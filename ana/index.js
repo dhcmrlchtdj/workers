@@ -1,5 +1,5 @@
 /*
-source: https://github.com/SukkaW/cloudflare-workers-async-google-analytics/blob/master/worker.js
+source: https://github.com/SukkaW/cloudflare-workers-async-google-analytics
 license: MIT
 */
 
@@ -9,6 +9,7 @@ addEventListener('fetch', event => {
 
 async function senData(event, url, uuid, user_agent, page_url) {
     const encode = data => encodeURIComponent(decodeURIComponent(data))
+
     const getReqHeader = key => event.request.headers.get(key)
     const getQueryString = name => {
         const pattern = new RegExp('(^|&)' + name + '=([^&]*)(&|$)', 'i')
@@ -58,18 +59,45 @@ async function senData(event, url, uuid, user_agent, page_url) {
 
 async function response(event) {
     const url = new URL(event.request.url)
+
     const getReqHeader = key => event.request.headers.get(key)
-    const referrer = getReqHeader('Referer')
+
+    const Referer = getReqHeader('Referer')
     const user_agent = getReqHeader('User-Agent')
     const ref_host = (() => {
         try {
-            return new URL(referrer).hostname
+            return new URL(Referer).hostname
         } catch (e) {
             return ''
         }
     })()
 
-    const needBlock = !ref_host || !user_agent || !url.search.includes('ga=UA-')
+    let needBlock = false
+
+    needBlock =
+        !ref_host ||
+        ref_host === '' ||
+        !user_agent ||
+        !url.search.includes('ga=UA-')
+            ? true
+            : false
+
+    if (
+        typeof AllowedReferrer !== 'undefined' &&
+        AllowedReferrer !== null &&
+        AllowedReferrer
+    ) {
+        let _AllowedReferrer = AllowedReferrer
+
+        if (!Array.isArray(AllowedReferrer))
+            _AllowedReferrer = [_AllowedReferrer]
+
+        const rAllowedReferrer = new RegExp(_AllowedReferrer.join('|'), 'g')
+
+        needBlock = !rAllowedReferrer.test(ref_host) ? true : false
+        console.log(_AllowedReferrer, rAllowedReferrer, ref_host)
+    }
+
     if (needBlock) {
         return new Response('403 Forbidden', {
             headers: { 'Content-Type': 'text/html' },
@@ -93,8 +121,10 @@ async function response(event) {
         s[14] = '4' // bits 12-15 of the time_hi_and_version field to 0010
         s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1) // bits 6-7 of the clock_seq_hi_and_reserved to 01
         s[8] = s[13] = s[18] = s[23] = '-'
+
         return s.join('')
     }
+
     const _uuid = getCookie('uuid')
     const uuid = _uuid ? _uuid : createUuid()
 
@@ -102,17 +132,18 @@ async function response(event) {
     event.waitUntil(senData(event, url, uuid, user_agent, Referer))
 
     // Return an 204 to speed up: No need to download a gif
-    const response = new Response(null, {
+    let response = new Response(null, {
         status: 204,
         statusText: 'No Content',
     })
-    if (!_uuid) {
+
+    if (!_uuid)
         response.headers.set(
             'Set-Cookie',
             `uuid=${uuid}; Expires=${new Date(
                 new Date().getTime() + 365 * 86400 * 30 * 1000,
             ).toGMTString()}; Path='/';`,
         )
-    }
+
     return response
 }
