@@ -3,7 +3,7 @@ source: https://github.com/SukkaW/cloudflare-workers-async-google-analytics/blob
 license: MIT
 */
 
-const AllowedReferrer = 'log.h11.io'
+const AllowedReferrer = 'h11.io'
 
 addEventListener('fetch', event => {
     event.respondWith(response(event))
