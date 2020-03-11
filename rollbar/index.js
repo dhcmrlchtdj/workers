@@ -15,7 +15,7 @@ async function handle(request) {
     }
 }
 
-async function dispatchRollba(payload) {
+async function dispatchRollbar(payload) {
     const evt = payload.event_name
     if (evt === 'occurrence') {
         await handleOccurrence(payload.data)
@@ -25,8 +25,14 @@ async function dispatchRollba(payload) {
 async function handleOccurrence(data) {
     const msg = {
         rollbar: data.url,
-        feedurl: data.occurrence?.feedurl,
-        exception: data.occurrence?.body?.trace_chain?.[0]?.exception?.message,
+        feedurl: data.occurrence.feedurl,
+        exception: (() => {
+            try {
+                return data.occurrence.body.trace_chain[0].exception.message
+            } catch (err) {
+                return err.message
+            }
+        })(),
     }
     const text = JSON.stringify(msg, null, 4)
     await sendToTelegram(text)
