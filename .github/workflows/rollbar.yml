@@ -27,7 +27,12 @@ jobs:
                       ${{ runner.os }}-yarn-
             - run: yarn install
               working-directory: ./rollbar
-            - run: yarn wrangler publish
+            - run: |
+                yarn wrangler publish
+                echo "$TELEGRAM_BOT_TOKEN" | yarn wrangler secret put 'TELEGRAM_BOT_TOKEN'
+                echo "$TELEGRAM_CHAT_ID" yarn wrangler secret put 'TELEGRAM_CHAT_ID'
               working-directory: ./rollbar
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+                  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+                  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
