@@ -9,8 +9,8 @@ async function handle(request) {
     if (request.method.toUpperCase() !== 'POST') {
         return new Response('Method Not Allowed', { status: 405 })
     } else {
-        const payload = request.json()
-        dispatchRollbar(payload)
+        const payload = await request.json()
+        await dispatchRollbar(payload)
         return new Response('', { status: 204 })
     }
 }
