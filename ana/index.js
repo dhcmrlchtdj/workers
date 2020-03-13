@@ -3,8 +3,6 @@ source: https://github.com/SukkaW/cloudflare-workers-async-google-analytics/blob
 license: MIT
 */
 
-const AllowedReferrer = 'h11.io'
-
 addEventListener('fetch', event => {
     event.respondWith(response(event))
 })
@@ -60,43 +58,18 @@ async function senData(event, url, uuid, user_agent, page_url) {
 
 async function response(event) {
     const url = new URL(event.request.url)
-
     const getReqHeader = key => event.request.headers.get(key)
-
-    const Referer = getReqHeader('Referer')
+    const referrer = getReqHeader('Referer')
     const user_agent = getReqHeader('User-Agent')
     const ref_host = (() => {
         try {
-            return new URL(Referer).hostname
+            return new URL(referrer).hostname
         } catch (e) {
             return ''
         }
     })()
 
-    let needBlock = false
-
-    needBlock =
-        !ref_host ||
-        ref_host === '' ||
-        !user_agent ||
-        !url.search.includes('ga=UA-')
-            ? true
-            : false
-
-    if (
-        typeof AllowedReferrer !== 'undefined' &&
-        AllowedReferrer !== null &&
-        AllowedReferrer
-    ) {
-        let _AllowedReferrer = AllowedReferrer
-
-        if (!Array.isArray(AllowedReferrer))
-            _AllowedReferrer = [_AllowedReferrer]
-
-        const rAllowedReferrer = new RegExp(_AllowedReferrer.join('|'), 'g')
-        needBlock = !rAllowedReferrer.test(ref_host) ? true : false
-    }
-
+    const needBlock = !ref_host || !user_agent || !url.search.includes('ga=UA-')
     if (needBlock) {
         return new Response('403 Forbidden', {
             headers: { 'Content-Type': 'text/html' },
@@ -122,7 +95,6 @@ async function response(event) {
         s[8] = s[13] = s[18] = s[23] = '-'
         return s.join('')
     }
-
     const _uuid = getCookie('uuid')
     const uuid = _uuid ? _uuid : createUuid()
 
@@ -134,7 +106,6 @@ async function response(event) {
         status: 204,
         statusText: 'No Content',
     })
-
     if (!_uuid) {
         response.headers.set(
             'Set-Cookie',
@@ -143,6 +114,5 @@ async function response(event) {
             ).toGMTString()}; Path='/';`,
         )
     }
-
     return response
 }
