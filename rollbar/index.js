@@ -37,10 +37,11 @@ async function handleOccurrence(data) {
             return err.message
         }
     })()
-    const text = `<pre>rollbar = <a href="${url}">${url}</a>
-feedurl   = <a href="${feedurl}">${feedurl}</a>
-exception = ${exception}
-</pre>`
+    const text = [
+        `rollbar = <a href="${url}">${url}</a>`,
+        `feedurl   = <a href="${feedurl}">${feedurl}</a>`,
+        `exception = ${exception}`,
+    ].join('\n')
     await sendToTelegram(text)
 }
 
