@@ -26,10 +26,13 @@ jobs:
                   key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
                   restore-keys: ${{ runner.os }}-yarn-
             - run: yarn install
+            - uses: cloudflare/wrangler-action@1.1.0
+              workingDirectory: 'rollbar'
+              with:
+                  apiToken: ${{ secrets.CF_API_TOKEN }}
             - run: |
-                yarn wrangler publish
-                echo "$TELEGRAM_BOT_TOKEN" | yarn wrangler secret put 'TELEGRAM_BOT_TOKEN'
-                echo "$TELEGRAM_CHAT_ID" | yarn wrangler secret put 'TELEGRAM_CHAT_ID'
+                echo "$TELEGRAM_BOT_TOKEN" | ../node_modules/.bin/wrangler secret put 'TELEGRAM_BOT_TOKEN'
+                echo "$TELEGRAM_CHAT_ID" | ../node_modules/.bin/wrangler secret put 'TELEGRAM_CHAT_ID'
               working-directory: ./rollbar
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
