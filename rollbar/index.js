@@ -28,6 +28,8 @@ async function dispatch(payload) {
 }
 
 async function handleOccurrence(data) {
+    const url = data.url
+    const feedurl = data.occurrence.feedurl
     const exception = (() => {
         try {
             return data.occurrence.body.trace_chain[0].exception.message
@@ -35,8 +37,8 @@ async function handleOccurrence(data) {
             return err.message
         }
     })()
-    const text = `<pre>rollbar   = ${data.url}
-feedurl   = ${data.occurrence.feedurl}
+    const text = `<pre>rollbar = <a href="${url}">${url}</a>
+feedurl   = <a href="${feedurl}">${feedurl}</a>
 exception = ${exception}
 </pre>`
     await sendToTelegram(text)
