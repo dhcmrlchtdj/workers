@@ -39,7 +39,7 @@ async function handleOccurrence(data) {
     })()
     const text = [
         `rollbar = <a href="${url}">${url}</a>`,
-        `feedurl   = <a href="${feedurl}">${feedurl}</a>`,
+        `feedurl = <a href="${feedurl}">${feedurl}</a>`,
         `exception = ${exception}`,
     ].join('\n')
     await sendToTelegram(text)
