@@ -5,12 +5,5 @@
     "repository": "git@github.com:dhcmrlchtdj/workers.git",
     "author": "h11 <nirisix@gmail.com>",
     "license": "MIT",
-    "main": "index.js",
-    "engines": {
-        "node": "13.*",
-        "yarn": "1.*"
-    },
-    "devDependencies": {
-        "@cloudflare/wrangler": "1.8.1"
-    }
+    "main": "index.js"
 }
