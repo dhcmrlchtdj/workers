@@ -102,7 +102,7 @@ async function response(event) {
     event.waitUntil(senData(event, url, uuid, user_agent, Referer))
 
     // Return an 204 to speed up: No need to download a gif
-    let response = new Response(null, {
+    const response = new Response(null, {
         status: 204,
         statusText: 'No Content',
     })
