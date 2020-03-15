@@ -1,0 +1,29 @@
+{
+    "compilerOptions": {
+        "module": "CommonJS",
+        "target": "ES2019",
+        "lib": ["ESNext", "WebWorker"],
+
+        "sourceMap": false,
+        "importHelpers": false,
+        "declaration": false,
+        "noEmitOnError": false,
+        "moduleResolution": "node",
+
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+
+        "strict": true,
+        "noImplicitAny": true,
+        "strictPropertyInitialization": true,
+        "strictBindCallApply": true,
+        "alwaysStrict": true,
+        "noImplicitThis": true,
+        "strictFunctionTypes": true,
+        "strictNullChecks": true,
+
+        "pretty": true
+    }
+}
