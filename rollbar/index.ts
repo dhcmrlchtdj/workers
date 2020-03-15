@@ -56,16 +56,27 @@ async function dispatch(payload: RollbarPayload) {
     }
 }
 
+const encodeHtmlEntities = (raw: string): string => {
+    const pairs: Record<string, string> = {
+        '&': '',
+        '<': '',
+        '>': '',
+    }
+    return raw.replace(/[&<>]/g, matched => pairs[matched])
+}
+
 async function handleOccurrence(data: Occurrence) {
-    const url = data.url
-    const feedurl = data.occurrence.feedurl
-    const exception =
+    const url = encodeHtmlEntities(data.url)
+    const feedurl = encodeHtmlEntities(data.occurrence.feedurl)
+    const exception = encodeHtmlEntities(
         data.occurrence.body?.trace_chain?.[0]?.exception?.message ??
-        data.occurrence.body?.message?.body
+            data.occurrence.body?.message?.body ??
+            '',
+    )
     const text = [
-        `rollbar = <a href="${url}">${url}</a>`,
         `feedurl = <a href="${feedurl}">${feedurl}</a>`,
         `exception = ${exception}`,
+        `rollbar = <a href="${url}">${url}</a>`,
     ].join('\n')
     await sendToTelegram(text)
 }
