@@ -1,9 +1,10 @@
 {
     "compilerOptions": {
-        "module": "CommonJS",
+        "module": "ES6",
         "target": "ES2019",
         "lib": ["ESNext", "WebWorker"],
 
+        "removeComments": true,
         "sourceMap": false,
         "importHelpers": false,
         "declaration": false,
