@@ -3,5 +3,8 @@ PATH := ./node_modules/.bin:$(PATH)
 
 build:
 	for i in */index.ts; do \
-		rollup --input=$$i --file=$${i%ts}js --format=es --plugin=typescript ; \
+		rollup --input=$$i --file=$${i%ts}js \
+		--plugin=node-resolve \
+		--plugin=typescript \
+		--format=es; \
 		done
