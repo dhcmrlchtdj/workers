@@ -1,5 +1,5 @@
 import {} from '@cloudflare/workers-types'
-import { encodeHtmlEntities } from '../common'
+import { encodeHtmlEntities } from '../common/html'
 
 // https://docs.rollbar.com/docs/webhooks
 // https://rollbar.com/h11/feedbox/items/23/occurrences/117235378113/
@@ -32,22 +32,17 @@ declare const TELEGRAM_CHAT_ID: string
 // ---
 
 addEventListener('fetch', event => {
-    event.respondWith(handle(event))
+    event.respondWith(handle(event.request))
 })
 
-async function handle(event: FetchEvent) {
-    const req = event.request
-    if (req.method.toUpperCase() === 'POST') {
+async function handle(request: Request) {
+    if (request.method.toUpperCase() === 'POST') {
         try {
-            const payload = await req.json()
-            event.waitUntil(dispatch(payload))
+            const payload = await request.json()
+            await dispatch(payload)
         } catch (_) {}
     }
-    const response = new Response(null, {
-        status: 204,
-        statusText: 'No Content',
-    })
-    return response
+    return new Response(null, { status: 204 })
 }
 
 async function dispatch(payload: RollbarPayload) {

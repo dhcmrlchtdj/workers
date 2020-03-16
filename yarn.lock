@@ -51,6 +51,11 @@ rollup@2.0.6:
   optionalDependencies:
     fsevents "~2.1.2"
 
+telegram-typings@4.0.0-beta:
+  version "4.0.0-beta"
+  resolved "https://registry.yarnpkg.com/telegram-typings/-/telegram-typings-4.0.0-beta.tgz#802e2f6f58af1c33bbc12c3fe8702e9e07d4d9bc"
+  integrity sha512-p5rH6xmotS4wvzQr3z0EyyMNGOceaZ1poUienbRFPUHTHQv4W+n40vORRwuc1myZ41E633l2UGdXl2V9hjX7Dw==
+
 tslib@1.11.1:
   version "1.11.1"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.11.1.tgz#eb15d128827fbee2841549e171f45ed338ac7e35"
