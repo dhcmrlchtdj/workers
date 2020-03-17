@@ -2,20 +2,24 @@ import {} from '@cloudflare/workers-types'
 import { Update, Message } from 'telegram-typings'
 import { execute } from './command'
 import * as db from './db'
+import { sentry } from './sentry'
 
 // from worker environment
 declare const BCC_FAUNA_KEY: string
 declare const BCC_WEBHOOK_PATH: string
 declare const BCC_BOT_TOKEN: string
+declare const SENTRY_KEY: string
 
-addEventListener('fetch', event => {
+addEventListener('fetch', async event => {
+    let resp: Response
     try {
-        event.respondWith(handle(event.request))
+        resp = await handle(event.request)
     } catch (err) {
+        event.waitUntil(sentry('bcc', event.request, err))
         const msg = `${err}\n${err.stack}`
-        const resp = new Response(msg, { status: 500 })
-        event.respondWith(resp)
+        resp = new Response(msg, { status: 500 })
     }
+    event.respondWith(resp)
 })
 
 async function handle(request: Request) {

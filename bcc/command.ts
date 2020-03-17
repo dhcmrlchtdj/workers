@@ -32,20 +32,12 @@ actions.set('/start', async (_args: string[], msg: Message) => {
 
 actions.set('/list', async (_args: string[], msg: Message) => {
     const chat_id = msg.chat.id
-    try {
-        const tags = await db.getTags(chat_id)
-        const text = tags.length === 0 ? 'not found' : tags.join('\n')
-        await sendMessage({
-            chat_id,
-            text,
-        })
-    } catch (err) {
-        const text = `${err}\n${err.stack}`
-        await sendMessage({
-            chat_id,
-            text,
-        })
-    }
+    const tags = await db.getTags(chat_id)
+    const text = tags.length === 0 ? 'not found' : tags.join('\n')
+    await sendMessage({
+        chat_id,
+        text,
+    })
 })
 
 actions.set('/whoami', async (_args: string[], msg: Message) => {

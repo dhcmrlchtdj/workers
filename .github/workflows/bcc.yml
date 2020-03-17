@@ -39,6 +39,7 @@ jobs:
                 curl "https://api.telegram.org/bot${BCC_BOT_TOKEN}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Fwebhook%2Ftelegram%2Fbcc%2F${BCC_WEBHOOK_PATH}"
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+                  SENTRY_KEY: ${{ secrets.SENTRY_KEY }}
                   BCC_FAUNA_KEY: ${{ secrets.BCC_FAUNA_KEY }}
                   BCC_WEBHOOK_PATH: ${{ secrets.BCC_WEBHOOK_PATH }}
                   BCC_BOT_TOKEN: ${{ secrets.BCC_BOT_TOKEN }}
