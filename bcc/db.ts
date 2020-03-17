@@ -10,18 +10,15 @@ const execute = async (query: string) => {
     const resp = await fetch('https://db.fauna.com', {
         method: 'POST',
         headers: {
-            Connection: 'close',
-            'Content-Type': 'text/plain;charset=UTF-8',
-            Authorization: `Basic ${btoa(BCC_FAUNA_KEY + ':')}`,
-            'X-FaunaDB-API-Version': '2.7',
-            'X-Fauna-Driver': 'JavascriptX',
+            connection: 'close',
+            authorization: `Basic ${btoa(BCC_FAUNA_KEY + ':')}`,
+            'x-faunadb-api-version': '2.7',
+            'x-fauna-driver': 'JavascriptX',
         },
         body: query,
     })
     if (resp.ok) {
-        const text = await resp.text()
-        const json = JSON.parse(text)
-        return json
+        return resp.json()
     } else {
         throw new Error(resp.statusText)
     }
