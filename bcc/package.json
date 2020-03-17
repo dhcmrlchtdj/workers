@@ -7,10 +7,14 @@
     "license": "MIT",
     "main": "index.js",
     "scripts": {
-        "build": "tsc"
+        "build": "rollup --format=es --input=index.ts --file=index.js --plugin=typescript --no-esModule"
     },
     "devDependencies": {
         "@cloudflare/workers-types": "1.0.7",
+        "@rollup/plugin-typescript": "4.0.0",
+        "rollup": "2.0.6",
+        "telegram-typings": "4.0.0-beta",
+        "tslib": "1.11.1",
         "typescript": "3.8.3"
     }
 }

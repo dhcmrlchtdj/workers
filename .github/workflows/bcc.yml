@@ -1,12 +1,12 @@
-name: rollbar
+name: bcc
 
 on:
     push:
         branches:
             - master
         paths:
-            - '.github/workflows/rollbar.yml'
-            - 'rollbar/**'
+            - '.github/workflows/bcc.yml'
+            - 'bcc/**'
 
 jobs:
     deploy:
@@ -24,18 +24,20 @@ jobs:
                   key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
                   restore-keys: ${{ runner.os }}-yarn-
             - name: build
-              working-directory: ./rollbar
+              working-directory: ./bcc
               run: |
                 yarn install
                 yarn build
             - name: deploy
-              working-directory: ./rollbar
+              working-directory: ./bcc
               run: |
                 yarn add @cloudflare/wrangler
                 yarn wrangler publish
-                echo "$TELEGRAM_BOT_TOKEN" | yarn wrangler secret put 'TELEGRAM_BOT_TOKEN'
-                echo "$TELEGRAM_CHAT_ID" | yarn wrangler secret put 'TELEGRAM_CHAT_ID'
+                echo "$BCC_FAUNA_KEY" | yarn wrangler secret put 'BCC_FAUNA_KEY'
+                echo "$BCC_WEBHOOK_PATH" | yarn wrangler secret put 'BCC_WEBHOOK_PATH'
+                echo "$BCC_BOT_TOKEN" | yarn wrangler secret put 'BCC_BOT_TOKEN'
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-                  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-                  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+                  BCC_FAUNA_KEY: ${{ secrets.BCC_FAUNA_KEY }}
+                  BCC_WEBHOOK_PATH: ${{ secrets.BCC_WEBHOOK_PATH }}
+                  BCC_BOT_TOKEN: ${{ secrets.BCC_BOT_TOKEN }}
