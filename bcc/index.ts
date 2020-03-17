@@ -10,19 +10,21 @@ declare const BCC_WEBHOOK_PATH: string
 declare const BCC_BOT_TOKEN: string
 declare const SENTRY_KEY: string
 
-addEventListener('fetch', async event => {
-    let resp: Response
-    try {
-        resp = await handle(event.request)
-    } catch (err) {
-        event.waitUntil(sentry('bcc', event.request, err))
-        const msg = `${err}\n${err.stack}`
-        resp = new Response(msg, { status: 200 })
-    }
-    event.respondWith(resp)
+addEventListener('fetch', event => {
+    event.respondWith(handle(event.request))
 })
 
 async function handle(request: Request) {
+    try {
+        return route(request)
+    } catch (err) {
+        await sentry('bcc', request, err)
+        const msg = `${err}\n${err.stack}`
+        return new Response(msg, { status: 200 })
+    }
+}
+
+async function route(request: Request) {
     const url = new URL(request.url)
     switch (url.pathname) {
         case `/webhook/telegram/bcc/${BCC_WEBHOOK_PATH}`:
