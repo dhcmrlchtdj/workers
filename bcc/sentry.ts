@@ -33,13 +33,6 @@ const buildPacket = (project: string, request: Request, err: Error): string => {
                 {
                     type: err.name,
                     value: err.message,
-                    stacktrace: {
-                        frames: [
-                            {
-                                filename: err.stack,
-                            },
-                        ],
-                    },
                 },
             ],
         },

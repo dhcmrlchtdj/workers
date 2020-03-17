@@ -17,7 +17,7 @@ addEventListener('fetch', async event => {
     } catch (err) {
         event.waitUntil(sentry('bcc', event.request, err))
         const msg = `${err}\n${err.stack}`
-        resp = new Response(msg, { status: 500 })
+        resp = new Response(msg, { status: 200 })
     }
     event.respondWith(resp)
 })
@@ -29,10 +29,10 @@ async function handle(request: Request) {
             if (request.method.toUpperCase() === 'POST') {
                 return webhook(request)
             } else {
-                return new Response(null, { status: 405 })
+                return new Response('405', { status: 200 })
             }
         default:
-            return new Response(null, { status: 404 })
+            return new Response('404', { status: 200 })
     }
 }
 
@@ -72,5 +72,5 @@ async function webhook(request: Request) {
         handleMsg(payload.channel_post),
         handleMsg(payload.edited_channel_post),
     ])
-    return new Response(null, { status: 204 })
+    return new Response('ok', { status: 200 })
 }
