@@ -1,29 +1,5 @@
 import {} from '@cloudflare/workers-types'
-import { encodeHtmlEntities } from '../common/html'
-
-// https://docs.rollbar.com/docs/webhooks
-// https://rollbar.com/h11/feedbox/items/23/occurrences/117235378113/
-// https://transform.tools/json-to-typescript
-type Occurrence = {
-    url: string
-    occurrence: {
-        feedurl: string
-        body?: {
-            message?: {
-                body?: string
-            }
-            trace_chain?: Array<{
-                exception?: {
-                    message?: string
-                }
-            }>
-        }
-    }
-}
-type RollbarPayload = {
-    event_name: 'occurrence'
-    data: Occurrence
-}
+import { Occurrence, RollbarPayload } from './rollbar'
 
 // from worker environment
 declare const TELEGRAM_BOT_TOKEN: string
@@ -50,6 +26,16 @@ async function dispatch(payload: RollbarPayload) {
     if (evt === 'occurrence') {
         await handleOccurrence(payload.data)
     }
+}
+
+const encodeHtmlEntities = (raw: string): string => {
+    const pairs: Record<string, string> = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+    }
+    return raw.replace(/[&<>]/g, matched => pairs[matched])
 }
 
 async function handleOccurrence(data: Occurrence) {

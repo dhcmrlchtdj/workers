@@ -5,5 +5,12 @@
     "repository": "git@github.com:dhcmrlchtdj/workers.git",
     "author": "h11 <nirisix@gmail.com>",
     "license": "MIT",
-    "main": "index.js"
+    "main": "index.js",
+    "devDependencies": {
+        "@cloudflare/workers-types": "1.0.7",
+        "@rollup/plugin-typescript": "4.0.0",
+        "rollup": "2.0.6",
+        "tslib": "1.11.1",
+        "typescript": "3.8.3"
+    }
 }
