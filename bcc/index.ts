@@ -11,14 +11,14 @@ declare const BCC_BOT_TOKEN: string
 declare const SENTRY_KEY: string
 
 addEventListener('fetch', event => {
-    event.respondWith(handle(event.request))
+    event.respondWith(handle(event))
 })
 
-async function handle(request: Request) {
+async function handle(event: FetchEvent) {
     try {
-        return route(request)
+        return await route(event.request)
     } catch (err) {
-        await sentry('bcc', request, err)
+        event.waitUntil(sentry('bcc', event.request, err))
         const msg = `${err}\n${err.stack}`
         return new Response(msg, { status: 200 })
     }
