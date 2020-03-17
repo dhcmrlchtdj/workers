@@ -19,11 +19,11 @@ const execute = async (query: string) => {
         body: query,
     })
     if (resp.ok) {
-        const json = await resp.json()
+        const text = await resp.text()
+        const json = JSON.parse(text)
         return json
     } else {
-        const msg = await resp.text()
-        throw msg
+        throw new Error(resp.statusText)
     }
 }
 

@@ -24,7 +24,7 @@ const buildPacket = (project: string, request: Request, err: Error): string => {
         tags: { project },
         request: {
             method: request.method,
-            url: `${url.protocol}://${url.hostname}${url.pathname}`,
+            url: `${url.protocol}//${url.hostname}${url.pathname}`,
             query_string: url.search,
             headers: request.headers,
         },
@@ -36,8 +36,7 @@ const buildPacket = (project: string, request: Request, err: Error): string => {
                     stacktrace: {
                         frames: [
                             {
-                                filename: 'index.ts',
-                                pre_context: err.stack,
+                                filename: err.stack,
                             },
                         ],
                     },
