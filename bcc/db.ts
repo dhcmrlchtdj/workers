@@ -2,6 +2,7 @@ import {} from '@cloudflare/workers-types'
 
 // https://github.com/fauna/faunadb-js/blob/2.13.0/src/
 // https://docs.fauna.com/fauna/current/start/fql_for_sql_users.html
+// https://dashboard.fauna.com/webshell/@db/kv
 
 declare const BCC_FAUNA_KEY: string
 
@@ -21,54 +22,114 @@ const execute = async (query: string) => {
 
 export const addTags = async (chat_id: number, tags: string[]) => {
     /*
-    Map(
-        ['#xxx', '#yyy', '#zzz'],
-        Lambda(
-            'tag',
-            Create(
-                Collection('bcc'),
-                { data: { chat_id: chat_id, tag: q.Var('tag') } }
-            )
+    If(
+        Exists(Match(Index('bcc_sort_by_chat_id_asc'), -1001450758329)),
+        Update(
+            Select('ref',Get(Match(Index('bcc_sort_by_chat_id_asc'), -1001450758329))),
+            {
+                data: {
+                    tags: Distinct(Union(
+                        Select(["data","tags"], Get(Match(Index('bcc_sort_by_chat_id_asc'), -1001450758329))),
+                        ['#ocaml', '#gc', '#type']
+                    ))
+                }
+            }
+        ),
+        Create(
+            Collection('bcc'),
+            { data: { chat_id: -1001450758329, tags: ['#ocaml', '#gc', '#type'] } }
         )
     )
     */
     const query = JSON.stringify({
-        map: {
-            lambda: 'tag',
-            expr: {
-                create: { collection: 'bcc' },
-                params: {
-                    object: {
-                        data: {
-                            object: {
-                                chat_id,
-                                tag: { var: 'tag' },
+        if: {
+            exists: {
+                match: { index: 'bcc_sort_by_chat_id_asc' },
+                terms: chat_id,
+            },
+        },
+        then: {
+            update: {
+                select: 'ref',
+                from: {
+                    get: {
+                        match: { index: 'bcc_sort_by_chat_id_asc' },
+                        terms: chat_id,
+                    },
+                },
+            },
+            params: {
+                object: {
+                    data: {
+                        object: {
+                            tags: {
+                                distinct: {
+                                    union: [
+                                        {
+                                            select: ['data', 'tags'],
+                                            from: {
+                                                get: {
+                                                    match: {
+                                                        index:
+                                                            'bcc_sort_by_chat_id_asc',
+                                                    },
+                                                    terms: chat_id,
+                                                },
+                                            },
+                                        },
+                                        tags,
+                                    ],
+                                },
                             },
                         },
                     },
                 },
             },
         },
-        collection: tags,
+        else: {
+            create: { collection: 'bcc' },
+            params: {
+                object: {
+                    data: {
+                        object: {
+                            chat_id,
+                            tags,
+                        },
+                    },
+                },
+            },
+        },
     })
-    const resp = await execute(query)
-    return resp
+    await execute(query)
 }
 
 export const getTags = async (chat_id: number): Promise<string[]> => {
     /*
-    Paginate(
-        Match(Index('chat_id'), chat_id),
-        100000
+    If(
+        Exists(Match(Index('bcc_sort_by_chat_id_asc'), -1001450758329)),
+        Select(["data","tags"], Get(Match(Index('bcc_sort_by_chat_id_asc'), -1001450758329))),
+        []
     )
     */
     const query = JSON.stringify({
-        paginate: {
-            match: { index: 'chat_id' },
-            terms: chat_id,
+        if: {
+            exists: {
+                match: { index: 'bcc_sort_by_chat_id_asc' },
+                terms: chat_id,
+            },
         },
+        then: {
+            select: ['data', 'tags'],
+            from: {
+                get: {
+                    match: { index: 'bcc_sort_by_chat_id_asc' },
+                    terms: chat_id,
+                },
+            },
+        },
+        else: [],
     })
     const resp = await execute(query)
-    const tags = resp.resource.data
+    const tags = resp.resource
     return tags
 }
