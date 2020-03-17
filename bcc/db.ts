@@ -10,14 +10,21 @@ const execute = async (query: string) => {
     const resp = await fetch('https://db.fauna.com', {
         method: 'POST',
         headers: {
+            Connection: 'close',
+            'Content-Type': 'text/plain;charset=UTF-8',
             Authorization: `Basic ${btoa(BCC_FAUNA_KEY + ':')}`,
             'X-FaunaDB-API-Version': '2.7',
             'X-Fauna-Driver': 'JavascriptX',
         },
         body: query,
     })
-    const json = await resp.json()
-    return json
+    if (resp.ok) {
+        const json = await resp.json()
+        return json
+    } else {
+        const msg = await resp.text()
+        throw msg
+    }
 }
 
 export const addTags = async (chat_id: number, tags: string[]) => {

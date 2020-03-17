@@ -9,7 +9,13 @@ declare const BCC_WEBHOOK_PATH: string
 declare const BCC_BOT_TOKEN: string
 
 addEventListener('fetch', event => {
-    event.respondWith(handle(event.request))
+    try {
+        event.respondWith(handle(event.request))
+    } catch (err) {
+        const msg = `${err}\n${err.stack}`
+        const resp = new Response(msg, { status: 500 })
+        event.respondWith(resp)
+    }
 })
 
 async function handle(request: Request) {
