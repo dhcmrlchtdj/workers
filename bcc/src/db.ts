@@ -1,28 +1,4 @@
-import {} from '@cloudflare/workers-types'
-
-// https://github.com/fauna/faunadb-js/blob/2.13.0/src/
-// https://docs.fauna.com/fauna/current/start/fql_for_sql_users.html
-// https://dashboard.fauna.com/webshell/@db/kv
-
-declare const BCC_FAUNA_KEY: string
-
-const execute = async (query: string) => {
-    const resp = await fetch('https://db.fauna.com', {
-        method: 'POST',
-        headers: {
-            connection: 'close',
-            authorization: `Basic ${btoa(BCC_FAUNA_KEY + ':')}`,
-            'x-faunadb-api-version': '2.7',
-            'x-fauna-driver': 'JavascriptX',
-        },
-        body: query,
-    })
-    if (resp.ok) {
-        return resp.json()
-    } else {
-        throw new Error(resp.statusText)
-    }
-}
+import { execute } from './service/fauna'
 
 export const addTags = async (chat_id: number, tags: string[]) => {
     /*
@@ -45,7 +21,7 @@ export const addTags = async (chat_id: number, tags: string[]) => {
         )
     )
     */
-    const query = JSON.stringify({
+    const stmt = JSON.stringify({
         if: {
             exists: {
                 match: { index: 'bcc-get-tags-by-chat_id-sort_by-tag' },
@@ -104,7 +80,7 @@ export const addTags = async (chat_id: number, tags: string[]) => {
             },
         },
     })
-    await execute(query)
+    await execute(stmt)
 }
 
 export const getTags = async (chat_id: number): Promise<string[]> => {
@@ -118,7 +94,7 @@ export const getTags = async (chat_id: number): Promise<string[]> => {
         []
     )
     */
-    const query = JSON.stringify({
+    const stmt = JSON.stringify({
         if: {
             exists: {
                 match: { index: 'bcc-get-tags-by-chat_id-sort_by-tag' },
@@ -137,7 +113,6 @@ export const getTags = async (chat_id: number): Promise<string[]> => {
         },
         else: [],
     })
-    const resp = await execute(query)
-    const tags = resp.resource
+    const tags = await execute<string[]>(stmt)
     return tags
 }

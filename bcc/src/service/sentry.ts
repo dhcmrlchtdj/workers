@@ -1,7 +1,5 @@
 // https://gist.github.com/mhart/1b3bbfbdfa6825baab003b5f55a15322
 
-import {} from '@cloudflare/workers-types'
-
 declare const SENTRY_KEY: string
 
 const fakeUUIDv4 = () => {
@@ -39,7 +37,7 @@ const buildPacket = (project: string, request: Request, err: Error): string => {
     })
 }
 
-export const sentry = async (project: string, request: Request, err: Error) => {
+export const log = async (project: string, request: Request, err: Error) => {
     // https://docs.sentry.io/development/sdk-dev/overview/
     const PROJECT_ID = 5024029
     const url = `https://sentry.io/api/${PROJECT_ID}/store/`

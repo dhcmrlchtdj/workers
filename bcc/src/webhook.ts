@@ -1,45 +1,10 @@
-import {} from '@cloudflare/workers-types'
 import { Update, Message } from 'telegram-typings'
-import { execute } from './command'
+import { execute } from './bot_command'
 import * as db from './db'
-import { sentry } from './sentry'
-
-// from worker environment
-declare const BCC_FAUNA_KEY: string
-declare const BCC_WEBHOOK_PATH: string
-declare const BCC_BOT_TOKEN: string
-declare const SENTRY_KEY: string
-
-addEventListener('fetch', event => {
-    event.respondWith(handle(event))
-})
-
-async function handle(event: FetchEvent) {
-    try {
-        return await route(event.request)
-    } catch (err) {
-        event.waitUntil(sentry('bcc', event.request, err))
-        const msg = `${err}\n${err.stack}`
-        return new Response(msg, { status: 200 })
-    }
-}
-
-async function route(request: Request) {
-    const url = new URL(request.url)
-    switch (url.pathname) {
-        case `/webhook/telegram/bcc/${BCC_WEBHOOK_PATH}`:
-            if (request.method.toUpperCase() === 'POST') {
-                return webhook(request)
-            } else {
-                return new Response('405', { status: 200 })
-            }
-        default:
-            return new Response('404', { status: 200 })
-    }
-}
 
 const handleMsg = async (msg: Message | undefined) => {
     if (!msg || !msg.text || !msg.entities) return
+
     const text = msg.text
     const entities: [string, string][] = msg.entities.map(entity => [
         entity.type,
@@ -66,7 +31,7 @@ const handleMsg = async (msg: Message | undefined) => {
     }
 }
 
-async function webhook(request: Request) {
+export const webhook = async (request: Request) => {
     const payload: Update = await request.json()
     await Promise.all([
         handleMsg(payload.message),

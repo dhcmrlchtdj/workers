@@ -33,14 +33,14 @@ jobs:
               run: |
                 yarn add @cloudflare/wrangler
                 yarn wrangler publish
-                echo "$BCC_FAUNA_KEY" | yarn wrangler secret put 'BCC_FAUNA_KEY'
                 echo "$BCC_WEBHOOK_PATH" | yarn wrangler secret put 'BCC_WEBHOOK_PATH'
                 echo "$BCC_BOT_TOKEN" | yarn wrangler secret put 'BCC_BOT_TOKEN'
+                echo "$FAUNA_KEY" | yarn wrangler secret put 'FAUNA_KEY'
                 echo "$SENTRY_KEY" | yarn wrangler secret put 'SENTRY_KEY'
                 curl "https://api.telegram.org/bot${BCC_BOT_TOKEN}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Fwebhook%2Ftelegram%2Fbcc%2F${BCC_WEBHOOK_PATH}"
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-                  SENTRY_KEY: ${{ secrets.SENTRY_KEY }}
-                  BCC_FAUNA_KEY: ${{ secrets.BCC_FAUNA_KEY }}
                   BCC_WEBHOOK_PATH: ${{ secrets.BCC_WEBHOOK_PATH }}
                   BCC_BOT_TOKEN: ${{ secrets.BCC_BOT_TOKEN }}
+                  FAUNA_KEY: ${{ secrets.BCC_FAUNA_KEY }}
+                  SENTRY_KEY: ${{ secrets.SENTRY_KEY }}

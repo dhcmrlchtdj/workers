@@ -7,7 +7,7 @@
     "license": "MIT",
     "main": "index.js",
     "scripts": {
-        "build": "rollup --format=es --input=index.ts --file=index.js --plugin=typescript --no-esModule"
+        "build": "rollup --format=es --input=src/index.ts --file=index.js --plugin=typescript --no-esModule"
     },
     "devDependencies": {
         "@cloudflare/workers-types": "1.0.7",
