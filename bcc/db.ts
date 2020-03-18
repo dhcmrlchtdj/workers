@@ -27,13 +27,13 @@ const execute = async (query: string) => {
 export const addTags = async (chat_id: number, tags: string[]) => {
     /*
     If(
-        Exists(Match(Index('bcc_sort_by_chat_id_asc'), -1001450758329)),
+        Exists(Match(Index('bcc-get-tags-by-chat_id-sort_by-tag'), -1001450758329))
         Update(
-            Select('ref',Get(Match(Index('bcc_sort_by_chat_id_asc'), -1001450758329))),
+            Select('ref',Get(Match(Index('bcc-get-tags-by-chat_id-sort_by-tag'), -1001450758329))),
             {
                 data: {
                     tags: Distinct(Union(
-                        Select(["data","tags"], Get(Match(Index('bcc_sort_by_chat_id_asc'), -1001450758329))),
+                        Select(["data","tags"], Get(Match(Index('bcc-get-tags-by-chat_id-sort_by-tag'), -1001450758329))),
                         ['#ocaml', '#gc', '#type']
                     ))
                 }
@@ -48,7 +48,7 @@ export const addTags = async (chat_id: number, tags: string[]) => {
     const query = JSON.stringify({
         if: {
             exists: {
-                match: { index: 'bcc_sort_by_chat_id_asc' },
+                match: { index: 'bcc-get-tags-by-chat_id-sort_by-tag' },
                 terms: chat_id,
             },
         },
@@ -57,7 +57,7 @@ export const addTags = async (chat_id: number, tags: string[]) => {
                 select: 'ref',
                 from: {
                     get: {
-                        match: { index: 'bcc_sort_by_chat_id_asc' },
+                        match: { index: 'bcc-get-tags-by-chat_id-sort_by-tag' },
                         terms: chat_id,
                     },
                 },
@@ -75,7 +75,7 @@ export const addTags = async (chat_id: number, tags: string[]) => {
                                                 get: {
                                                     match: {
                                                         index:
-                                                            'bcc_sort_by_chat_id_asc',
+                                                            'bcc-get-tags-by-chat_id-sort_by-tag',
                                                     },
                                                     terms: chat_id,
                                                 },
@@ -110,25 +110,29 @@ export const addTags = async (chat_id: number, tags: string[]) => {
 export const getTags = async (chat_id: number): Promise<string[]> => {
     /*
     If(
-        Exists(Match(Index('bcc_sort_by_chat_id_asc'), -1001450758329)),
-        Select(["data","tags"], Get(Match(Index('bcc_sort_by_chat_id_asc'), -1001450758329))),
+        Exists(Match(Index('bcc-get-tags-by-chat_id-sort_by-tag'), -1001450758329)),
+        Select(
+            ["data"],
+            Paginate(Match(Index('bcc-get-tags-by-chat_id-sort_by-tag'), -1001450758329), {size:100000})
+        ),
         []
     )
     */
     const query = JSON.stringify({
         if: {
             exists: {
-                match: { index: 'bcc_sort_by_chat_id_asc' },
+                match: { index: 'bcc-get-tags-by-chat_id-sort_by-tag' },
                 terms: chat_id,
             },
         },
         then: {
-            select: ['data', 'tags'],
+            select: ['data'],
             from: {
-                get: {
-                    match: { index: 'bcc_sort_by_chat_id_asc' },
+                paginate: {
+                    match: { index: 'bcc-get-tags-by-chat_id-sort_by-tag' },
                     terms: chat_id,
                 },
+                size: 100000,
             },
         },
         else: [],
