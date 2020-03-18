@@ -57,6 +57,6 @@ actions.set('/whoami', async (_args: string[], msg: Message) => {
 export const execute = async (cmd: string, args: string[], msg: Message) => {
     const act = actions.get(cmd)
     if (act !== undefined) {
-        act(args, msg)
+        await act(args, msg)
     }
 }
