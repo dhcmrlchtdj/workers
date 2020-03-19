@@ -68,7 +68,16 @@ export const addTags = async (chat_id: number, tags: string[]) => {
         },
         else: {
             create: { collection: 'bcc' },
-            params: { object: { data: { object: { chat_id, tags } } } },
+            params: {
+                object: {
+                    data: {
+                        object: {
+                            chat_id,
+                            tags,
+                        },
+                    },
+                },
+            },
         },
     })
     await execute(stmt)
