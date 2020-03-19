@@ -7,10 +7,15 @@ import { execute } from './service/fauna'
         Lambda(
             "chat_id",
             Let(
-                { x: Match(Index("bcc-get-tags-by-chat_id-sort_by-tag"), Var("chat_id")) },
+                {
+                    tags: Match(
+                        Index("bcc-get-tags-by-chat_id-sort_by-tag"),
+                        Var("chat_id")
+                    )
+                },
                 If(
-                    Exists(Var('x')),
-                    Select(["data"], Paginate(Var('x'), {size: 100000})),
+                    Exists(Var("tags")),
+                    Select(["data"], Paginate(Var("tags"), 100000)),
                     []
                 )
             )
@@ -24,22 +29,24 @@ import { execute } from './service/fauna'
         Lambda(
             ["chat_id", "tags"],
             Let(
-                { x: Match(Index("bcc-get-tags-by-chat_id-sort_by-tag"), Var("chat_id")) },
-                If(
-                    Exists(Var('x')),
-                    Update(Select("ref", Get(Var('x'))), {
-                        data: {
-                            tags: Distinct(
-                                Union(
-                                    Select(["data", "tags"], Get(Var('x'))),
-                                    Var("tags")
+                {
+                    x: Match(Index("bcc-get-tags-by-chat_id-sort_by-tag"), Var("chat_id"))
+                },
+                Select(
+                    ["ts"],
+                    If(
+                        Exists(Var("x")),
+                        Update(Select("ref", Get(Var("x"))), {
+                            data: {
+                                tags: Distinct(
+                                Union(Select(["data", "tags"], Get(Var("x"))), Var("tags"))
                                 )
-                            )
-                        }
-                    }),
-                    Create(Collection("bcc"), {
-                        data: { chat_id: Var("chat_id"), tags: Var("tags") }
-                    })
+                            }
+                        }),
+                        Create(Collection("bcc"), {
+                            data: { chat_id: Var("chat_id"), tags: Var("tags") }
+                        })
+                    )
                 )
             )
         )
