@@ -8,21 +8,18 @@ declare const BCC_BOT_TOKEN: string
 declare const FAUNA_KEY: string
 declare const SENTRY_KEY: string
 
-addEventListener('fetch', event => {
-    event.respondWith(handle(event))
-})
-
-async function handle(event: FetchEvent) {
+addEventListener('fetch', async event => {
     try {
-        return await route(event.request)
+        const resp = await handle(event.request)
+        return resp
     } catch (err) {
         event.waitUntil(log('bcc', event.request, err))
         const msg = `${err}\n${err.stack}`
         return new Response(msg, { status: 200 })
     }
-}
+})
 
-async function route(request: Request) {
+async function handle(request: Request) {
     const url = new URL(request.url)
     switch (url.pathname) {
         case `/webhook/telegram/bcc/${BCC_WEBHOOK_PATH}`:
