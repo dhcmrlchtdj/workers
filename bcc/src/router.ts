@@ -1,3 +1,34 @@
+/*
+Usage:
+
+```javascript
+import { Router } from 'path/to/router'
+
+// build router
+const router = new Router()
+
+router.fallback(async (event) => {
+    fetch(event.request)
+})
+
+router.get('/static', async (event, params) => {
+    fetch(event.request)
+})
+router.post('/param/:id/:title', async (event, params) => {
+    assert(params.has('id'))
+    assert(params.has('title'))
+    return fetch(event.request)
+})
+router.head('/any/*', async (event, params) => {
+    assert(params.has('*'))
+    return fetch(event.request)
+})
+
+// route the fetch event
+router.route(event)
+```
+*/
+
 type Params = Map<string, string>
 type Handler = (event: FetchEvent, params: Params) => Promise<Response>
 type Route = {
@@ -6,6 +37,7 @@ type Route = {
     parameter: Map<string, Route>
     any: Route | undefined
 }
+
 const newRoute = (): Route => {
     return {
         handler: null,
@@ -15,10 +47,20 @@ const newRoute = (): Route => {
     }
 }
 
+const handleNotFound: Handler = async () =>
+    new Response('Not Found', { status: 404 })
+
 export class Router {
     private routes: Route
+    private defaultHandler: Handler
     constructor() {
         this.routes = newRoute()
+        this.defaultHandler = handleNotFound
+    }
+
+    fallback(handler: Handler): Router {
+        this.defaultHandler = handler
+        return this
     }
 
     private _add(routes: Route, segments: string[], handler: Handler) {
@@ -98,7 +140,7 @@ export class Router {
             return null
         }
     }
-    async route(event: FetchEvent): Promise<Response> {
+    route(event: FetchEvent): Promise<Response> {
         const request = event.request
         const url = new URL(request.url)
         const segments = [
@@ -106,11 +148,9 @@ export class Router {
             ...url.pathname.split('/'),
         ]
         const params = new Map()
-        const handler = this._route(this.routes, segments, params)
-        if (handler === null) {
-            return new Response('Not Found', { status: 404 })
-        } else {
-            return handler(event, params)
-        }
+        const handler =
+            this._route(this.routes, segments, params) ?? this.defaultHandler
+        const resp = handler(event, params)
+        return resp
     }
 }
