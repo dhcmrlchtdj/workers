@@ -1,6 +1,7 @@
 import {} from '@cloudflare/workers-types'
 import { log } from './service/sentry'
 import { webhook } from './webhook'
+import { Router } from './router'
 
 // from worker environment
 declare const BCC_WEBHOOK_PATH: string
@@ -8,13 +9,15 @@ declare const BCC_BOT_TOKEN: string
 declare const FAUNA_KEY: string
 declare const SENTRY_KEY: string
 
-addEventListener('fetch', event => {
-    event.respondWith(handle(event))
-})
+const router = new Router().post(
+    `/webhook/telegram/bcc/${BCC_WEBHOOK_PATH}`,
+    event => webhook(event.request),
+)
 
-async function handle(event: FetchEvent) {
+const handle = async (event: FetchEvent) => {
     try {
-        return await route(event.request)
+        const resp = await router.route(event)
+        return resp
     } catch (err) {
         event.waitUntil(log('bcc', event.request, err))
         const msg = `${err}\n${err.stack}`
@@ -22,16 +25,6 @@ async function handle(event: FetchEvent) {
     }
 }
 
-async function route(request: Request) {
-    const url = new URL(request.url)
-    switch (url.pathname) {
-        case `/webhook/telegram/bcc/${BCC_WEBHOOK_PATH}`:
-            if (request.method.toUpperCase() === 'POST') {
-                return webhook(request)
-            } else {
-                return new Response('405', { status: 200 })
-            }
-        default:
-            return new Response('404', { status: 200 })
-    }
-}
+addEventListener('fetch', event => {
+    event.respondWith(handle(event))
+})
