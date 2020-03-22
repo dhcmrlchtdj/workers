@@ -100,6 +100,9 @@ export class WorkerRouter extends BaseRouter<Handler> {
         super._add(segments, handler)
         return this
     }
+    all(pathname: string, handler: Handler): this {
+        return this.add(':METHOD', pathname, handler)
+    }
     head(pathname: string, handler: Handler): this {
         return this.add('HEAD', pathname, handler)
     }
