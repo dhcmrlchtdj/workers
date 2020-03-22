@@ -1,4 +1,4 @@
-import { execute } from '../util/fauna'
+import { execute } from '../_common/fauna'
 
 /*
 {

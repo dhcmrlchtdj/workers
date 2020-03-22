@@ -3,7 +3,7 @@ source: https://github.com/SukkaW/cloudflare-workers-async-google-analytics
 license: MIT
 */
 
-;(function(window, document, navigator) {
+;(function (window, document, navigator) {
     window.ga_tid = 'UA-xxx'
     window.ga_api = 'https://path/to/ana/worker'
     if (navigator.doNotTrack === '1') return
@@ -14,7 +14,7 @@ license: MIT
         //min = Math.min,
         performance = window.performance,
         t = performance && performance.timing,
-        filterNumber = function(num) {
+        filterNumber = function (num) {
             return isNaN(num) || num == Infinity || num < 0 ? void 0 : num
         }
 

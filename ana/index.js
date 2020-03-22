@@ -3,15 +3,15 @@ source: https://github.com/SukkaW/cloudflare-workers-async-google-analytics
 license: MIT
 */
 
-addEventListener('fetch', event => {
+addEventListener('fetch', (event) => {
     event.respondWith(response(event))
 })
 
 async function senData(event, url, uuid, user_agent, page_url) {
-    const encode = data => encodeURIComponent(decodeURIComponent(data))
+    const encode = (data) => encodeURIComponent(decodeURIComponent(data))
 
-    const getReqHeader = key => event.request.headers.get(key)
-    const getQueryString = name => {
+    const getReqHeader = (key) => event.request.headers.get(key)
+    const getQueryString = (name) => {
         const pattern = new RegExp('(^|&)' + name + '=([^&]*)(&|$)', 'i')
         const r = url.search.substr(1).match(pattern)
         return r !== null ? unescape(r[2]) : null
@@ -60,7 +60,7 @@ async function senData(event, url, uuid, user_agent, page_url) {
 async function response(event) {
     const url = new URL(event.request.url)
 
-    const getReqHeader = key => event.request.headers.get(key)
+    const getReqHeader = (key) => event.request.headers.get(key)
 
     const Referer = getReqHeader('Referer')
     const user_agent = getReqHeader('User-Agent')
@@ -106,7 +106,7 @@ async function response(event) {
         })
     }
 
-    const getCookie = name => {
+    const getCookie = (name) => {
         const pattern = new RegExp('(^| )' + name + '=([^;]*)(;|$)')
         const r = (getReqHeader('cookie') || '').match(pattern)
         return r !== null ? unescape(r[2]) : null

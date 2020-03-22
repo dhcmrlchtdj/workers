@@ -2,8 +2,6 @@
 // https://docs.fauna.com/fauna/current/start/fql_for_sql_users.html
 // https://dashboard.fauna.com/webshell/@db/kv
 
-declare const FAUNA_KEY: string
-
 export const execute = async <T>(token: string, stmt: string): Promise<T> => {
     const resp = await fetch('https://db.fauna.com', {
         method: 'POST',

@@ -81,12 +81,8 @@ class BaseRouter<T> {
     }
 }
 
-export type WorkerHandler = (
-    event: FetchEvent,
-    params: Params,
-) => Promise<Response>
-
-export class WorkerRouter extends BaseRouter<WorkerHandler> {
+export type Handler = (event: FetchEvent, params: Params) => Promise<Response>
+export class WorkerRouter extends BaseRouter<Handler> {
     constructor() {
         super()
     }
@@ -94,33 +90,29 @@ export class WorkerRouter extends BaseRouter<WorkerHandler> {
     private async defaultHandler(_event: FetchEvent, _params: Params) {
         return new Response('Not Found', { status: 404 })
     }
-    fallback(handler: WorkerHandler): WorkerRouter {
+    fallback(handler: Handler): this {
         this.defaultHandler = handler
         return this
     }
 
-    add(
-        method: string,
-        pathname: string,
-        handler: WorkerHandler,
-    ): WorkerRouter {
+    add(method: string, pathname: string, handler: Handler): this {
         const segments = [method.toUpperCase(), ...pathname.split('/')]
         super._add(segments, handler)
         return this
     }
-    head(pathname: string, handler: WorkerHandler): WorkerRouter {
+    head(pathname: string, handler: Handler): this {
         return this.add('HEAD', pathname, handler)
     }
-    get(pathname: string, handler: WorkerHandler): WorkerRouter {
+    get(pathname: string, handler: Handler): this {
         return this.add('GET', pathname, handler)
     }
-    post(pathname: string, handler: WorkerHandler): WorkerRouter {
+    post(pathname: string, handler: Handler): this {
         return this.add('POST', pathname, handler)
     }
-    put(pathname: string, handler: WorkerHandler): WorkerRouter {
+    put(pathname: string, handler: Handler): this {
         return this.add('PUT', pathname, handler)
     }
-    delete(pathname: string, handler: WorkerHandler): WorkerRouter {
+    delete(pathname: string, handler: Handler): this {
         return this.add('DELETE', pathname, handler)
     }
 

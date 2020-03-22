@@ -1,5 +1,5 @@
 import {} from '@cloudflare/workers-types'
-import { sendMessage, encodeHtmlEntities } from '../util/telegram'
+import { sendMessage, encodeHtmlEntities } from '../_common/telegram'
 
 // https://docs.rollbar.com/docs/webhooks
 // https://rollbar.com/h11/feedbox/items/23/occurrences/117235378113/

@@ -1,13 +1,11 @@
 // https://gist.github.com/mhart/1b3bbfbdfa6825baab003b5f55a15322
 
-declare const SENTRY_KEY: string
-
 const fakeUUIDv4 = () => {
     const bytes = new Uint8Array(16)
     crypto.getRandomValues(bytes)
     bytes[6] = (bytes[6] & 0x0f) | 0x40
     bytes[8] = (bytes[8] & 0x3f) | 0x80
-    return [...bytes].map(b => ('0' + b.toString(16)).slice(-2)).join('') // to hex
+    return [...bytes].map((b) => ('0' + b.toString(16)).slice(-2)).join('') // to hex
 }
 
 const buildPacket = (project: string, request: Request, err: Error): string => {
@@ -37,7 +35,12 @@ const buildPacket = (project: string, request: Request, err: Error): string => {
     })
 }
 
-export const log = async (token: string, project: string, request: Request, err: Error) => {
+export const log = async (
+    token: string,
+    project: string,
+    request: Request,
+    err: Error,
+) => {
     // https://docs.sentry.io/development/sdk-dev/overview/
     const PROJECT_ID = 5024029
     const url = `https://sentry.io/api/${PROJECT_ID}/store/`

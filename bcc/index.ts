@@ -1,6 +1,6 @@
 import {} from '@cloudflare/workers-types'
-import { log } from '../util/sentry'
-import { WorkerRouter } from '../util/router'
+import { log } from '../_common/sentry'
+import { WorkerRouter } from '../_common/router'
 import { webhook } from './webhook'
 
 // from worker environment
