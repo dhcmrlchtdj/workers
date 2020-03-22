@@ -4,9 +4,6 @@ on:
     push:
         branches:
             - master
-        paths:
-            - '.github/workflows/bcc.yml'
-            - 'bcc/**'
 
 jobs:
     deploy:
@@ -15,7 +12,7 @@ jobs:
             - uses: actions/checkout@v2.0.0
             - uses: actions/setup-node@v1.1.0
               with:
-                  version: "13.x"
+                  version: '13.x'
             - run: echo "::set-output name=dir::$(yarn cache dir)"
               id: yarn-cache
             - uses: actions/cache@v1.1.2
@@ -24,20 +21,19 @@ jobs:
                   key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
                   restore-keys: ${{ runner.os }}-yarn-
             - name: build
-              working-directory: ./bcc
               run: |
-                yarn install
-                yarn build
+                  yarn install
+                  yarn rollup --format=es --input=bcc/index.ts --file=bcc/index.js --plugin=typescript --no-esModule
             - name: deploy
               working-directory: ./bcc
               run: |
-                yarn add @cloudflare/wrangler
-                yarn wrangler publish
-                echo "$BCC_WEBHOOK_PATH" | yarn wrangler secret put 'BCC_WEBHOOK_PATH'
-                echo "$BCC_BOT_TOKEN" | yarn wrangler secret put 'BCC_BOT_TOKEN'
-                echo "$FAUNA_KEY" | yarn wrangler secret put 'FAUNA_KEY'
-                echo "$SENTRY_KEY" | yarn wrangler secret put 'SENTRY_KEY'
-                curl "https://api.telegram.org/bot${BCC_BOT_TOKEN}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Fwebhook%2Ftelegram%2Fbcc%2F${BCC_WEBHOOK_PATH}"
+                  yarn add @cloudflare/wrangler
+                  yarn wrangler publish
+                  echo "$BCC_WEBHOOK_PATH" | yarn wrangler secret put 'BCC_WEBHOOK_PATH'
+                  echo "$BCC_BOT_TOKEN" | yarn wrangler secret put 'BCC_BOT_TOKEN'
+                  echo "$FAUNA_KEY" | yarn wrangler secret put 'FAUNA_KEY'
+                  echo "$SENTRY_KEY" | yarn wrangler secret put 'SENTRY_KEY'
+                  curl "https://api.telegram.org/bot${BCC_BOT_TOKEN}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Fwebhook%2Ftelegram%2Fbcc%2F${BCC_WEBHOOK_PATH}"
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
                   BCC_WEBHOOK_PATH: ${{ secrets.BCC_WEBHOOK_PATH }}

@@ -4,9 +4,6 @@ on:
     push:
         branches:
             - master
-        paths:
-            - '.github/workflows/ana.yml'
-            - 'ana/**'
 
 jobs:
     deploy:

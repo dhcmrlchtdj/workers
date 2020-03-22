@@ -1,4 +1,5 @@
 import {} from '@cloudflare/workers-types'
+import { sendMessage, encodeHtmlEntities } from '../util/telegram'
 
 // https://docs.rollbar.com/docs/webhooks
 // https://rollbar.com/h11/feedbox/items/23/occurrences/117235378113/
@@ -30,7 +31,7 @@ declare const TELEGRAM_CHAT_ID: string
 
 // ---
 
-addEventListener('fetch', event => {
+addEventListener('fetch', (event) => {
     event.respondWith(handle(event.request))
 })
 
@@ -51,16 +52,6 @@ async function dispatch(payload: RollbarPayload) {
     }
 }
 
-const encodeHtmlEntities = (raw: string): string => {
-    const pairs: Record<string, string> = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-    }
-    return raw.replace(/[&<>]/g, matched => pairs[matched])
-}
-
 async function handleOccurrence(data: Occurrence) {
     const url = encodeHtmlEntities(data.url)
     const feedurl = encodeHtmlEntities(data.occurrence.feedurl)
@@ -74,21 +65,9 @@ async function handleOccurrence(data: Occurrence) {
         `exception = ${exception}`,
         `rollbar = <a href="${url}">${url}</a>`,
     ].join('\n')
-    await sendToTelegram(text)
-}
-
-async function sendToTelegram(text: string) {
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            parse_mode: 'HTML',
-            chat_id: Number(TELEGRAM_CHAT_ID),
-            text,
-        }),
+    await sendMessage(TELEGRAM_BOT_TOKEN, {
+        parse_mode: 'HTML',
+        chat_id: Number(TELEGRAM_CHAT_ID),
+        text,
     })
-    return resp
 }

@@ -4,12 +4,12 @@
 
 declare const FAUNA_KEY: string
 
-export const execute = async <T>(stmt: string): Promise<T> => {
+export const execute = async <T>(token: string, stmt: string): Promise<T> => {
     const resp = await fetch('https://db.fauna.com', {
         method: 'POST',
         headers: {
             connection: 'close',
-            authorization: `Basic ${btoa(FAUNA_KEY + ':')}`,
+            authorization: `Basic ${btoa(token + ':')}`,
             'x-faunadb-api-version': '2.7',
             'x-fauna-driver': 'JavascriptX',
         },

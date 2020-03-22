@@ -1,5 +1,5 @@
 import { Message } from 'telegram-typings'
-import { sendMessage } from './service/telegram'
+import { sendMessage } from '../util/telegram'
 import * as db from './db'
 
 declare const BCC_BOT_TOKEN: string

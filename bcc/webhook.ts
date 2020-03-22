@@ -6,7 +6,7 @@ const handleMsg = async (msg: Message | undefined) => {
     if (!msg || !msg.text || !msg.entities) return
 
     const text = msg.text
-    const entities: [string, string][] = msg.entities.map(entity => [
+    const entities: [string, string][] = msg.entities.map((entity) => [
         entity.type,
         text.substr(entity.offset, entity.length),
     ])

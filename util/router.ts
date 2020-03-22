@@ -1,41 +1,12 @@
-/*
-Usage:
-
-```javascript
-import { Router } from 'path/to/router'
-
-// build router
-const router = new Router()
-
-router.fallback(async (event) => {
-    fetch(event.request)
-})
-
-router.get('/static', async (event, params) => {
-    fetch(event.request)
-})
-router.post('/param/:id/:title', async (event, params) => {
-    assert(params.has('id'))
-    assert(params.has('title'))
-    return fetch(event.request)
-})
-router.head('/any/*', async (event, params) => {
-    assert(params.has('*'))
-    return fetch(event.request)
-})
-
-// route the fetch event
-router.route(event)
-```
-*/
-
 export type Params = Map<string, string>
+
 type Route<T> = {
     handler: T | null
     static: Map<string, Route<T>>
     parameter: Map<string, Route<T>>
     any: T | null
 }
+
 class BaseRouter<T> {
     private _routes: Route<T>
     constructor() {
@@ -87,16 +58,16 @@ class BaseRouter<T> {
 
             const staticRoutes = routes.static.get(seg)
             if (staticRoutes !== undefined) {
-                const handler = this._route(subSeg, params, staticRoutes)
-                if (handler !== null) return handler
+                const matched = this._route(subSeg, params, staticRoutes)
+                if (matched !== null) return matched
             }
 
             if (seg !== '') {
                 for (const [param, paramRouter] of routes.parameter) {
-                    const handler = this._route(subSeg, params, paramRouter)
-                    if (handler !== null) {
+                    const matched = this._route(subSeg, params, paramRouter)
+                    if (matched !== null) {
                         params.set(param, seg)
-                        return handler
+                        return matched
                     }
                 }
             }
@@ -110,8 +81,12 @@ class BaseRouter<T> {
     }
 }
 
-export type Handler = (event: FetchEvent, params: Params) => Promise<Response>
-export class Router extends BaseRouter<Handler> {
+export type WorkerHandler = (
+    event: FetchEvent,
+    params: Params,
+) => Promise<Response>
+
+export class WorkerRouter extends BaseRouter<WorkerHandler> {
     constructor() {
         super()
     }
@@ -119,29 +94,33 @@ export class Router extends BaseRouter<Handler> {
     private async defaultHandler(_event: FetchEvent, _params: Params) {
         return new Response('Not Found', { status: 404 })
     }
-    fallback(handler: Handler): Router {
+    fallback(handler: WorkerHandler): WorkerRouter {
         this.defaultHandler = handler
         return this
     }
 
-    add(method: string, pathname: string, handler: Handler): Router {
+    add(
+        method: string,
+        pathname: string,
+        handler: WorkerHandler,
+    ): WorkerRouter {
         const segments = [method.toUpperCase(), ...pathname.split('/')]
         super._add(segments, handler)
         return this
     }
-    head(pathname: string, handler: Handler): Router {
+    head(pathname: string, handler: WorkerHandler): WorkerRouter {
         return this.add('HEAD', pathname, handler)
     }
-    get(pathname: string, handler: Handler): Router {
+    get(pathname: string, handler: WorkerHandler): WorkerRouter {
         return this.add('GET', pathname, handler)
     }
-    post(pathname: string, handler: Handler): Router {
+    post(pathname: string, handler: WorkerHandler): WorkerRouter {
         return this.add('POST', pathname, handler)
     }
-    put(pathname: string, handler: Handler): Router {
+    put(pathname: string, handler: WorkerHandler): WorkerRouter {
         return this.add('PUT', pathname, handler)
     }
-    delete(pathname: string, handler: Handler): Router {
+    delete(pathname: string, handler: WorkerHandler): WorkerRouter {
         return this.add('DELETE', pathname, handler)
     }
 

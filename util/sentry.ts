@@ -37,7 +37,7 @@ const buildPacket = (project: string, request: Request, err: Error): string => {
     })
 }
 
-export const log = async (project: string, request: Request, err: Error) => {
+export const log = async (token: string, project: string, request: Request, err: Error) => {
     // https://docs.sentry.io/development/sdk-dev/overview/
     const PROJECT_ID = 5024029
     const url = `https://sentry.io/api/${PROJECT_ID}/store/`
@@ -45,7 +45,7 @@ export const log = async (project: string, request: Request, err: Error) => {
         'Sentry sentry_version=7',
         `sentry_client=sentry_at_cloudflare_worker/1.0`,
         `sentry_timestamp=${Date.now() / 1000}`,
-        `sentry_key=${SENTRY_KEY}`,
+        `sentry_key=${token}`,
     ].join(', ')
     const resp = await fetch(url, {
         method: 'POST',

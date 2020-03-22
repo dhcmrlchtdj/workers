@@ -4,9 +4,6 @@ on:
     push:
         branches:
             - master
-        paths:
-            - '.github/workflows/rollbar.yml'
-            - 'rollbar/**'
 
 jobs:
     deploy:
@@ -24,10 +21,9 @@ jobs:
                   key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
                   restore-keys: ${{ runner.os }}-yarn-
             - name: build
-              working-directory: ./rollbar
               run: |
                 yarn install
-                yarn build
+                yarn rollup --format=es --input=rollbar/index.ts --file=rollbar/index.js --plugin=typescript --no-esModule
             - name: deploy
               working-directory: ./rollbar
               run: |
