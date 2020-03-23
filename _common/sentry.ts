@@ -18,11 +18,12 @@ const buildPacket = (project: string, request: Request, err: Error): string => {
         level: 'error',
         environment: 'production',
         tags: { project },
+        extra: { stacktrace: JSON.stringify(err.stack) },
         request: {
             method: request.method,
             url: `${url.protocol}//${url.hostname}${url.pathname}`,
             query_string: url.search,
-            headers: request.headers,
+            headers: request.headers, // TODO header to object ?
         },
         exception: {
             values: [
