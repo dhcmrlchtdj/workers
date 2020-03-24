@@ -5,7 +5,7 @@ export const encodeHtmlEntities = (raw: string): string => {
         '>': '&gt;',
         '"': '&quot;',
     }
-    return raw.replace(/[&<>]/g, (matched) => pairs[matched])
+    return raw.replace(/[&<>"]/g, (matched) => pairs[matched])
 }
 
 interface SendMessage {
