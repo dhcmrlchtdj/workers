@@ -15,16 +15,16 @@ const router = new WorkerRouter()
     })
     .get('/badip/all', async (_event) => {
         const list = await db.getAll()
-        return new Response(JSON.stringify(list), {
+        return new Response(JSON.stringify(list, null, 4), {
             status: 200,
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': 'application/json; charset=utf-8' },
         })
     })
     .get('/badip/recent', async (_event) => {
         const list = await db.getRecent(60)
-        return new Response(JSON.stringify(list), {
+        return new Response(JSON.stringify(list, null, 4), {
             status: 200,
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': 'application/json; charset=utf-8' },
         })
     })
 

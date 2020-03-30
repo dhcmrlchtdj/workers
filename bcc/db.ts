@@ -2,7 +2,7 @@ import { execute } from '../_common/fauna'
 
 /*
 {
-    name: "get_tags",
+    name: "bcc_get_tags",
     body: Query(
         Lambda(
             "chat_id",
@@ -24,7 +24,7 @@ import { execute } from '../_common/fauna'
 }
 
 {
-    name: "add_tags",
+    name: "bcc_add_tags",
     body: Query(
         Lambda(
             ["chat_id", "tags"],
@@ -58,7 +58,7 @@ declare const FAUNA_KEY: string
 
 export const addTags = async (chat_id: number, tags: string[]) => {
     const stmt = JSON.stringify({
-        call: { function: 'add_tags' },
+        call: { function: 'bcc_add_tags' },
         arguments: [chat_id, tags],
     })
     await execute(FAUNA_KEY, stmt)
@@ -66,7 +66,7 @@ export const addTags = async (chat_id: number, tags: string[]) => {
 
 export const getTags = async (chat_id: number): Promise<string[]> => {
     const stmt = JSON.stringify({
-        call: { function: 'get_tags' },
+        call: { function: 'bcc_get_tags' },
         arguments: chat_id,
     })
     const tags = await execute<string[]>(FAUNA_KEY, stmt)

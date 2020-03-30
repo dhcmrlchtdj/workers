@@ -71,7 +71,7 @@ export const getAll = async (): Promise<string[]> => {
         arguments: [],
     })
     const resp = await execute<string[]>(FAUNA_KEY, stmt)
-    return resp
+    return resp.sort()
 }
 
 export const getRecent = async (days: number): Promise<string[]> => {
@@ -80,5 +80,5 @@ export const getRecent = async (days: number): Promise<string[]> => {
         arguments: [days],
     })
     const resp = await execute<string[]>(FAUNA_KEY, stmt)
-    return resp
+    return resp.sort()
 }
