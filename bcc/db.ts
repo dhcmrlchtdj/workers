@@ -15,7 +15,7 @@ import { execute } from '../_common/fauna'
                 },
                 If(
                     Exists(Var("tags")),
-                    Select(["data"], Paginate(Var("tags"), 100000)),
+                    Select(["data"], Paginate(Var("tags"), {size:100000})),
                     []
                 )
             )

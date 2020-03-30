@@ -19,7 +19,7 @@ Query(Lambda(
     Select(
         ["data"],
         Distinct(Map(
-            Paginate(Match(Index("badip-ip")), 100000),
+            Paginate(Match(Index("badip-ip")), {size:100000}),
             Lambda(["x"], Select(["data", "ip"], Get(Var("x"))))
         ))
     )
@@ -34,7 +34,7 @@ Query(Lambda(
             ["data"],
             Distinct(Map(
                 Filter(
-                    Paginate(Match(Index("badip-ip")), 100000),
+                    Paginate(Match(Index("badip-ip")), {size:100000}),
                     Lambda(
                         ["x"],
                         LTE(
