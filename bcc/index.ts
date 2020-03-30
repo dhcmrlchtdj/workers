@@ -10,7 +10,7 @@ declare const FAUNA_KEY: string
 declare const SENTRY_KEY: string
 
 const router = new WorkerRouter().post(
-    `/webhook/telegram/bcc/${BCC_WEBHOOK_PATH}`,
+    `/telegram/bcc/${BCC_WEBHOOK_PATH}`,
     (event) => webhook(event.request),
 )
 
