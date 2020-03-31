@@ -12,18 +12,20 @@ declare const TELEGRAM_CHAT_ID: string
 const router = new WorkerRouter()
     .post('/badip/report', async (event) => {
         const req = event.request
-        const { ip } = await req.json()
-
-        await db.report(ip)
-
-        const tg = sendMessage(TELEGRAM_BOT_TOKEN, {
-            parse_mode: 'MarkdownV2',
-            chat_id: Number(TELEGRAM_CHAT_ID),
-            text: `BadIP Found: \`${ip}\`\nhttps://www.cip.cc/${ip}`,
-        })
-        event.waitUntil(tg)
-
-        return new Response('created', { status: 201 })
+        const payload = await req.json()
+        const ip = payload.ip
+        if (ip) {
+            await db.report(ip)
+            const tg = sendMessage(TELEGRAM_BOT_TOKEN, {
+                parse_mode: 'MarkdownV2',
+                chat_id: Number(TELEGRAM_CHAT_ID),
+                text: `BadIP Found: \`${ip}\`\nhttps://www.cip.cc/${ip}`,
+            })
+            event.waitUntil(tg)
+            return new Response('created', { status: 201 })
+        } else {
+            return new Response('invalid payload', { status: 200 })
+        }
     })
     .get('/badip/all', async (_event) => {
         const list = await db.getAll()
@@ -34,7 +36,7 @@ const router = new WorkerRouter()
     })
     .get('/badip/recent', async (event) => {
         const query = new URL(event.request.url).searchParams
-        const days = Number(query.get('days') ?? 30)
+        const days = Number(query.get('days') ?? 14)
         const list = await db.getRecent(days)
         return new Response(JSON.stringify(list, null, 4), {
             status: 200,
