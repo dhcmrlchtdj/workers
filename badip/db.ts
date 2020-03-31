@@ -2,13 +2,26 @@ import { execute } from '../_common/fauna'
 
 /*
 
+// index
+CreateIndex({
+    name: "badip-sortby-timestamp-desc",
+    unique: false,
+    serialized: true,
+    source: Collection("badip"),
+    terms: [],
+    values: [
+        {field: ["data", "timestamp"], reverse: true},
+        {field: ["data", "ip"]}
+    ]
+})
+
 // badip_add
 Query(Lambda(
     ["ip"],
     Select(
         ["ts"],
         Create(Collection("badip"), {
-            data: { ip: Var("ip"), timestamp: Now(null) }
+            data: { ip: Var("ip"), timestamp: Now() }
         })
     )
 ))
@@ -19,8 +32,8 @@ Query(Lambda(
     Select(
         ["data"],
         Distinct(Map(
-            Paginate(Match(Index("badip-ip")), {size:100000}),
-            Lambda(["x"], Select(["data", "ip"], Get(Var("x"))))
+            Paginate(Match(Index("badip-sortby-timestamp-desc")), {size: 100000}),
+            Lambda(["ts", "ip"], Var("ip"))
         ))
     )
 ))
@@ -29,25 +42,15 @@ Query(Lambda(
 Query(Lambda(
     ["days"],
     Let(
-        {now: Now()},
+        { now: Now() },
         Select(
             ["data"],
             Distinct(Map(
                 Filter(
-                    Paginate(Match(Index("badip-ip")), {size:100000}),
-                    Lambda(
-                        ["x"],
-                        LTE(
-                            TimeDiff(
-                                Select(["data", "timestamp"], Get(Var("x"))),
-                                Var("now"),
-                                "days"
-                            ),
-                            Var("days")
-                        )
-                    )
+                    Paginate(Match(Index("badip-sortby-timestamp-desc")), {size: 100000}),
+                    Lambda(["ts", "ip"], LTE(TimeDiff(Var("ts"), Var("now"), "days"), Var("days")))
                 ),
-                Lambda(["x"], Select(["data", "ip"], Get(Var("x"))))
+                Lambda(["ts", "ip"], Var("ip"))
             ))
         )
     )
