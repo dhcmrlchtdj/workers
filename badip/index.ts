@@ -9,6 +9,26 @@ declare const SENTRY_KEY: string
 declare const TELEGRAM_BOT_TOKEN: string
 declare const TELEGRAM_CHAT_ID: string
 
+const sendToIM = async (ip: string) => {
+    const text = [`BadIP Found: <code>${ip}</code>`]
+
+    const ipReq = await fetch(`https://freegeoip.app/json/${ip}`)
+    if (ipReq.ok) {
+        const ipData = await ipReq.json()
+        const { country_name, region_name, city } = ipData
+        text.push(`${country_name}, ${region_name}, ${city}`)
+    }
+
+    text.push(`https://www.cip.cc/${ip}`)
+
+    await sendMessage(TELEGRAM_BOT_TOKEN, {
+        parse_mode: 'HTML',
+        chat_id: Number(TELEGRAM_CHAT_ID),
+        text: text.join('\n'),
+        disable_web_page_preview: true,
+    })
+}
+
 const router = new WorkerRouter()
     .post('/badip/report', async (event) => {
         const req = event.request
@@ -16,14 +36,7 @@ const router = new WorkerRouter()
         const ip = payload.ip
         if (ip) {
             await db.report(ip)
-            event.waitUntil(
-                sendMessage(TELEGRAM_BOT_TOKEN, {
-                    parse_mode: 'HTML',
-                    chat_id: Number(TELEGRAM_CHAT_ID),
-                    text: `BadIP Found: <code>${ip}</code>\nhttps://www.cip.cc/${ip}`,
-                    disable_web_page_preview: true,
-                }),
-            )
+            event.waitUntil(sendToIM(ip))
             return new Response('created', { status: 201 })
         } else {
             return new Response('invalid payload', { status: 200 })
