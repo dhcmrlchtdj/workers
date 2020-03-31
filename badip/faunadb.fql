@@ -1,0 +1,61 @@
+CreateIndex({
+    name: "badip-sortby-timestamp-desc",
+    unique: false,
+    serialized: true,
+    source: Collection("badip"),
+    terms: [],
+    values: [
+        {field: ["data", "timestamp"], reverse: true},
+        {field: ["data", "ip"]}
+    ]
+})
+
+
+CreateFunction({
+    name: "badip_add",
+    body: Query(Lambda(
+        ["ip"],
+        Select(
+            ["ts"],
+            Create(Collection("badip"), {
+                data: { ip: Var("ip"), timestamp: Now() }
+            })
+        )
+    ))
+})
+
+
+CreateFunction({
+    name: "badip_get_all",
+    body: Query(Lambda(
+        [],
+        Select(
+            ["data"],
+            Distinct(Map(
+                Paginate(Match(Index("badip-sortby-timestamp-desc")), {size: 100000}),
+                Lambda(["ts", "ip"], Var("ip"))
+            ))
+        )
+    ))
+})
+
+
+CreateFunction({
+    name: "badip_get_recent",
+    body: Query(Lambda(
+        ["days"],
+        Let(
+            { now: Now() },
+            Select(
+                ["data"],
+                Distinct(Map(
+                    Filter(
+                        Paginate(Match(Index("badip-sortby-timestamp-desc")), {size: 100000}),
+                        Lambda(["ts", "ip"], LTE(TimeDiff(Var("ts"), Var("now"), "days"), Var("days")))
+                    ),
+                    Lambda(["ts", "ip"], Var("ip"))
+                ))
+            )
+        )
+    ))
+})

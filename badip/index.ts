@@ -2,7 +2,8 @@ import {} from '@cloudflare/workers-types'
 import { log } from '../_common/sentry'
 import { sendMessage } from '../_common/telegram'
 import { WorkerRouter } from '../_common/router'
-import * as db from './db'
+import { call } from '../_common/fauna'
+import { sortIP } from './sort-ip'
 
 declare const FAUNA_KEY: string
 declare const SENTRY_KEY: string
@@ -37,7 +38,7 @@ const router = new WorkerRouter()
         const payload = await req.json()
         const ip = payload.ip
         if (ip) {
-            await db.report(ip)
+            await call('badip_add', ip)
             event.waitUntil(sendToIM(ip))
             return new Response('created', { status: 201 })
         } else {
@@ -45,7 +46,8 @@ const router = new WorkerRouter()
         }
     })
     .get('/badip/all', async (_event) => {
-        const list = await db.getAll()
+        const list = await call<string[]>('badip_get_all')
+        list.sort(sortIP)
         return new Response(JSON.stringify(list, null, 4), {
             status: 200,
             headers: { 'content-type': 'application/json; charset=utf-8' },
@@ -54,7 +56,8 @@ const router = new WorkerRouter()
     .get('/badip/recent', async (event) => {
         const query = new URL(event.request.url).searchParams
         const days = Number(query.get('days') ?? 14)
-        const list = await db.getRecent(days)
+        const list = await call<string[]>('badip_get_recent', days)
+        list.sort(sortIP)
         return new Response(JSON.stringify(list, null, 4), {
             status: 200,
             headers: { 'content-type': 'application/json; charset=utf-8' },

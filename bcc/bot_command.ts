@@ -1,6 +1,6 @@
 import { Message } from 'telegram-typings'
 import { sendMessage } from '../_common/telegram'
-import * as db from './db'
+import { call } from '../_common/fauna'
 
 declare const BCC_BOT_TOKEN: string
 
@@ -15,7 +15,7 @@ actions.set('/start', async (_args: string[], msg: Message) => {
 
 actions.set('/list', async (_args: string[], msg: Message) => {
     const chat_id = msg.chat.id
-    const tags = await db.getTags(chat_id)
+    const tags = await call<string[]>('bcc_get_tags', chat_id)
     const text = tags.length === 0 ? 'not found' : tags.join('\n')
     await sendMessage(BCC_BOT_TOKEN, { chat_id, text })
 })

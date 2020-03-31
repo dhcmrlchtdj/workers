@@ -1,6 +1,6 @@
 import { Update, Message } from 'telegram-typings'
 import { execute } from './bot_command'
-import * as db from './db'
+import { call } from '../_common/fauna'
 
 const handleMsg = async (msg: Message | undefined) => {
     if (!msg || !msg.text || !msg.entities) return
@@ -15,7 +15,8 @@ const handleMsg = async (msg: Message | undefined) => {
         .filter(([type, _]) => type === 'hashtag')
         .map(([_, tag]) => tag)
     if (hashtags.length > 0) {
-        await db.addTags(msg.chat.id, Array.from(new Set(hashtags)))
+        const tags = Array.from(new Set(hashtags))
+        await call('bcc_add_tags', msg.chat.id, tags)
     }
 
     const commands = entities
