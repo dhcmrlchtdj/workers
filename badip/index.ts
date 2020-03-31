@@ -30,7 +30,6 @@ const sendToIM = async (ip: string) => {
             ipData.region,
             ipData.city,
             ipData.organization,
-            ipData.asn_organization,
         ]
             .filter(Boolean)
             .join(', ')
