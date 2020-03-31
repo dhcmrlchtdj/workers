@@ -16,12 +16,14 @@ const router = new WorkerRouter()
         const ip = payload.ip
         if (ip) {
             await db.report(ip)
-            const tg = sendMessage(TELEGRAM_BOT_TOKEN, {
-                parse_mode: 'MarkdownV2',
-                chat_id: Number(TELEGRAM_CHAT_ID),
-                text: `BadIP Found: \`${ip}\`\nhttps://www.cip.cc/${ip}`,
-            })
-            event.waitUntil(tg)
+            event.waitUntil(
+                sendMessage(TELEGRAM_BOT_TOKEN, {
+                    parse_mode: 'HTML',
+                    chat_id: Number(TELEGRAM_CHAT_ID),
+                    text: `BadIP Found: <code>${ip}</code>\nhttps://www.cip.cc/${ip}`,
+                    disable_web_page_preview: true,
+                }),
+            )
             return new Response('created', { status: 201 })
         } else {
             return new Response('invalid payload', { status: 200 })
