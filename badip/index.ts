@@ -13,10 +13,25 @@ declare const TELEGRAM_CHAT_ID: string
 const sendToIM = async (ip: string) => {
     const text = [`BadIP Found: <code>${ip}</code>`]
 
-    const ipReq = await fetch(`https://freegeoip.app/json/${ip}`)
+    // const ipReq = await fetch(`https://freegeoip.app/json/${ip}`)
+    // if (ipReq.ok) {
+    //     const ipData = await ipReq.json()
+    //     const loc = [ipData.country_name, ipData.region_name, ipData.city]
+    //         .filter(Boolean)
+    //         .join(', ')
+    //     text.push(loc)
+    // }
+
+    const ipReq = await fetch(`https://api.ip.sb/geoip/${ip}`)
     if (ipReq.ok) {
         const ipData = await ipReq.json()
-        const loc = [ipData.country_name, ipData.region_name, ipData.city]
+        const loc = [
+            ipData.country,
+            ipData.region,
+            ipData.city,
+            ipData.organization,
+            ipData.asn_organization,
+        ]
             .filter(Boolean)
             .join(', ')
         text.push(loc)
