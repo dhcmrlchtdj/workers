@@ -15,9 +15,10 @@ const sendToIM = async (ip: string) => {
     const ipReq = await fetch(`https://freegeoip.app/json/${ip}`)
     if (ipReq.ok) {
         const ipData = await ipReq.json()
-        text.push(
-            [ipData.country_name, ipData.region_name, ipData.city].join(', '),
-        )
+        const loc = [ipData.country_name, ipData.region_name, ipData.city]
+            .filter(Boolean)
+            .join(', ')
+        text.push(loc)
     }
 
     text.push(`https://www.cip.cc/${ip}`)
