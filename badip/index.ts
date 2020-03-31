@@ -34,7 +34,7 @@ const router = new WorkerRouter()
     })
     .get('/badip/recent', async (event) => {
         const query = new URL(event.request.url).searchParams
-        const days = Number(query.get('days') || 30)
+        const days = Number(query.get('days') ?? 30)
         const list = await db.getRecent(days)
         return new Response(JSON.stringify(list, null, 4), {
             status: 200,

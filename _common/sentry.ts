@@ -36,6 +36,8 @@ const buildPacket = (project: string, request: Request, err: Error): string => {
     })
 }
 
+const PROJECT_ID = 5024029
+
 export const log = async (
     token: string,
     project: string,
@@ -43,7 +45,6 @@ export const log = async (
     err: Error,
 ) => {
     // https://docs.sentry.io/development/sdk-dev/overview/
-    const PROJECT_ID = 5024029
     const url = `https://sentry.io/api/${PROJECT_ID}/store/`
     const auth = [
         'Sentry sentry_version=7',
