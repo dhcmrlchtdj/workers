@@ -61,9 +61,9 @@ async function handleOccurrence(data: Occurrence) {
             '',
     )
     const text = [
-        `feedurl = <a href="${feedurl}">${feedurl}</a>`,
+        `feedurl = ${feedurl}`,
         `exception = ${exception}`,
-        `rollbar = <a href="${url}">${url}</a>`,
+        `rollbar = ${url}`,
     ].join('\n')
     await sendMessage(TELEGRAM_BOT_TOKEN, {
         parse_mode: 'HTML',
