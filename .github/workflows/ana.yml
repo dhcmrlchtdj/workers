@@ -8,6 +8,7 @@ on:
             - '*'
             - '_common/**'
             - 'ana/**'
+            - '.github/workflows/ana.yml'
 
 jobs:
     deploy:

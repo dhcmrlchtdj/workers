@@ -8,6 +8,7 @@ on:
             - '*'
             - '_common/**'
             - 'bcc/**'
+            - '.github/workflows/bcc.yml'
 
 jobs:
     deploy:

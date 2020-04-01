@@ -8,6 +8,7 @@ on:
             - '*'
             - '_common/**'
             - 'rollbar/**'
+            - '.github/workflows/rollbar.yml'
 
 jobs:
     deploy:
