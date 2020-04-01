@@ -54,7 +54,7 @@ const router = new WorkerRouter()
         const ip = payload.ip
         if (ip) {
             await call('badip_add', ip)
-            event.waitUntil(sendToIM(ip))
+            // event.waitUntil(sendToIM(ip))
             return new Response('created', { status: 201 })
         } else {
             return new Response('invalid payload', { status: 200 })
