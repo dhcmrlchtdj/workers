@@ -34,6 +34,7 @@ const sendToIM = async (ip: string) => {
             .filter(Boolean)
             .join(', ')
         text.push(loc)
+        text.push(`https://ip.sb/ip/${ip}`)
     }
 
     text.push(`https://www.cip.cc/${ip}`)
