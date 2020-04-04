@@ -1,9 +1,11 @@
 import { Message } from 'telegram-typings'
 import { sendMessage } from '../_common/telegram'
-import { call } from '../_common/fauna'
+import { FaunaClient } from '../_common/fauna'
 
 declare const BCC_BOT_TOKEN: string
+declare const FAUNA_KEY: string
 
+const fauna = new FaunaClient(FAUNA_KEY)
 const actions = new Map<
     string,
     (args: string[], msg: Message) => Promise<void>
@@ -13,9 +15,13 @@ actions.set('/start', async (_args: string[], msg: Message) => {
     await sendMessage(BCC_BOT_TOKEN, { chat_id: msg.chat.id, text: 'hello' })
 })
 
+actions.set('/add_tags', async (tags: string[], msg: Message) => {
+    await fauna.execute('bcc_add_tags', msg.chat.id, tags)
+})
+
 actions.set('/list', async (_args: string[], msg: Message) => {
     const chat_id = msg.chat.id
-    const tags = await call<string[]>('bcc_get_tags', chat_id)
+    const tags = await fauna.execute<string[]>('bcc_get_tags', chat_id)
     const text = tags.length === 0 ? 'not found' : tags.join('\n')
     await sendMessage(BCC_BOT_TOKEN, { chat_id, text })
 })

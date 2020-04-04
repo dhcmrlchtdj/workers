@@ -1,6 +1,6 @@
 import { Update, Message } from 'telegram-typings'
 import { execute } from './bot_command'
-import { call } from '../_common/fauna'
+import { FaunaClient } from '../_common/fauna'
 
 const handleMsg = async (msg: Message | undefined) => {
     if (!msg || !msg.text || !msg.entities) return
@@ -16,7 +16,7 @@ const handleMsg = async (msg: Message | undefined) => {
         .map(([_, tag]) => tag)
     if (hashtags.length > 0) {
         const tags = Array.from(new Set(hashtags))
-        await call('bcc_add_tags', msg.chat.id, tags)
+        await execute('add_tags', tags, msg)
     }
 
     const commands = entities
