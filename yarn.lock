@@ -44,10 +44,10 @@ resolve@^1.14.1:
   dependencies:
     path-parse "^1.0.6"
 
-rollup@2.3.1:
-  version "2.3.1"
-  resolved "https://registry.yarnpkg.com/rollup/-/rollup-2.3.1.tgz#844c5cdf88d212ff7e59212088c37eacc521a2f9"
-  integrity sha512-BRjzOauORe+R0U0I6SkMTSG22nYmtztR/TaBl0SvbXgc3VAxBDrZoB6HROiK0S5px1pUBnLnjBkbzmVuwC9Q1Q==
+rollup@2.3.5:
+  version "2.3.5"
+  resolved "https://registry.yarnpkg.com/rollup/-/rollup-2.3.5.tgz#f1ef81d43669d2601bebdf306b46d2d3a2f4662f"
+  integrity sha512-SOdDjh1x+0q4/xZX3KGgT4+T3gp1E0U/9DfCW982Zd4PdKXqriJ9TosOEwzIA8fkhIQmxWhqeJCLZTmY3H/gdA==
   optionalDependencies:
     fsevents "~2.1.2"
 
