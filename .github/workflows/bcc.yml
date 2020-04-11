@@ -28,7 +28,7 @@ jobs:
             - name: build
               run: |
                   yarn install
-                  yarn rollup --format=es --input=bcc/index.ts --file=bcc/index.js --plugin=typescript --no-esModule
+                  make build PROJ=bcc
             - name: deploy
               working-directory: ./bcc
               run: |

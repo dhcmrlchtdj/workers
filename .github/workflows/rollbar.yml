@@ -28,7 +28,7 @@ jobs:
             - name: build
               run: |
                   yarn install
-                  yarn rollup --format=es --input=rollbar/index.ts --file=rollbar/index.js --plugin=typescript --no-esModule
+                  make build PROJ=rollbar
             - name: deploy
               working-directory: ./rollbar
               run: |

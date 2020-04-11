@@ -28,7 +28,7 @@ jobs:
             - name: build
               run: |
                   yarn install
-                  yarn rollup --format=es --input=badip/index.ts --file=badip/index.js --plugin=typescript --no-esModule
+                  make build PROJ=badip
             - name: deploy
               working-directory: ./badip
               run: |
