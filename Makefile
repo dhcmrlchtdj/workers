@@ -2,11 +2,12 @@ SHELL := bash
 PATH := ./node_modules/.bin:$(PATH)
 
 all:
-	@$(MAKE) --no-print-directory build PROJ='badip bcc rollbar'
+	$(MAKE) --no-print-directory build PROJ=badip
+	$(MAKE) --no-print-directory build PROJ=bcc
+	$(MAKE) --no-print-directory build PROJ=rollbar
 
 build:
-	@for p in $(PROJ); do \
-		rollup --format=es --input=$${p}/index.ts --file=$${p}/index.js --plugin=typescript --no-esModule; \
-		done
+	@rollup --format=es --input=$(PROJ)/index.ts --file=$(PROJ)/index.js --plugin=typescript --no-esModule
+	@echo ""
 
-.PHONY: build
+.PHONY: all build
