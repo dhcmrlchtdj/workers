@@ -1,6 +1,5 @@
 import { Update, Message } from 'telegram-typings'
 import { execute } from './bot_command'
-import { FaunaClient } from '../_common/fauna'
 
 const handleMsg = async (msg: Message | undefined) => {
     if (!msg || !msg.text || !msg.entities) return

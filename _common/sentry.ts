@@ -36,29 +36,32 @@ const buildPacket = (project: string, request: Request, err: Error): string => {
     })
 }
 
-const PROJECT_ID = 5024029
-
-export const log = async (
-    token: string,
-    project: string,
-    request: Request,
-    err: Error,
-) => {
-    // https://docs.sentry.io/development/sdk-dev/overview/
-    const url = `https://sentry.io/api/${PROJECT_ID}/store/`
-    const auth = [
-        'Sentry sentry_version=7',
-        `sentry_client=sentry_at_cloudflare_worker/1.0`,
-        `sentry_timestamp=${Date.now() / 1000}`,
-        `sentry_key=${token}`,
-    ].join(', ')
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Sentry-Auth': auth,
-        },
-        body: buildPacket(project, request, err),
-    })
-    return resp
+export class Sentry {
+    private projectId: number
+    private project: string
+    private token: string
+    constructor(projectId: number, token: string, project: string) {
+        this.project = project
+        this.projectId = projectId
+        this.token = token
+    }
+    async log(request: Request, err: Error) {
+        // https://docs.sentry.io/development/sdk-dev/overview/
+        const url = `https://sentry.io/api/${this.projectId}/store/`
+        const auth = [
+            'Sentry sentry_version=7',
+            `sentry_client=sentry_at_cloudflare_worker/1.0`,
+            `sentry_timestamp=${Date.now() / 1000}`,
+            `sentry_key=${this.token}`,
+        ].join(', ')
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Sentry-Auth': auth,
+            },
+            body: buildPacket(this.project, request, err),
+        })
+        return resp
+    }
 }
