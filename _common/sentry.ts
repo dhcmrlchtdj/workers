@@ -8,9 +8,34 @@ const fakeUUIDv4 = () => {
     return [...bytes].map((b) => ('0' + b.toString(16)).slice(-2)).join('') // to hex
 }
 
+const parseError = (err: Error) => {
+    return (err.stack || '')
+        .split('\n')
+        .slice(1)
+        .map((line) => {
+            if (line.match(/^\s*[-]{4,}$/)) {
+                return { filename: line }
+            }
+            const lineMatch = line.match(
+                /at (?:(.+)\s+\()?(?:(.+?):(\d+)(?::(\d+))?|([^)]+))\)?/,
+            )
+            if (!lineMatch) return
+            return {
+                function: lineMatch[1] || undefined,
+                filename: lineMatch[2] || undefined,
+                lineno: Number(lineMatch[3]) || undefined,
+                colno: Number(lineMatch[4]) || undefined,
+                in_app: lineMatch[5] !== 'native' || undefined,
+            }
+        })
+        .filter(Boolean)
+        .reverse()
+}
+
 const buildPacket = (project: string, request: Request, err: Error): string => {
     // https://docs.sentry.io/development/sdk-dev/event-payloads/
     const url = new URL(request.url)
+    const stacktrace = parseError(err)
     return JSON.stringify({
         event_id: fakeUUIDv4(),
         timestamp: Date.now() / 1000,
@@ -18,18 +43,26 @@ const buildPacket = (project: string, request: Request, err: Error): string => {
         level: 'error',
         environment: 'production',
         tags: { project },
-        extra: { stacktrace: JSON.stringify(err.stack) },
         request: {
             method: request.method,
             url: `${url.protocol}//${url.hostname}${url.pathname}`,
             query_string: url.search,
-            headers: request.headers, // TODO header to object ?
+            headers: (() => {
+                const h: Record<string, string> = {}
+                request.headers.forEach((v, k) => {
+                    h[k] = v
+                })
+                return h
+            })(),
         },
         exception: {
             values: [
                 {
                     type: err.name,
                     value: err.message,
+                    stacktrace: {
+                        frames: stacktrace,
+                    },
                 },
             ],
         },
