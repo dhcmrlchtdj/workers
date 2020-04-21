@@ -43,7 +43,7 @@ jobs:
               env:
                   MZBOT_WEBHOOK_PATH: ${{ secrets.MZBOT_WEBHOOK_PATH }}
                   MZBOT_BOT_TOKEN: ${{ secrets.MZBOT_BOT_TOKEN }}
-                  MY_TELEGRAM_CHAT_ID: ${{ secret.MY_TELEGRAM_CHAT_ID }}
+                  MY_TELEGRAM_CHAT_ID: ${{ secrets.MY_TELEGRAM_CHAT_ID }}
                   FAUNA_KEY: ${{ secrets.FAUNA_KEY }}
                   SENTRY_KEY: ${{ secrets.SENTRY_KEY }}
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
