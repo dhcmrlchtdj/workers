@@ -14,7 +14,7 @@ declare const MZBOT_BOT_TOKEN: string
 const sentry = new Sentry(5024029, SENTRY_KEY, 'mzbot')
 
 const router = new WorkerRouter().post(
-    `/telegram/bcc/${MZBOT_WEBHOOK_PATH}`,
+    `/telegram/mzbot/${MZBOT_WEBHOOK_PATH}`,
     (event) => webhook(event.request),
 )
 
