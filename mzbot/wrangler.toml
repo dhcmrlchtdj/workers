@@ -4,4 +4,4 @@ account_id = "d36f6909d7981a482a32e5690c07bf87"
 type = "javascript"
 
 name = "mzbot"
-route = "worker.h11.io/mzbot/*"
+route = "worker.h11.io/telegram/mzbot/*"
