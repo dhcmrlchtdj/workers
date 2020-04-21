@@ -33,11 +33,11 @@ jobs:
               working-directory: ./bcc
               run: |
                   yarn add @cloudflare/wrangler
-                  yarn wrangler publish
                   echo "$BCC_WEBHOOK_PATH" | yarn wrangler secret put 'BCC_WEBHOOK_PATH'
                   echo "$BCC_BOT_TOKEN" | yarn wrangler secret put 'BCC_BOT_TOKEN'
                   echo "$FAUNA_KEY" | yarn wrangler secret put 'FAUNA_KEY'
                   echo "$SENTRY_KEY" | yarn wrangler secret put 'SENTRY_KEY'
+                  yarn wrangler publish
                   curl "https://api.telegram.org/bot${BCC_BOT_TOKEN}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${BCC_WEBHOOK_PATH}"
               env:
                   BCC_WEBHOOK_PATH: ${{ secrets.BCC_WEBHOOK_PATH }}

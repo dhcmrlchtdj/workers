@@ -33,9 +33,9 @@ jobs:
               working-directory: ./badip
               run: |
                   yarn add @cloudflare/wrangler
-                  yarn wrangler publish
                   echo "$FAUNA_KEY" | yarn wrangler secret put 'FAUNA_KEY'
                   echo "$SENTRY_KEY" | yarn wrangler secret put 'SENTRY_KEY'
+                  yarn wrangler publish
               env:
                   FAUNA_KEY: ${{ secrets.FAUNA_KEY }}
                   SENTRY_KEY: ${{ secrets.SENTRY_KEY }}
