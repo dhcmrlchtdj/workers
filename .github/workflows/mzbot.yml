@@ -33,12 +33,12 @@ jobs:
               working-directory: ./mzbot
               run: |
                   yarn add @cloudflare/wrangler
+                  yarn wrangler publish
                   echo "$MZBOT_WEBHOOK_PATH" | yarn wrangler secret put 'MZBOT_WEBHOOK_PATH'
                   echo "$MZBOT_BOT_TOKEN" | yarn wrangler secret put 'MZBOT_BOT_TOKEN'
                   echo "$MY_TELEGRAM_CHAT_ID" | yarn wrangler secret put 'MY_TELEGRAM_CHAT_ID'
                   echo "$FAUNA_KEY" | yarn wrangler secret put 'FAUNA_KEY'
                   echo "$SENTRY_KEY" | yarn wrangler secret put 'SENTRY_KEY'
-                  yarn wrangler publish
                   curl "https://api.telegram.org/bot${MZBOT_BOT_TOKEN}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fmzbot%2F${MZBOT_WEBHOOK_PATH}"
               env:
                   MZBOT_WEBHOOK_PATH: ${{ secrets.MZBOT_WEBHOOK_PATH }}
