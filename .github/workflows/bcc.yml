@@ -40,8 +40,8 @@ jobs:
                   echo "$SENTRY_KEY" | yarn wrangler secret put 'SENTRY_KEY'
                   curl "https://api.telegram.org/bot${BCC_BOT_TOKEN}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${BCC_WEBHOOK_PATH}"
               env:
-                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
                   BCC_WEBHOOK_PATH: ${{ secrets.BCC_WEBHOOK_PATH }}
                   BCC_BOT_TOKEN: ${{ secrets.BCC_BOT_TOKEN }}
-                  FAUNA_KEY: ${{ secrets.BCC_FAUNA_KEY }}
+                  FAUNA_KEY: ${{ secrets.FAUNA_KEY }}
                   SENTRY_KEY: ${{ secrets.SENTRY_KEY }}
+                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}

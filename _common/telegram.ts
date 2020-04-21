@@ -28,3 +28,24 @@ export const sendMessage = async (token: string, msg: SendMessage) => {
     })
     return resp
 }
+
+interface SendPhoto {
+    chat_id: number
+    photo: string // file_id
+    caption?: string
+    parse_mode?: 'MarkdownV2' | 'HTML' | 'Markdown'
+    disable_notification?: boolean
+    reply_to_message_id?: number
+}
+
+export const sendPhoto = async (token: string, data: SendPhoto) => {
+    const url = `https://api.telegram.org/bot${token}/sendPhoto`
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    return resp
+}

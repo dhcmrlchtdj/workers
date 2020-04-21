@@ -35,8 +35,8 @@ jobs:
                   yarn add @cloudflare/wrangler
                   yarn wrangler publish
                   echo "$TELEGRAM_BOT_TOKEN" | yarn wrangler secret put 'TELEGRAM_BOT_TOKEN'
-                  echo "$TELEGRAM_CHAT_ID" | yarn wrangler secret put 'TELEGRAM_CHAT_ID'
+                  echo "$MY_TELEGRAM_CHAT_ID" | yarn wrangler secret put 'MY_TELEGRAM_CHAT_ID'
               env:
-                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
                   TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-                  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+                  MY_TELEGRAM_CHAT_ID: ${{ secrets.MY_TELEGRAM_CHAT_ID }}
+                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}

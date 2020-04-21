@@ -4,6 +4,7 @@ PATH := ./node_modules/.bin:$(PATH)
 all:
 	$(MAKE) --no-print-directory build PROJ=badip
 	$(MAKE) --no-print-directory build PROJ=bcc
+	$(MAKE) --no-print-directory build PROJ=mzbot
 	$(MAKE) --no-print-directory build PROJ=rollbar
 
 build:

@@ -27,7 +27,7 @@ type RollbarPayload = {
 
 // from worker environment
 declare const TELEGRAM_BOT_TOKEN: string
-declare const TELEGRAM_CHAT_ID: string
+declare const MY_TELEGRAM_CHAT_ID: string
 
 // ---
 
@@ -67,7 +67,7 @@ async function handleOccurrence(data: Occurrence) {
     ].join('\n')
     await sendMessage(TELEGRAM_BOT_TOKEN, {
         parse_mode: 'HTML',
-        chat_id: Number(TELEGRAM_CHAT_ID),
+        chat_id: Number(MY_TELEGRAM_CHAT_ID),
         text,
     })
 }
