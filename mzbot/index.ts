@@ -4,7 +4,7 @@ import { Sentry } from '../_common/sentry'
 // import { FaunaClient } from '../_common/fauna'
 import { webhook } from './webhook'
 
-declare const FAUNA_KEY: string
+// declare const FAUNA_KEY: string
 declare const SENTRY_KEY: string
 declare const MY_TELEGRAM_CHAT_ID: string
 declare const MZBOT_WEBHOOK_PATH: string
