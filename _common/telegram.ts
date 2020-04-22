@@ -1,3 +1,5 @@
+import { InlineKeyboardMarkup } from 'telegram-typings'
+
 export const encodeHtmlEntities = (raw: string): string => {
     const pairs: Record<string, string> = {
         '&': '&amp;',
@@ -15,8 +17,8 @@ interface SendMessage {
     disable_web_page_preview?: boolean
     disable_notification?: boolean
     reply_to_message_id?: number
+    reply_markup?: InlineKeyboardMarkup
 }
-
 export const sendMessage = async (token: string, msg: SendMessage) => {
     const url = `https://api.telegram.org/bot${token}/sendMessage`
     const resp = await fetch(url, {
@@ -36,10 +38,32 @@ interface SendPhoto {
     parse_mode?: 'MarkdownV2' | 'HTML' | 'Markdown'
     disable_notification?: boolean
     reply_to_message_id?: number
+    reply_markup?: InlineKeyboardMarkup
 }
-
 export const sendPhoto = async (token: string, data: SendPhoto) => {
     const url = `https://api.telegram.org/bot${token}/sendPhoto`
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    return resp
+}
+
+interface AnswerCallbackQuery {
+    callback_query_id: string
+    text?: string
+    show_alert?: boolean
+    url?: string
+    cache_time?: number
+}
+export const answerCallbackQuery = async (
+    token: string,
+    data: AnswerCallbackQuery,
+) => {
+    const url = `https://api.telegram.org/bot${token}/answerCallbackQuery`
     const resp = await fetch(url, {
         method: 'POST',
         headers: {
