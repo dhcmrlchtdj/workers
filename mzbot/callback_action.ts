@@ -1,7 +1,9 @@
 import { Message } from 'telegram-typings'
-import { sendPhoto } from '../_common/telegram'
+import { TelegramClient } from '../_common/telegram'
 
 declare const MZBOT_BOT_TOKEN: string
+
+const telegram = new TelegramClient(MZBOT_BOT_TOKEN)
 
 const actions = new Map<
     string,
@@ -9,7 +11,7 @@ const actions = new Map<
 >()
 
 actions.set('post_photo', async (chatId: string[], msg: Message) => {
-    if (!msg.photo) return 'post_photo | empty photo'
+    if (!msg.photo) return 'post | empty'
     const photo = msg.photo.reduce((x, y) => {
         if (x.width * x.height >= y.width * y.height) {
             return x
@@ -17,11 +19,39 @@ actions.set('post_photo', async (chatId: string[], msg: Message) => {
             return y
         }
     })
-    await sendPhoto(MZBOT_BOT_TOKEN, {
+    await telegram.send('sendPhoto', {
         chat_id: Number(chatId[0]),
         photo: photo.file_id,
     })
-    return 'post_photo | done'
+    return 'post | done'
+})
+
+actions.set('post_animation', async (chatId: string[], msg: Message) => {
+    if (!msg.animation) return 'post | empty'
+    const m = msg.animation
+    await telegram.send('sendAnimation', {
+        chat_id: Number(chatId[0]),
+        animation: m.file_id,
+        duration: m.duration,
+        width: m.width,
+        height: m.height,
+        thumb: m.thumb?.file_id,
+    })
+    return 'post | done'
+})
+
+actions.set('post_video', async (chatId: string[], msg: Message) => {
+    if (!msg.video) return 'post | empty'
+    const m = msg.video
+    await telegram.send('sendVideo', {
+        chat_id: Number(chatId[0]),
+        video: m.file_id,
+        duration: m.duration,
+        width: m.width,
+        height: m.height,
+        thumb: m.thumb?.file_id,
+    })
+    return 'post | done'
 })
 
 export const execute = (cmd: string, args: string[], msg: Message) => {

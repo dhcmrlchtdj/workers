@@ -1,5 +1,5 @@
 import {} from '@cloudflare/workers-types'
-import { sendMessage, encodeHtmlEntities } from '../_common/telegram'
+import { encodeHtmlEntities, TelegramClient } from '../_common/telegram'
 
 // https://docs.rollbar.com/docs/webhooks
 // https://rollbar.com/h11/feedbox/items/23/occurrences/117235378113/
@@ -28,6 +28,8 @@ type RollbarPayload = {
 // from worker environment
 declare const TELEGRAM_BOT_TOKEN: string
 declare const MY_TELEGRAM_CHAT_ID: string
+
+const telegram = new TelegramClient(TELEGRAM_BOT_TOKEN)
 
 // ---
 
@@ -65,7 +67,7 @@ async function handleOccurrence(data: Occurrence) {
         `exception = ${exception}`,
         `rollbar = ${url}`,
     ].join('\n')
-    await sendMessage(TELEGRAM_BOT_TOKEN, {
+    await telegram.send('sendMessage', {
         parse_mode: 'HTML',
         chat_id: Number(MY_TELEGRAM_CHAT_ID),
         text,

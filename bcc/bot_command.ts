@@ -1,10 +1,11 @@
 import { Message } from 'telegram-typings'
-import { sendMessage } from '../_common/telegram'
+import { TelegramClient } from '../_common/telegram'
 import { FaunaClient } from '../_common/fauna'
 
 declare const BCC_BOT_TOKEN: string
 declare const FAUNA_KEY: string
 
+const telegram = new TelegramClient(BCC_BOT_TOKEN)
 const fauna = new FaunaClient(FAUNA_KEY)
 const actions = new Map<
     string,
@@ -12,7 +13,7 @@ const actions = new Map<
 >()
 
 actions.set('/start', async (_args: string[], msg: Message) => {
-    await sendMessage(BCC_BOT_TOKEN, { chat_id: msg.chat.id, text: 'hello' })
+    await telegram.send('sendMessage', { chat_id: msg.chat.id, text: 'hello' })
 })
 
 actions.set('/add_tags', async (tags: string[], msg: Message) => {
@@ -23,7 +24,7 @@ actions.set('/list', async (_args: string[], msg: Message) => {
     const chat_id = msg.chat.id
     const tags = await fauna.execute<string[]>('bcc_get_tags', chat_id)
     const text = tags.length === 0 ? 'not found' : tags.join('\n')
-    await sendMessage(BCC_BOT_TOKEN, { chat_id, text })
+    await telegram.send('sendMessage', { chat_id, text })
 })
 
 actions.set('/whoami', async (_args: string[], msg: Message) => {
@@ -32,7 +33,7 @@ actions.set('/whoami', async (_args: string[], msg: Message) => {
     if (user) {
         const chat_id = msg.chat.id
         const text = JSON.stringify(user, null, 4)
-        await sendMessage(BCC_BOT_TOKEN, {
+        await telegram.send('sendMessage', {
             chat_id,
             text,
             reply_to_message_id: msg.message_id,

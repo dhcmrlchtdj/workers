@@ -10,7 +10,7 @@ export const encodeHtmlEntities = (raw: string): string => {
     return raw.replace(/[&<>"]/g, (matched) => pairs[matched])
 }
 
-interface SendMessage {
+type SendMessage = {
     chat_id: number
     text: string
     parse_mode?: 'MarkdownV2' | 'HTML' | 'Markdown'
@@ -19,19 +19,7 @@ interface SendMessage {
     reply_to_message_id?: number
     reply_markup?: InlineKeyboardMarkup
 }
-export const sendMessage = async (token: string, msg: SendMessage) => {
-    const url = `https://api.telegram.org/bot${token}/sendMessage`
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(msg),
-    })
-    return resp
-}
-
-interface SendPhoto {
+type SendPhoto = {
     chat_id: number
     photo: string // file_id
     caption?: string
@@ -40,36 +28,64 @@ interface SendPhoto {
     reply_to_message_id?: number
     reply_markup?: InlineKeyboardMarkup
 }
-export const sendPhoto = async (token: string, data: SendPhoto) => {
-    const url = `https://api.telegram.org/bot${token}/sendPhoto`
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    })
-    return resp
+type SendAnimation = {
+    chat_id: number
+    animation: string // file_id
+    duration?: number
+    width?: number
+    height?: number
+    thumb?: string // file_id
+    caption?: string
+    parse_mode?: 'MarkdownV2' | 'HTML' | 'Markdown'
+    disable_notification?: boolean
+    reply_to_message_id?: number
+    reply_markup?: InlineKeyboardMarkup
 }
-
-interface AnswerCallbackQuery {
+type SendVideo = {
+    chat_id: number
+    video: string // file_id
+    duration?: number
+    width?: number
+    height?: number
+    thumb?: string // file_id
+    caption?: string
+    parse_mode?: 'MarkdownV2' | 'HTML' | 'Markdown'
+    supports_streaming?: boolean
+    disable_notification?: boolean
+    reply_to_message_id?: number
+    reply_markup?: InlineKeyboardMarkup
+}
+type AnswerCallbackQuery = {
     callback_query_id: string
     text?: string
     show_alert?: boolean
     url?: string
     cache_time?: number
 }
-export const answerCallbackQuery = async (
-    token: string,
-    data: AnswerCallbackQuery,
-) => {
-    const url = `https://api.telegram.org/bot${token}/answerCallbackQuery`
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    })
-    return resp
+
+export class TelegramClient {
+    private token: string
+    constructor(token: string) {
+        this.token = token
+    }
+
+    async send(type: 'sendMessage', data: SendMessage): Promise<Response>
+    async send(type: 'sendPhoto', data: SendPhoto): Promise<Response>
+    async send(type: 'sendAnimation', data: SendAnimation): Promise<Response>
+    async send(type: 'sendVideo', data: SendVideo): Promise<Response>
+    async send(
+        type: 'answerCallbackQuery',
+        data: AnswerCallbackQuery,
+    ): Promise<Response>
+    async send(type: unknown, data: unknown) {
+        const url = `https://api.telegram.org/bot${this.token}/${type}`
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        })
+        return resp
+    }
 }
