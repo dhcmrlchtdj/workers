@@ -15,7 +15,7 @@ const handleMsg = async (msg: Message | undefined) => {
 
     const commands = extractCommands(msg, 'blind_carbon_copy_bot')
     if (commands.length > 0) {
-        Promise.all(commands.map((c) => execute(c.cmd, c.arg, msg)))
+        await Promise.all(commands.map((c) => execute(c.cmd, c.arg, msg)))
     }
 }
 
