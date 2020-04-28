@@ -10,7 +10,7 @@ const handleMsg = async (msg: Message | undefined) => {
         .map((entity) => msg.text!.substr(entity.offset, entity.length))
     if (hashtags.length > 0) {
         const tags = Array.from(new Set(hashtags))
-        await execute('add_tags', tags.join(' '), msg)
+        await execute('/add_tags', tags.join(' '), msg)
     }
 
     const commands = extractCommands(msg, 'blind_carbon_copy_bot')
