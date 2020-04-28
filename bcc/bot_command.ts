@@ -7,27 +7,24 @@ declare const FAUNA_KEY: string
 
 const telegram = new TelegramClient(BCC_BOT_TOKEN)
 const fauna = new FaunaClient(FAUNA_KEY)
-const actions = new Map<
-    string,
-    (args: string[], msg: Message) => Promise<void>
->()
+const actions = new Map<string, (arg: string, msg: Message) => Promise<void>>()
 
-actions.set('/start', async (_args: string[], msg: Message) => {
+actions.set('/start', async (_arg: string, msg: Message) => {
     await telegram.send('sendMessage', { chat_id: msg.chat.id, text: 'hello' })
 })
 
-actions.set('/add_tags', async (tags: string[], msg: Message) => {
-    await fauna.execute('bcc_add_tags', msg.chat.id, tags)
+actions.set('/add_tags', async (tags: string, msg: Message) => {
+    await fauna.execute('bcc_add_tags', msg.chat.id, tags.split(' '))
 })
 
-actions.set('/list', async (_args: string[], msg: Message) => {
+actions.set('/list', async (_arg: string, msg: Message) => {
     const chat_id = msg.chat.id
     const tags = await fauna.execute<string[]>('bcc_get_tags', chat_id)
     const text = tags.length === 0 ? 'not found' : tags.join('\n')
     await telegram.send('sendMessage', { chat_id, text })
 })
 
-actions.set('/whoami', async (_args: string[], msg: Message) => {
+actions.set('/whoami', async (_arg: string, msg: Message) => {
     if (msg.forward_from) return
     const user = msg.from
     if (user) {
@@ -41,9 +38,9 @@ actions.set('/whoami', async (_args: string[], msg: Message) => {
     }
 })
 
-export const execute = async (cmd: string, args: string[], msg: Message) => {
+export const execute = async (cmd: string, arg: string, msg: Message) => {
     const act = actions.get(cmd)
     if (act !== undefined) {
-        await act(args, msg)
+        await act(arg, msg)
     }
 }

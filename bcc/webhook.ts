@@ -1,33 +1,21 @@
 import { Update, Message } from 'telegram-typings'
+import { extractCommands } from '../_common/telegram'
 import { execute } from './bot_command'
 
 const handleMsg = async (msg: Message | undefined) => {
     if (!msg || !msg.text || !msg.entities) return
 
-    const text = msg.text
-    const entities: [string, string][] = msg.entities.map((entity) => [
-        entity.type,
-        text.substr(entity.offset, entity.length),
-    ])
-
-    const hashtags = entities
-        .filter(([type, _]) => type === 'hashtag')
-        .map(([_, tag]) => tag)
+    const hashtags = msg.entities
+        .filter((x) => x.type === 'hashtag')
+        .map((entity) => msg.text!.substr(entity.offset, entity.length))
     if (hashtags.length > 0) {
         const tags = Array.from(new Set(hashtags))
-        await execute('add_tags', tags, msg)
+        await execute('add_tags', tags.join(' '), msg)
     }
 
-    const commands = entities
-        .filter(([type, _]) => type === 'bot_command')
-        .map(([_, command]) => {
-            const args = command.split(/\s+/)
-            let cmd = args.shift()!
-            cmd = cmd.split('@')[0]
-            return execute(cmd, args, msg)
-        })
+    const commands = extractCommands(msg, 'blind_carbon_copy_bot')
     if (commands.length > 0) {
-        await Promise.all(commands)
+        Promise.all(commands.map((c) => execute(c.cmd, c.arg, msg)))
     }
 }
 
