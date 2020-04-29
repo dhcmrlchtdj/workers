@@ -44,6 +44,51 @@ export const extractCommands = (
     return cmds
 }
 
+export class TelegramClient {
+    private token: string
+    constructor(token: string) {
+        this.token = token
+    }
+
+    async send(method: 'sendMessage', data: SendMessage): Promise<Message>
+    async send(method: 'sendPhoto', data: SendPhoto): Promise<Message>
+    async send(method: 'sendAnimation', data: SendAnimation): Promise<Message>
+    async send(method: 'sendVideo', data: SendVideo): Promise<Message>
+    async send(
+        method: 'answerCallbackQuery',
+        data: AnswerCallbackQuery,
+    ): Promise<boolean>
+
+    async send(method: unknown, data: unknown): Promise<unknown> {
+        const url = `https://api.telegram.org/bot${this.token}/${method}`
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        })
+        const body: TGResponse = await resp.json()
+        if (body.ok) {
+            return body.result
+        } else {
+            throw new Error(body.description)
+        }
+    }
+}
+
+type TGResponse =
+    | {
+          ok: true
+          result: unknown
+          description?: string
+      }
+    | {
+          ok: false
+          error_code: number
+          description: string
+      }
+
 type SendMessage = {
     chat_id: number
     text: string
@@ -95,31 +140,4 @@ type AnswerCallbackQuery = {
     show_alert?: boolean
     url?: string
     cache_time?: number
-}
-
-export class TelegramClient {
-    private token: string
-    constructor(token: string) {
-        this.token = token
-    }
-
-    async send(type: 'sendMessage', data: SendMessage): Promise<Response>
-    async send(type: 'sendPhoto', data: SendPhoto): Promise<Response>
-    async send(type: 'sendAnimation', data: SendAnimation): Promise<Response>
-    async send(type: 'sendVideo', data: SendVideo): Promise<Response>
-    async send(
-        type: 'answerCallbackQuery',
-        data: AnswerCallbackQuery,
-    ): Promise<Response>
-    async send(type: unknown, data: unknown) {
-        const url = `https://api.telegram.org/bot${this.token}/${type}`
-        const resp = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        })
-        return resp
-    }
 }
