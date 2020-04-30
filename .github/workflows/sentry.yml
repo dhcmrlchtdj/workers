@@ -7,8 +7,8 @@ on:
         paths:
             - '*'
             - '_common/**'
-            - 'rollbar/**'
-            - '.github/workflows/rollbar.yml'
+            - 'sentry/**'
+            - '.github/workflows/sentry.yml'
 
 jobs:
     deploy:
@@ -17,7 +17,7 @@ jobs:
             - uses: actions/checkout@v2.0.0
             - uses: actions/setup-node@v1.1.0
               with:
-                  version: '13.x'
+                  version: '14.x'
             - run: echo "::set-output name=dir::$(yarn cache dir)"
               id: yarn-cache
             - uses: actions/cache@v1.1.2
@@ -28,9 +28,9 @@ jobs:
             - name: build
               run: |
                   yarn install
-                  make build PROJ=rollbar
+                  make build PROJ=sentry
             - name: deploy
-              working-directory: ./rollbar
+              working-directory: ./sentry
               run: |
                   yarn add @cloudflare/wrangler
                   yarn wrangler publish

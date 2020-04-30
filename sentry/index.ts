@@ -1,4 +1,11 @@
-import {} from '@cloudflare/workers-types'
+import type {} from '@cloudflare/workers-types'
+import { TelegramClient } from '../_common/telegram'
+
+// from worker environment
+declare const TELEGRAM_BOT_TOKEN: string
+declare const MY_TELEGRAM_CHAT_ID: string
+
+const telegram = new TelegramClient(TELEGRAM_BOT_TOKEN)
 
 addEventListener('fetch', (event) => {
     event.respondWith(handle(event.request))
@@ -7,12 +14,15 @@ addEventListener('fetch', (event) => {
 async function handle(request: Request) {
     if (request.method.toUpperCase() === 'POST') {
         try {
-            const payload = await request.json()
-            const body = JSON.stringify(payload)
+            const payload = await request.text()
             const signature = request.headers.get('Sentry-Hook-Signature')
-            const fromSentry = await verifySignature(body, signature)
+            const fromSentry = await verifySignature(payload, signature)
             if (fromSentry) {
-                // TODO
+                const body = JSON.parse(payload)
+                await telegram.send('sendMessage', {
+                    chat_id: Number(MY_TELEGRAM_CHAT_ID),
+                    text: body,
+                })
             }
         } catch (_) {}
     }
