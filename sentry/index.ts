@@ -24,11 +24,6 @@ async function handle(request: Request) {
                     chat_id: Number(MY_TELEGRAM_CHAT_ID),
                     text: JSON.stringify(body, null, 4),
                 })
-            } else {
-                await telegram.send('sendMessage', {
-                    chat_id: Number(MY_TELEGRAM_CHAT_ID),
-                    text,
-                })
             }
         } catch (_) {}
     }
