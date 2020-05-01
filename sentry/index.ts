@@ -1,5 +1,6 @@
 import type {} from '@cloudflare/workers-types'
 import { TelegramClient } from '../_common/telegram'
+import { createHmac } from '../_common/crypto'
 
 // from worker environment
 declare const SENTRY_HOOK_SECRET: string
@@ -17,7 +18,11 @@ async function handle(request: Request) {
         try {
             const text = await request.text()
             const sig = request.headers.get('Sentry-Hook-Signature')
-            const fromSentry = await verifySignature(SENTRY_HOOK_SECRET, text, sig)
+            const fromSentry = await verifySignature(
+                SENTRY_HOOK_SECRET,
+                text,
+                sig,
+            )
             if (fromSentry) {
                 const body = JSON.parse(text)
                 await telegram.send('sendMessage', {
@@ -37,24 +42,8 @@ async function verifySignature(
     signature: string | null,
 ): Promise<boolean> {
     if (signature === null) return false
-    const s = crypto.subtle
-    const enc = new TextEncoder()
-    const key = await s.importKey(
-        'raw',
-        enc.encode(secret),
-        {
-            name: 'HMAC',
-            hash: 'SHA-256',
-        },
-        false,
-        ['verify'],
-        // ['sign', 'verify'],
-    )
-    const sig = new Uint8Array(
-        signature.match(/[0-9a-fA-F]{2}/g)!.map((x) => parseInt(x, 16)),
-    )
-    return s.verify('HMAC', key, sig, enc.encode(message))
-
-    // const sig = await s.sign('HMAC', key, enc.encode(message))
-    // const hex = Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, '0')).join('')
+    const hmac = createHmac('SHA-256', secret)
+    hmac.update(message)
+    const sig = await hmac.digest('hex')
+    return sig === signature
 }
