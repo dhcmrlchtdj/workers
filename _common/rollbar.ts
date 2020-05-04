@@ -5,8 +5,10 @@
 
 export class Rollbar {
     token: string
-    constructor(token: string) {
+    project: string
+    constructor(token: string, project: string) {
         this.token = token
+        this.project = project
     }
     private async send(request: Request, body: Record<string, unknown>) {
         const url = new URL(request.url)
@@ -51,6 +53,7 @@ export class Rollbar {
             body: {
                 message: {
                     ...metadata,
+                    project: this.project,
                     body: msg,
                 },
             },
@@ -62,6 +65,7 @@ export class Rollbar {
             body: {
                 trace: {
                     ...metadata,
+                    project: this.project,
                     exception: {
                         class: err.name,
                         message: err.message,

@@ -35,8 +35,8 @@ jobs:
                   yarn add @cloudflare/wrangler
                   yarn wrangler publish
                   echo "$FAUNA_KEY" | yarn wrangler secret put 'FAUNA_KEY'
-                  echo "$SENTRY_KEY" | yarn wrangler secret put 'SENTRY_KEY'
+                  echo "$ROLLBAR_KEY" | yarn wrangler secret put 'ROLLBAR_KEY'
               env:
                   FAUNA_KEY: ${{ secrets.FAUNA_KEY }}
-                  SENTRY_KEY: ${{ secrets.SENTRY_KEY }}
+                  ROLLBAR_KEY: ${{ secrets.ROLLBAR_KEY }}
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
