@@ -1,29 +1,7 @@
-import {} from '@cloudflare/workers-types'
+import type {} from '@cloudflare/workers-types'
 import { encodeHtmlEntities, TelegramClient } from '../_common/telegram'
 
 // https://docs.rollbar.com/docs/webhooks
-// https://rollbar.com/h11/feedbox/items/23/occurrences/117235378113/
-// https://transform.tools/json-to-typescript
-type Occurrence = {
-    url: string
-    occurrence: {
-        feedurl: string
-        body?: {
-            message?: {
-                body?: string
-            }
-            trace_chain?: Array<{
-                exception?: {
-                    message?: string
-                }
-            }>
-        }
-    }
-}
-type RollbarPayload = {
-    event_name: 'occurrence'
-    data: Occurrence
-}
 
 // from worker environment
 declare const TELEGRAM_BOT_TOKEN: string
@@ -72,4 +50,27 @@ async function handleOccurrence(data: Occurrence) {
         chat_id: Number(MY_TELEGRAM_CHAT_ID),
         text,
     })
+}
+
+// https://rollbar.com/h11/feedbox/items/23/occurrences/117235378113/
+// https://transform.tools/json-to-typescript
+type Occurrence = {
+    url: string
+    occurrence: {
+        feedurl: string
+        body?: {
+            message?: {
+                body?: string
+            }
+            trace_chain?: Array<{
+                exception?: {
+                    message?: string
+                }
+            }>
+        }
+    }
+}
+type RollbarPayload = {
+    event_name: 'occurrence'
+    data: Occurrence
 }
