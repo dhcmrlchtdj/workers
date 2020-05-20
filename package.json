@@ -12,6 +12,6 @@
         "rollup": "2.6.1",
         "telegram-typings": "4.0.0-beta",
         "tslib": "1.11.1",
-        "typescript": "3.8.3"
+        "typescript": "3.9.3"
     }
 }
