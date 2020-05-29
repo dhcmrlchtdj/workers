@@ -16,8 +16,23 @@ actions.set('/add_tags', async (tags: string, msg: Message) => {
 actions.set('/list', async (_arg: string, msg: Message) => {
     const chat_id = msg.chat.id
     const tags = await fauna.execute<string[]>('bcc_get_tags', chat_id)
-    const text = tags.length === 0 ? 'not found' : tags.join('\n')
-    await telegram.send('sendMessage', { chat_id, text })
+    if (tags.length === 0) {
+        await telegram.send('sendMessage', { chat_id, text: 'not found' })
+    } else {
+        const text = tags.reduce(
+            (prev, curr) => {
+                if (prev.tag[1] === curr[1]) {
+                    prev.text += ' ' + curr
+                } else {
+                    prev.text += '\n' + curr
+                    prev.tag = curr
+                }
+                return prev
+            },
+            { tag: '', text: '' },
+        )
+        await telegram.send('sendMessage', { chat_id, text: text.text })
+    }
 })
 
 actions.set('/whoami', async (_arg: string, msg: Message) => {
