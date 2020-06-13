@@ -7,7 +7,7 @@
     "license": "MIT",
     "main": "index.js",
     "devDependencies": {
-        "@cloudflare/workers-types": "1.0.9",
+        "@cloudflare/workers-types": "2.0.0",
         "@rollup/plugin-typescript": "4.1.1",
         "rollup": "2.6.1",
         "telegram-typings": "4.0.0-beta",
