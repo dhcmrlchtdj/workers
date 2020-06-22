@@ -5,13 +5,13 @@
     "repository": "git@github.com:dhcmrlchtdj/workers.git",
     "author": "h11 <nirisix@gmail.com>",
     "license": "MIT",
-    "main": "index.js",
     "devDependencies": {
-        "@cloudflare/workers-types": "1.0.9",
-        "@rollup/plugin-typescript": "4.1.1",
-        "rollup": "2.6.1",
+        "@cloudflare/workers-types": "2.0.0",
+        "@rollup/plugin-typescript": "4.1.2",
+        "prettier": "2.0.5",
+        "rollup": "2.18.0",
         "telegram-typings": "4.0.0-beta",
-        "tslib": "1.11.1",
-        "typescript": "3.8.3"
+        "tslib": "2.0.0",
+        "typescript": "3.9.5"
     }
 }

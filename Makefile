@@ -12,4 +12,7 @@ build:
 	@rollup --format=es --input=$(PROJ)/index.ts --file=$(PROJ)/index.js --plugin=typescript --no-esModule
 	@echo ""
 
-.PHONY: all build
+fmt:
+	prettier --write .
+
+.PHONY: all build fmt

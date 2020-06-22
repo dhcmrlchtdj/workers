@@ -1,4 +1,3 @@
-import type {} from '@cloudflare/workers-types'
 import { TelegramClient } from '../_common/telegram'
 import { createHmac } from '../_common/crypto'
 

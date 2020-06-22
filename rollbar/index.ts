@@ -1,4 +1,3 @@
-import type {} from '@cloudflare/workers-types'
 import { encodeHtmlEntities, TelegramClient } from '../_common/telegram'
 
 // https://docs.rollbar.com/docs/webhooks

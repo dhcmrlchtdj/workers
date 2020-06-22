@@ -1,4 +1,3 @@
-import {} from '@cloudflare/workers-types'
 import { Rollbar } from '../_common/rollbar'
 import { WorkerRouter } from '../_common/router'
 import { FaunaClient } from '../_common/fauna'
