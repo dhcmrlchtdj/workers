@@ -1,6 +1,6 @@
 devDependencies:
   '@cloudflare/workers-types': 2.0.0
-  '@rollup/plugin-typescript': 4.1.2_a73258a2b513f9d84ee87bff854ffd8b
+  '@rollup/plugin-typescript': 5.0.2_a73258a2b513f9d84ee87bff854ffd8b
   prettier: 2.0.5
   rollup: 2.18.0
   telegram-typings: 4.0.0-beta
@@ -12,7 +12,7 @@ packages:
     dev: true
     resolution:
       integrity: sha512-SFUPQzR5aV2TBLP4Re+xNX5KfAGArcRGA44OLulBDnfblEf3J+6kFvdJAQwFhFpqru3wImwT1cX0wahk6EeWTw==
-  /@rollup/plugin-typescript/4.1.2_a73258a2b513f9d84ee87bff854ffd8b:
+  /@rollup/plugin-typescript/5.0.2_a73258a2b513f9d84ee87bff854ffd8b:
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.18.0
       resolve: 1.17.0
@@ -23,11 +23,11 @@ packages:
     engines:
       node: '>=8.0.0'
     peerDependencies:
-      rollup: ^1.20.0||^2.0.0
+      rollup: ^2.14.0
       tslib: '*'
-      typescript: '>=2.1.0'
+      typescript: '>=3.4.0'
     resolution:
-      integrity: sha512-+7UlGat/99e2JbmGNnIauxwEhYLwrL7adO/tSJxUN57xrrS3Ps+ZzYpLCDGPZJ57j+ZJTZLLN89KXW9JMEB+jg==
+      integrity: sha512-CkS028Itwjqm1uLbFVfpJgtVtnNvZ+og/m6UlNRR5wOOnNTWPcVQzOu5xGdEX+WWJxdvWIqUq2uR/RBt2ZipWg==
   /@rollup/pluginutils/3.1.0_rollup@2.18.0:
     dependencies:
       '@types/estree': 0.0.39
@@ -107,7 +107,7 @@ packages:
       integrity: sha512-hSAifV3k+i6lEoCJ2k6R2Z/rp/H3+8sdmcn5NrS3/3kE7+RyZXm9aqvxWqjEXHAd8b0pShatpcdMTvEdvAJltQ==
 specifiers:
   '@cloudflare/workers-types': 2.0.0
-  '@rollup/plugin-typescript': 4.1.2
+  '@rollup/plugin-typescript': 5.0.2
   prettier: 2.0.5
   rollup: 2.18.0
   telegram-typings: 4.0.0-beta
