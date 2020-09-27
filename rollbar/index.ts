@@ -33,15 +33,9 @@ async function dispatch(payload: RollbarPayload) {
 
 async function handleOccurrence(data: Occurrence) {
     const url = encodeHtmlEntities(data.url)
-    const feedurl = encodeHtmlEntities(data.occurrence.feedurl)
-    const exception = encodeHtmlEntities(
-        data.occurrence.body?.trace_chain?.[0]?.exception?.message ??
-            data.occurrence.body?.message?.body ??
-            '',
-    )
+    const error = encodeHtmlEntities(data.occurrence.title)
     const text = [
-        `feedurl = ${feedurl}`,
-        `exception = ${exception}`,
+        `error = <pre>${error}</pre>`,
         `rollbar = ${url}`,
     ].join('\n')
     await telegram.send('sendMessage', {
@@ -56,17 +50,18 @@ async function handleOccurrence(data: Occurrence) {
 type Occurrence = {
     url: string
     occurrence: {
-        feedurl: string
-        body?: {
-            message?: {
-                body?: string
-            }
-            trace_chain?: Array<{
-                exception?: {
-                    message?: string
-                }
-            }>
-        }
+        title: string
+        // feedurl: string
+        // body?: {
+        //     message?: {
+        //         body?: string
+        //     }
+        //     trace_chain?: Array<{
+        //         exception?: {
+        //             message?: string
+        //         }
+        //     }>
+        // }
     }
 }
 type RollbarPayload = {
