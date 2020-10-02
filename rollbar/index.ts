@@ -34,10 +34,7 @@ async function dispatch(payload: RollbarPayload) {
 async function handleOccurrence(data: Occurrence) {
     const url = encodeHtmlEntities(data.url)
     const error = encodeHtmlEntities(data.occurrence.title)
-    const text = [
-        `error = <pre>${error}</pre>`,
-        `rollbar = ${url}`,
-    ].join('\n')
+    const text = `${url}\n<pre>${error}</pre>`
     await telegram.send('sendMessage', {
         parse_mode: 'HTML',
         chat_id: Number(MY_TELEGRAM_CHAT_ID),
