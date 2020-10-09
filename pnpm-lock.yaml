@@ -1,10 +1,10 @@
 devDependencies:
   '@cloudflare/workers-types': 2.0.0
-  '@rollup/plugin-typescript': 6.0.0_cdbdda34bbbc534f7b00e9e97d2f15aa
+  '@rollup/plugin-typescript': 6.0.0_68531ba3b062457ec82b389ca1ac072c
   prettier: 2.1.2
   rollup: 2.28.2
   telegram-typings: 4.0.0-beta
-  tslib: 2.0.1
+  tslib: 2.0.3
   typescript: 4.0.3
 lockfileVersion: 5.1
 packages:
@@ -12,12 +12,12 @@ packages:
     dev: true
     resolution:
       integrity: sha512-SFUPQzR5aV2TBLP4Re+xNX5KfAGArcRGA44OLulBDnfblEf3J+6kFvdJAQwFhFpqru3wImwT1cX0wahk6EeWTw==
-  /@rollup/plugin-typescript/6.0.0_cdbdda34bbbc534f7b00e9e97d2f15aa:
+  /@rollup/plugin-typescript/6.0.0_68531ba3b062457ec82b389ca1ac072c:
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.28.2
       resolve: 1.17.0
       rollup: 2.28.2
-      tslib: 2.0.1
+      tslib: 2.0.3
       typescript: 4.0.3
     dev: true
     engines:
@@ -94,10 +94,10 @@ packages:
     dev: true
     resolution:
       integrity: sha512-p5rH6xmotS4wvzQr3z0EyyMNGOceaZ1poUienbRFPUHTHQv4W+n40vORRwuc1myZ41E633l2UGdXl2V9hjX7Dw==
-  /tslib/2.0.1:
+  /tslib/2.0.3:
     dev: true
     resolution:
-      integrity: sha512-SgIkNheinmEBgx1IUNirK0TUD4X9yjjBRTqqjggWCU3pUEqIk3/Uwl3yRixYKT6WjQuGiwDv4NomL3wqRCj+CQ==
+      integrity: sha512-uZtkfKblCEQtZKBF6EBXVZeQNl82yqtDQdv+eck8u7tdPxjLu2/lp5/uPW+um2tpuxINHWy3GhiccY7QgEaVHQ==
   /typescript/4.0.3:
     dev: true
     engines:
@@ -111,5 +111,5 @@ specifiers:
   prettier: 2.1.2
   rollup: 2.28.2
   telegram-typings: 4.0.0-beta
-  tslib: 2.0.1
+  tslib: 2.0.3
   typescript: 4.0.3
