@@ -1,5 +1,5 @@
 import { Update, Message, CallbackQuery } from 'telegram-typings'
-import { TelegramClient } from '../_common/telegram'
+import { TelegramClient } from '../../_common/telegram'
 import { execute } from './callback_action'
 
 declare const MZBOT_BOT_TOKEN: string

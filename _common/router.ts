@@ -96,7 +96,7 @@ export class WorkerRouter {
         _event: FetchEvent,
         _params: Map<string, string>,
     ) {
-        return new Response('Handler Not Found', {
+        return new Response('Not Found', {
             status: 404,
             statusText: 'Not Found',
         })

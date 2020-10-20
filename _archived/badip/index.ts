@@ -1,6 +1,6 @@
-import { Rollbar } from '../_common/rollbar'
-import { WorkerRouter } from '../_common/router'
-import { FaunaClient } from '../_common/fauna'
+import { Rollbar } from '../../_common/rollbar'
+import { WorkerRouter } from '../../_common/router'
+import { FaunaClient } from '../../_common/fauna'
 import { sortIP } from './sort-ip'
 
 declare const FAUNA_KEY: string
