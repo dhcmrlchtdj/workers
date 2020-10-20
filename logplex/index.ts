@@ -1,67 +1,46 @@
-import { encodeHtmlEntities, TelegramClient } from '../_common/telegram'
-
-// https://docs.rollbar.com/docs/webhooks
+import { Rollbar } from '../_common/rollbar'
+import { WorkerRouter } from '../_common/router'
+import { TelegramClient } from '../_common/telegram'
 
 // from worker environment
+declare const FBOX_LOGPLEX_WEBHOOK_PATH: string // openssl rand -hex 16
+declare const ROLLBAR_KEY: string
+
 declare const TELEGRAM_BOT_TOKEN: string
 declare const MY_TELEGRAM_CHAT_ID: string
-
 const telegram = new TelegramClient(TELEGRAM_BOT_TOKEN)
 
-// ---
+const rollbar = new Rollbar(ROLLBAR_KEY, 'bcc')
 
-addEventListener('fetch', (event) => {
-    event.respondWith(handle(event.request))
-})
+const router = new WorkerRouter()
+router.post(`/logplex/${FBOX_LOGPLEX_WEBHOOK_PATH}`, async (event) => {
+    const req = event.request
+    const obj = { headers: {} as any, body: null as any }
+    req.headers.forEach((v, k) => {
+        obj.headers[k] = v
+    })
+    obj.body = (await req.text()).split('\n')
+    const text = JSON.stringify(obj)
 
-async function handle(request: Request) {
-    if (request.method.toUpperCase() === 'POST') {
-        try {
-            const payload = await request.json()
-            await dispatch(payload)
-        } catch (_) {}
-    }
-    return new Response(null, { status: 204 })
-}
-
-async function dispatch(payload: RollbarPayload) {
-    const evt = payload.event_name
-    if (evt === 'occurrence') {
-        await handleOccurrence(payload.data)
-    }
-}
-
-async function handleOccurrence(data: Occurrence) {
-    const url = encodeHtmlEntities(data.url)
-    const error = encodeHtmlEntities(data.occurrence.title)
-    const text = `${url}\n<pre>${error}</pre>`
     await telegram.send('sendMessage', {
         parse_mode: 'HTML',
         chat_id: Number(MY_TELEGRAM_CHAT_ID),
         text,
     })
-}
+    return new Response('', { status: 200 })
+})
 
-// https://rollbar.com/h11/feedbox/items/23/occurrences/117235378113/
-// https://transform.tools/json-to-typescript
-type Occurrence = {
-    url: string
-    occurrence: {
-        title: string
-        // feedurl: string
-        // body?: {
-        //     message?: {
-        //         body?: string
-        //     }
-        //     trace_chain?: Array<{
-        //         exception?: {
-        //             message?: string
-        //         }
-        //     }>
-        // }
+const handle = async (event: FetchEvent) => {
+    try {
+        const resp = await router.route(event)
+        return resp
+    } catch (err) {
+        event.waitUntil(rollbar.err(event.request, err))
+        const msg = `${err}\n${err.stack}`
+        return new Response(msg, { status: 200 })
     }
 }
-type RollbarPayload = {
-    event_name: 'occurrence'
-    data: Occurrence
-}
+
+addEventListener('fetch', (event) => {
+    event.respondWith(handle(event))
+})
