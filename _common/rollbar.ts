@@ -28,9 +28,9 @@ export class Rollbar {
                         query_string: url.search,
                         headers: (() => {
                             const h: Record<string, string> = {}
-                            request.headers.forEach((v, k) => {
-                                h[k] = v
-                            })
+                            for (let [key, val] of request.headers.entries()) {
+                                h[key] = val
+                            }
                             return h
                         })(),
                         user_ip: request.headers.get('CF-Connecting-IP'),

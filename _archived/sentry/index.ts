@@ -1,5 +1,5 @@
-import { TelegramClient } from '../_common/telegram'
-import { createHmac } from '../_common/crypto'
+import { TelegramClient } from '../../_common/telegram'
+import { createHmac } from '../../_common/crypto'
 
 // from worker environment
 declare const SENTRY_HOOK_SECRET: string

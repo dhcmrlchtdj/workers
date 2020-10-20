@@ -1,5 +1,5 @@
-import { WorkerRouter } from '../_common/router'
-import { Rollbar } from '../_common/rollbar'
+import { WorkerRouter } from '../../_common/router'
+import { Rollbar } from '../../_common/rollbar'
 // import { FaunaClient } from '../_common/fauna'
 import { webhook } from './webhook'
 

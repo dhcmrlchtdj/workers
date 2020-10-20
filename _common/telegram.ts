@@ -92,7 +92,7 @@ type TGResponse =
 type SendMessage = {
     chat_id: number
     text: string
-    parse_mode?: 'MarkdownV2' | 'HTML' | 'Markdown'
+    parse_mode?: 'MarkdownV2' | 'HTML'
     disable_web_page_preview?: boolean
     disable_notification?: boolean
     reply_to_message_id?: number
@@ -102,7 +102,7 @@ type SendPhoto = {
     chat_id: number
     photo: string // file_id
     caption?: string
-    parse_mode?: 'MarkdownV2' | 'HTML' | 'Markdown'
+    parse_mode?: 'MarkdownV2' | 'HTML'
     disable_notification?: boolean
     reply_to_message_id?: number
     reply_markup?: InlineKeyboardMarkup
@@ -115,7 +115,7 @@ type SendAnimation = {
     height?: number
     thumb?: string // file_id
     caption?: string
-    parse_mode?: 'MarkdownV2' | 'HTML' | 'Markdown'
+    parse_mode?: 'MarkdownV2' | 'HTML'
     disable_notification?: boolean
     reply_to_message_id?: number
     reply_markup?: InlineKeyboardMarkup
@@ -128,7 +128,7 @@ type SendVideo = {
     height?: number
     thumb?: string // file_id
     caption?: string
-    parse_mode?: 'MarkdownV2' | 'HTML' | 'Markdown'
+    parse_mode?: 'MarkdownV2' | 'HTML'
     supports_streaming?: boolean
     disable_notification?: boolean
     reply_to_message_id?: number
