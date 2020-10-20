@@ -1,17 +1,23 @@
 import { Rollbar } from '../_common/rollbar'
+import { InfluxClient, BASE_AWS_OREGON } from '../_common/influx'
 import { WorkerRouter } from '../_common/router'
-// import { TelegramClient } from '../_common/telegram'
+import { parse, Logplex } from './logplex'
+import { transform } from './logplex2influx'
 
 // from worker environment
 declare const FBOX_LOGPLEX_WEBHOOK_PATH: string // openssl rand -hex 16
 declare const FBOX_LOGPLEX_DRAIN_TOKEN: string
+declare const FBOX_INFLUX_TOKEN: string
 declare const ROLLBAR_KEY: string
 
-// declare const TELEGRAM_BOT_TOKEN: string
-// declare const MY_TELEGRAM_CHAT_ID: string
-// const telegram = new TelegramClient(TELEGRAM_BOT_TOKEN)
-
 const rollbar = new Rollbar(ROLLBAR_KEY, 'logplex')
+const influx = new InfluxClient(
+    FBOX_INFLUX_TOKEN,
+    BASE_AWS_OREGON,
+    'h11',
+    'feedbox',
+    'ms',
+)
 
 const router = new WorkerRouter()
 router.post(`/logplex/${FBOX_LOGPLEX_WEBHOOK_PATH}`, async (event) => {
@@ -23,12 +29,15 @@ router.post(`/logplex/${FBOX_LOGPLEX_WEBHOOK_PATH}`, async (event) => {
         throw new Error('403 Forbidden')
     }
 
-    // const text = await req.text()
-    // await telegram.send('sendMessage', {
-    //     chat_id: Number(MY_TELEGRAM_CHAT_ID),
-    //     text,
-    // })
-
+    const text = await req.text()
+    const logs = text
+        .split('\n')
+        .map(parse)
+        .filter((x): x is Logplex => x !== null)
+        .map(transform)
+        .map((x) => x.toString())
+        .join('\n')
+    event.waitUntil(influx.write(logs).catch((err) => rollbar.err(req, err)))
     return new Response('ok', { status: 200 })
 })
 
