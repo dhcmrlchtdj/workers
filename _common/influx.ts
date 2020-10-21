@@ -11,7 +11,7 @@ export class Line {
         this._tag = {}
         this._field = {}
     }
-    measurement(m:string): Line {
+    measurement(m: string): Line {
         this._measurement = m
         return this
     }

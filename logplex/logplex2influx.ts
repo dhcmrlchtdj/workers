@@ -35,7 +35,7 @@ const appLog = (log: Logplex): Line => {
     if (!log.msg.startsWith('{')) {
         return line.str('msg', log.msg)
     }
-    const jsonlog = JSON.parse(log.msg.replaceAll('\\', '\\\\'))
+    const jsonlog = JSON.parse(log.msg)
     if (jsonlog.module === 'pgx') {
         line.str('module', 'pgx').str('message', jsonlog.message)
         if (jsonlog.sql) {
@@ -72,7 +72,7 @@ export const transform = (log: Logplex): Line => {
         }
     } else if (log.app === 'app') {
         if (log.proc === 'api') {
-            return base(log).str('msg', log.msg).measurement('app/web')
+            return base(log).str('msg', log.msg).measurement('app/api')
         } else if (log.proc.startsWith('scheduler.')) {
             return appLog(log).measurement('app/scheduler')
         } else if (log.proc.startsWith('web.')) {
