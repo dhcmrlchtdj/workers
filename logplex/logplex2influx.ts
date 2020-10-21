@@ -57,30 +57,13 @@ const appLog = (log: Logplex): Line => {
     return line
 }
 
-export const transform = (log: Logplex): Line => {
-    if (log.app === 'heroku') {
-        if (log.proc === 'router') {
-            return herokuRouter(log).measurement('heroku/router')
-        } else if (log.proc.startsWith('release.')) {
-            return base(log).str('msg', log.msg).measurement('heroku/release')
-        } else if (log.proc.startsWith('scheduler.')) {
-            return base(log).str('msg', log.msg).measurement('heroku/scheduler')
-        } else if (log.proc.startsWith('web.')) {
-            return base(log).str('msg', log.msg).measurement('heroku/web')
-        } else {
-            return base(log).str('msg', log.msg).measurement('heroku/unknown')
-        }
-    } else if (log.app === 'app') {
-        if (log.proc === 'api') {
-            return base(log).str('msg', log.msg).measurement('app/api')
-        } else if (log.proc.startsWith('scheduler.')) {
-            return appLog(log).measurement('app/scheduler')
-        } else if (log.proc.startsWith('web.')) {
-            return appLog(log).measurement('app/web')
-        } else {
-            return base(log).str('msg', log.msg).measurement('app/unknown')
-        }
-    } else {
-        return base(log).str('msg', log.msg).measurement('unknown')
+export const transform = (log: Logplex): Line | null => {
+    if (log.app === 'heroku' && log.proc === 'router') {
+        return herokuRouter(log).measurement('heroku/router')
+    } else if (log.app === 'app' && log.proc.startsWith('scheduler.')) {
+        return appLog(log).measurement('app/scheduler')
+    } else if (log.app === 'app' && log.proc.startsWith('web.')) {
+        return appLog(log).measurement('app/web')
     }
+    return null
 }

@@ -1,5 +1,5 @@
 import { Rollbar } from '../_common/rollbar'
-import { InfluxClient, BASE_AWS_OREGON } from '../_common/influx'
+import { InfluxClient, BASE_AWS_OREGON, Line } from '../_common/influx'
 import { WorkerRouter } from '../_common/router'
 import { parse, Logplex } from './logplex'
 import { transform } from './logplex2influx'
@@ -35,9 +35,15 @@ router.post(`/logplex/${FBOX_LOGPLEX_WEBHOOK_PATH}`, async (event) => {
         .map(parse)
         .filter((x): x is Logplex => x !== null)
         .map(transform)
+        .filter((x): x is Line => x !== null)
         .map((x) => x.toString())
         .join('\n')
-    event.waitUntil(influx.write(logs).catch((err) => rollbar.err(req, err)))
+    if (logs.length > 0) {
+        const sendToInflux = influx
+            .write(logs)
+            .catch((err) => rollbar.err(req, err))
+        event.waitUntil(sendToInflux)
+    }
     return new Response('ok', { status: 200 })
 })
 
