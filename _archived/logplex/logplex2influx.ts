@@ -1,4 +1,4 @@
-import { Line } from '../_common/influx'
+import { Line } from '../../_common/influx'
 import { Logplex } from './logplex'
 import { parse } from './logfmt'
 

@@ -49,18 +49,3 @@ jobs:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
                   TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
                   MY_TELEGRAM_CHAT_ID: ${{ secrets.MY_TELEGRAM_CHAT_ID }}
-            - name: logplex
-              working-directory: ./logplex
-              run: |
-                  pnpm add @cloudflare/wrangler
-                  echo "$ROLLBAR_KEY" | pnpx wrangler secret put 'ROLLBAR_KEY'
-                  echo "$FBOX_LOGPLEX_WEBHOOK_PATH" | pnpx wrangler secret put 'FBOX_LOGPLEX_WEBHOOK_PATH'
-                  echo "$FBOX_LOGPLEX_DRAIN_TOKEN"  | pnpx wrangler secret put 'FBOX_LOGPLEX_DRAIN_TOKEN'
-                  echo "$FBOX_INFLUX_TOKEN" | pnpx wrangler secret put 'FBOX_INFLUX_TOKEN'
-                  pnpx wrangler publish
-              env:
-                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-                  ROLLBAR_KEY: ${{ secrets.ROLLBAR_KEY }}
-                  FBOX_LOGPLEX_WEBHOOK_PATH: ${{ secrets.FBOX_LOGPLEX_WEBHOOK_PATH }}
-                  FBOX_LOGPLEX_DRAIN_TOKEN: ${{ secrets.FBOX_LOGPLEX_DRAIN_TOKEN }}
-                  FBOX_INFLUX_TOKEN: ${{ secrets.FBOX_INFLUX_TOKEN }}

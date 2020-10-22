@@ -1,6 +1,6 @@
-import { Rollbar } from '../_common/rollbar'
-import { InfluxClient, BASE_AWS_OREGON, Line } from '../_common/influx'
-import { WorkerRouter } from '../_common/router'
+import { Rollbar } from '../../_common/rollbar'
+import { InfluxClient, BASE_AWS_OREGON, Line } from '../../_common/influx'
+import { WorkerRouter } from '../../_common/router'
 import { parse, Logplex } from './logplex'
 import { transform } from './logplex2influx'
 
