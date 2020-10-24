@@ -10,11 +10,11 @@ export const encodeHtmlEntities = (raw: string): string => {
     return raw.replace(/[&<>"]/g, (matched) => pairs[matched])
 }
 
-export const extractCommands = (
+export const extractCommand = (
     msg: Message | undefined,
     botName?: string,
-): { cmd: string; arg: string }[] => {
-    if (!msg || !msg.text || !msg.entities) return []
+): { cmd: string; arg: string } | null => {
+    if (!msg || !msg.text || !msg.entities) return null
     const text = msg.text
     const commands = msg.entities
         .filter((entity) => entity.type === 'bot_command')
@@ -24,24 +24,16 @@ export const extractCommands = (
                 cmds.length === 1 ||
                 (cmds.length === 2 && botName && cmds[1] === botName)
             ) {
-                return { cmd: cmds[0], off: entity.offset, len: entity.length }
+                const cmd = cmds[0]
+                const arg = text.substring(entity.offset + entity.length).trim()
+                return { cmd, arg }
             } else {
                 return null
             }
         })
-        .filter(Boolean) as { cmd: string; off: number; len: number }[]
-
-    const cmds: { cmd: string; arg: string }[] = []
-    let i = 0
-    while (i < commands.length) {
-        const command = commands[i]
-        const nextOffset =
-            i + 1 < commands.length ? commands[i + 1].off : text.length
-        const arg = text.substring(command.off + command.len, nextOffset)
-        cmds.push({ cmd: command.cmd, arg })
-        i++
-    }
-    return cmds
+        .filter(Boolean)
+    if (commands.length === 0) return null
+    return commands[0]
 }
 
 export class TelegramClient {

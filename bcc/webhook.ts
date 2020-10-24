@@ -1,9 +1,15 @@
 import { Update, Message } from 'telegram-typings'
-import { extractCommands } from '../_common/telegram'
+import { extractCommand } from '../_common/telegram'
 import { execute } from './bot_command'
 
 const handleMsg = async (msg: Message | undefined) => {
     if (!msg || !msg.text || !msg.entities) return
+
+    const command = extractCommand(msg, 'blind_carbon_copy_bot')
+    if (command !== null) {
+        await execute(command.cmd, command.arg, msg)
+        return
+    }
 
     const hashtags = msg.entities
         .filter((x) => x.type === 'hashtag')
@@ -11,11 +17,6 @@ const handleMsg = async (msg: Message | undefined) => {
     if (hashtags.length > 0) {
         const tags = Array.from(new Set(hashtags))
         await execute('/add_tags', tags.join(' '), msg)
-    }
-
-    const commands = extractCommands(msg, 'blind_carbon_copy_bot')
-    if (commands.length > 0) {
-        await Promise.all(commands.map((c) => execute(c.cmd, c.arg, msg)))
     }
 }
 

@@ -1,17 +1,13 @@
-const enc = new TextEncoder()
-const dec = new TextDecoder()
-const reHEX = /[0-9a-zA-Z]{2}/g
-
 export const fromBuf = (buf: ArrayBuffer) => new Uint8Array(buf)
 
 export const toBuf = (u: Uint8Array) => u.buffer
 
-export const fromUtf8 = (s: string) => enc.encode(s)
+export const fromUtf8 = (s: string) => new TextEncoder().encode(s)
 
-export const toUtf8 = (u: Uint8Array) => dec.decode(u)
+export const toUtf8 = (u: Uint8Array) => new TextDecoder().decode(u)
 
 export const fromHex = (hex: string) =>
-    new Uint8Array(hex.match(reHEX)!.map((x) => parseInt(x, 16)))
+    new Uint8Array(hex.match(/[0-9a-zA-Z]{2}/g)!.map((x) => parseInt(x, 16)))
 
 export const toHex = (u: Uint8Array) =>
     Array.from(u)

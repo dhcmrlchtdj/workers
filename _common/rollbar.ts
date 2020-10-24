@@ -2,6 +2,7 @@
 // https://explorer.docs.rollbar.com/#operation/create-item
 // https://github.com/rollbar/rollbar.js
 // https://github.com/stacktracejs/error-stack-parser
+import { UUIDv4 } from './uuid'
 
 export class Rollbar {
     token: string
@@ -21,7 +22,7 @@ export class Rollbar {
                     timestamp: (Date.now() / 1000) | 0,
                     platform: 'cloudflare-worker',
                     language: 'javascript',
-                    uuid: fakeUUIDv4(),
+                    uuid: UUIDv4(),
                     request: {
                         url: `${url.protocol}//${url.hostname}${url.pathname}`,
                         method: request.method,
@@ -75,14 +76,6 @@ export class Rollbar {
             },
         })
     }
-}
-
-function fakeUUIDv4() {
-    const bytes = new Uint8Array(16)
-    crypto.getRandomValues(bytes)
-    bytes[6] = (bytes[6] & 0x0f) | 0x40
-    bytes[8] = (bytes[8] & 0x3f) | 0x80
-    return [...bytes].map((b) => ('0' + b.toString(16)).slice(-2)).join('') // to hex
 }
 
 function parseError(error: Error) {
