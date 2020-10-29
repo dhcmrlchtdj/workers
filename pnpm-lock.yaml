@@ -1,17 +1,17 @@
 devDependencies:
-  '@cloudflare/workers-types': 2.0.0
+  '@cloudflare/workers-types': 2.1.0
   '@rollup/plugin-typescript': 6.0.0_fdbcfa007260ce7ec26f11dd44471702
   prettier: 2.1.2
   rollup: 2.32.0
   telegram-typings: 4.0.0-beta
   tslib: 2.0.3
   typescript: 4.0.3
-lockfileVersion: 5.1
+lockfileVersion: 5.2
 packages:
-  /@cloudflare/workers-types/2.0.0:
+  /@cloudflare/workers-types/2.1.0:
     dev: true
     resolution:
-      integrity: sha512-SFUPQzR5aV2TBLP4Re+xNX5KfAGArcRGA44OLulBDnfblEf3J+6kFvdJAQwFhFpqru3wImwT1cX0wahk6EeWTw==
+      integrity: sha512-VmXaHTq0lt6Xre4aK1hUK25hjZjuEUkHtdUEt0FJamv+NzQO54Gwp6Zr5Cfu6SP5EQ/tTmTMP/tK9npA8zhcCg==
   /@rollup/plugin-typescript/6.0.0_fdbcfa007260ce7ec26f11dd44471702:
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.32.0
@@ -125,7 +125,7 @@ packages:
     resolution:
       integrity: sha512-tEu6DGxGgRJPb/mVPIZ48e69xCn2yRmCgYmDugAVwmJ6o+0u1RI18eO7E7WBTLYLaEVVOhwQmcdhQHweux/WPg==
 specifiers:
-  '@cloudflare/workers-types': 2.0.0
+  '@cloudflare/workers-types': 2.1.0
   '@rollup/plugin-typescript': 6.0.0
   prettier: 2.1.2
   rollup: 2.32.0
