@@ -6,12 +6,12 @@
     "author": "h11 <nirisix@gmail.com>",
     "license": "MIT",
     "devDependencies": {
-        "@cloudflare/workers-types": "2.0.0",
-        "@rollup/plugin-typescript": "6.0.0",
+        "@cloudflare/workers-types": "2.1.0",
+        "@rollup/plugin-typescript": "6.1.0",
         "prettier": "2.1.2",
-        "rollup": "2.32.0",
+        "rollup": "2.32.1",
         "telegram-typings": "4.0.0-beta",
         "tslib": "2.0.3",
-        "typescript": "4.0.3"
+        "typescript": "4.0.5"
     }
 }
