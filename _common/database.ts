@@ -1,9 +1,9 @@
-import { encode } from './crypto/base64'
+import { encode } from './base64'
 
 export type PGArray<T> = [
     {
         Elements: T[] | null
-        Dimensions: [{ Length: number; LowerBound: number }]
+        Dimensions: Array<{ Length: number; LowerBound: number }> | null
         Status: number
     },
 ]
@@ -15,7 +15,8 @@ export class Database {
         this.api = api
         this.auth = 'Basic ' + encode('token:' + token)
     }
-    async query<T>(sql: string, ...args: unknown[]): Promise<T[]> {
+
+    async raw(sql: string, ...args: unknown[]): Promise<Response> {
         const resp = await fetch(this.api, {
             method: 'POST',
             headers: {
@@ -25,13 +26,19 @@ export class Database {
             body: JSON.stringify({ sql, args }),
         })
         if (resp.status === 200) {
-            const json = await resp.json()
-            return json
+            return resp
         } else {
             const text = await resp.text()
             throw new Error(resp.statusText + '\n' + text)
         }
     }
+
+    async query<T>(sql: string, ...args: unknown[]): Promise<T[]> {
+        const resp = await this.raw(sql, ...args)
+        const json: T[] = await resp.json()
+        return json
+    }
+
     async queryOne<T>(sql: string, ...args: unknown[]): Promise<T | null> {
         const r = await this.query<T>(sql, ...args)
         if (r.length === 0) return null
