@@ -56,7 +56,7 @@ actions.set('/list', async (_arg: string, msg: Message) => {
     if (arr === null || arr[0].Elements.length  === 0) {
         await telegram.send('sendMessage', { chat_id, text: 'not found' })
     } else {
-        const tags = arr[0].Elements
+        const tags = arr[0].Elements.sort()
         const text = tags.reduce(
             (prev, curr) => {
                 if (prev.tag[1] === curr[1]) {
