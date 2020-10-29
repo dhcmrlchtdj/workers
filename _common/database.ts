@@ -2,7 +2,7 @@ import { encode } from './crypto/base64'
 
 export type PGArray<T> = [
     {
-        Elements: Array<T>
+        Elements: T[] | null
         Dimensions: [{ Length: number; LowerBound: number }]
         Status: number
     },

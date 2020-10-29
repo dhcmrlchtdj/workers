@@ -63,7 +63,11 @@ actions.set('/list', async (_arg: string, msg: Message) => {
         'SELECT tags FROM bcc WHERE chat_id=$1',
         chat_id,
     )
-    if (arr === null || arr[0].Elements.length === 0) {
+    if (
+        arr === null ||
+        arr[0].Elements === null ||
+        arr[0].Elements.length === 0
+    ) {
         await telegram.send('sendMessage', { chat_id, text: 'not found' })
     } else {
         const tags = arr[0].Elements.sort()
