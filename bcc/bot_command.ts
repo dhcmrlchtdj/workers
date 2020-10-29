@@ -1,6 +1,7 @@
 import { Message } from 'telegram-typings'
 import { TelegramClient } from '../_common/telegram'
 import { Database } from '../_common/database'
+import type { PGArray } from '../_common/database'
 
 declare const BCC_BOT_TOKEN: string
 declare const DB_API: string
@@ -48,13 +49,14 @@ actions.set('/remove_tags', async (tags: string, msg: Message) => {
 
 actions.set('/list', async (_arg: string, msg: Message) => {
     const chat_id = msg.chat.id
-    const tags = await database.queryOne<string[]>(
+    const arr = await database.queryOne<PGArray<string>>(
         'SELECT tags FROM bcc WHERE chat_id=$1',
         chat_id,
     )
-    if (tags === null || tags.length === 0) {
+    if (arr === null || arr[0].Elements.length  === 0) {
         await telegram.send('sendMessage', { chat_id, text: 'not found' })
     } else {
+        const tags = arr[0].Elements
         const text = tags.reduce(
             (prev, curr) => {
                 if (prev.tag[1] === curr[1]) {

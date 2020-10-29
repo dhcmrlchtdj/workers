@@ -1,5 +1,13 @@
 import { encode } from './crypto/base64'
 
+export type PGArray<T> = [
+    {
+        Elements: Array<T>
+        Dimensions: [{ Length: number; LowerBound: number }]
+        Status: number
+    },
+]
+
 export class Database {
     private api: string
     private auth: string
