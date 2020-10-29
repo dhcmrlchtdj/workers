@@ -28,7 +28,8 @@ jobs:
                   pnpm add @cloudflare/wrangler
                   echo "$BCC_WEBHOOK_PATH" | pnpx wrangler secret put 'BCC_WEBHOOK_PATH'
                   echo "$BCC_BOT_TOKEN" | pnpx wrangler secret put 'BCC_BOT_TOKEN'
-                  echo "$FAUNA_KEY" | pnpx wrangler secret put 'FAUNA_KEY'
+                  echo "$DB_API" | pnpx wrangler secret put 'DB_API'
+                  echo "$DB_TOKEN" | pnpx wrangler secret put 'DB_TOKEN'
                   echo "$ROLLBAR_KEY" | pnpx wrangler secret put 'ROLLBAR_KEY'
                   pnpx wrangler publish
                   curl "https://api.telegram.org/bot${BCC_BOT_TOKEN}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${BCC_WEBHOOK_PATH}"
@@ -36,7 +37,8 @@ jobs:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
                   BCC_WEBHOOK_PATH: ${{ secrets.BCC_WEBHOOK_PATH }}
                   BCC_BOT_TOKEN: ${{ secrets.BCC_BOT_TOKEN }}
-                  FAUNA_KEY: ${{ secrets.FAUNA_KEY }}
+                  DB_API: ${{ secrets.DB_API }}
+                  DB_TOKEN: ${{ secrets.DB_TOKEN }}
                   ROLLBAR_KEY: ${{ secrets.ROLLBAR_KEY }}
             - name: rollbar
               working-directory: ./rollbar

@@ -4,9 +4,9 @@ export const fromU8 = (u: Uint8Array) => u.buffer
 
 export const toU8 = (b: ArrayBuffer) => new Uint8Array(b)
 
-export const fromUtf8 = (s: string) => uint8.fromUtf8(s).buffer
+export const fromStr = (s: string) => uint8.fromStr(s).buffer
 
-export const toUtf8 = (b: ArrayBuffer) => uint8.toUtf8(new Uint8Array(b))
+export const toStr = (b: ArrayBuffer) => uint8.toStr(new Uint8Array(b))
 
 export const fromHex = (hex: string) => uint8.fromHex(hex).buffer
 

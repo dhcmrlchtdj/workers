@@ -2,9 +2,9 @@ export const fromBuf = (buf: ArrayBuffer) => new Uint8Array(buf)
 
 export const toBuf = (u: Uint8Array) => u.buffer
 
-export const fromUtf8 = (s: string) => new TextEncoder().encode(s)
+export const fromStr = (s: string) => new TextEncoder().encode(s)
 
-export const toUtf8 = (u: Uint8Array) => new TextDecoder().decode(u)
+export const toStr = (u: Uint8Array) => new TextDecoder().decode(u)
 
 export const fromHex = (hex: string) =>
     new Uint8Array(hex.match(/[0-9a-zA-Z]{2}/g)!.map((x) => parseInt(x, 16)))

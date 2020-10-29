@@ -1,22 +1,58 @@
 import { Message } from 'telegram-typings'
 import { TelegramClient } from '../_common/telegram'
-import { FaunaClient } from '../_common/fauna'
+import { Database } from '../_common/database'
 
 declare const BCC_BOT_TOKEN: string
-declare const FAUNA_KEY: string
+declare const DB_API: string
+declare const DB_TOKEN: string
 
 const telegram = new TelegramClient(BCC_BOT_TOKEN)
-const fauna = new FaunaClient(FAUNA_KEY)
+const database = new Database(DB_API, DB_TOKEN)
 const actions = new Map<string, (arg: string, msg: Message) => Promise<void>>()
 
 actions.set('/add_tags', async (tags: string, msg: Message) => {
-    await fauna.execute('bcc_add_tags', msg.chat.id, tags.split(' '))
+    await database.query(
+        `
+            WITH t(tags) AS (
+                SELECT ARRAY(
+                    SELECT UNNEST($2::TEXT[])
+                    UNION
+                    SELECT UNNEST(tags) FROM bcc WHERE chat_id=$1
+                )
+            )
+            INSERT INTO bcc(chat_id, tags) SELECT $1, tags FROM t
+            ON CONFLICT(chat_id)
+            DO UPDATE SET tags = EXCLUDED.tags
+        `,
+        msg.chat.id,
+        tags.trim().split(/\s+/),
+    )
+})
+
+actions.set('/remove_tags', async (tags: string, msg: Message) => {
+    await database.query(
+        `
+            WITH t(tags) AS (
+                SELECT ARRAY(
+                    SELECT UNNEST(tags) FROM bcc WHERE chat_id=$1
+                    EXCEPT
+                    SELECT UNNEST($2::TEXT[])
+                )
+            )
+            update bcc set tags = t.tags from t where bcc.chat_id=$1
+        `,
+        msg.chat.id,
+        tags.trim().split(/\s+/),
+    )
 })
 
 actions.set('/list', async (_arg: string, msg: Message) => {
     const chat_id = msg.chat.id
-    const tags = await fauna.execute<string[]>('bcc_get_tags', chat_id)
-    if (tags.length === 0) {
+    const tags = await database.queryOne<string[]>(
+        'SELECT tags FROM bcc WHERE chat_id=$1',
+        chat_id,
+    )
+    if (tags === null || tags.length === 0) {
         await telegram.send('sendMessage', { chat_id, text: 'not found' })
     } else {
         const text = tags.reduce(

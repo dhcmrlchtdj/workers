@@ -5,8 +5,9 @@ import { webhook } from './webhook'
 // from worker environment
 declare const BCC_WEBHOOK_PATH: string
 declare const BCC_BOT_TOKEN: string
-declare const FAUNA_KEY: string
 declare const ROLLBAR_KEY: string
+declare const DB_API: string
+declare const DB_TOKEN: string
 
 const rollbar = new Rollbar(ROLLBAR_KEY, 'bcc')
 

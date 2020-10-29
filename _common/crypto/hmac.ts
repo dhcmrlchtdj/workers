@@ -11,7 +11,7 @@ export class Hmac {
         this.data = []
         this.key = crypto.subtle.importKey(
             'raw',
-            typeof key === 'string' ? uint8.fromUtf8(key) : key,
+            typeof key === 'string' ? uint8.fromStr(key) : key,
             {
                 name: 'HMAC',
                 hash: algorithm,
@@ -25,7 +25,7 @@ export class Hmac {
     update(data: string, encoding?: 'utf8'): void
     update(data: string | Uint8Array | ArrayBuffer, _encoding?: 'utf8'): void {
         if (typeof data === 'string') {
-            this.data.push(uint8.fromUtf8(data))
+            this.data.push(uint8.fromStr(data))
         } else if (data instanceof ArrayBuffer) {
             this.data.push(uint8.fromBuf(data))
         } else {
@@ -44,7 +44,7 @@ export class Hmac {
             case 'hex':
                 return buffer.toHex(sig)
             case 'utf8':
-                return buffer.toUtf8(sig)
+                return buffer.toStr(sig)
             default:
                 return sig
         }
