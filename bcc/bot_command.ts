@@ -11,7 +11,12 @@ const telegram = new TelegramClient(BCC_BOT_TOKEN)
 const database = new Database(DB_API, DB_TOKEN)
 const actions = new Map<string, (arg: string, msg: Message) => Promise<void>>()
 
-actions.set('/add_tags', async (tags: string, msg: Message) => {
+actions.set('/add', async (arg: string, msg: Message) => {
+    const tag = arg.trim()
+    if (tag.length < 1) return
+    const tags = tag.split(/\s+/)
+    if (tags.length < 1) return
+
     await database.query(
         `
             WITH t(tags) AS (
@@ -26,11 +31,16 @@ actions.set('/add_tags', async (tags: string, msg: Message) => {
             DO UPDATE SET tags = EXCLUDED.tags
         `,
         msg.chat.id,
-        tags.trim().split(/\s+/),
+        tags,
     )
 })
 
-actions.set('/remove_tags', async (tags: string, msg: Message) => {
+actions.set('/remove', async (arg: string, msg: Message) => {
+    const tag = arg.trim()
+    if (tag.length < 1) return
+    const tags = tag.split(/\s+/)
+    if (tags.length < 1) return
+
     await database.query(
         `
             WITH t(tags) AS (
@@ -43,7 +53,7 @@ actions.set('/remove_tags', async (tags: string, msg: Message) => {
             update bcc set tags = t.tags from t where bcc.chat_id=$1
         `,
         msg.chat.id,
-        tags.trim().split(/\s+/),
+        tags,
     )
 })
 
@@ -53,7 +63,7 @@ actions.set('/list', async (_arg: string, msg: Message) => {
         'SELECT tags FROM bcc WHERE chat_id=$1',
         chat_id,
     )
-    if (arr === null || arr[0].Elements.length  === 0) {
+    if (arr === null || arr[0].Elements.length === 0) {
         await telegram.send('sendMessage', { chat_id, text: 'not found' })
     } else {
         const tags = arr[0].Elements.sort()

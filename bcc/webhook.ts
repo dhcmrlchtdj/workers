@@ -6,7 +6,7 @@ const handleMsg = async (msg: Message | undefined) => {
     if (!msg || !msg.text || !msg.entities) return
 
     const command = extractCommand(msg, 'blind_carbon_copy_bot')
-    if (command !== null) {
+    if (command !== null && command.cmd !== '/add') {
         await execute(command.cmd, command.arg, msg)
         return
     }
@@ -16,7 +16,7 @@ const handleMsg = async (msg: Message | undefined) => {
         .map((entity) => msg.text!.substr(entity.offset, entity.length))
     if (hashtags.length > 0) {
         const tags = Array.from(new Set(hashtags))
-        await execute('/add_tags', tags.join(' '), msg)
+        await execute('/add', tags.join(' '), msg)
     }
 }
 
