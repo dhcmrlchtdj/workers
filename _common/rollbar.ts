@@ -43,26 +43,10 @@ export class Rollbar {
         return resp
     }
 
-    log(
-        request: Request,
-        level: 'critical' | 'error' | 'warning' | 'info' | 'debug',
-        msg: string,
-        metadata?: Record<string, unknown>,
-    ) {
-        return this.send(request, {
-            level,
-            body: {
-                message: {
-                    ...metadata,
-                    project: this.project,
-                    body: msg,
-                },
-            },
-        })
-    }
     err(request: Request, err: Error, metadata?: Record<string, unknown>) {
         return this.send(request, {
             level: 'error',
+            title: `${err.name}: ${err.message}`,
             body: {
                 trace: {
                     ...metadata,
