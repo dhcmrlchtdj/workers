@@ -1,11 +1,10 @@
 import { Update, Message } from 'telegram-typings'
-import { extractCommand } from '../_common/telegram'
-import { execute } from './bot_command'
+import { execute, telegram } from './bot_command'
 
 const handleMsg = async (msg: Message | undefined) => {
     if (!msg || !msg.text || !msg.entities) return
 
-    const command = extractCommand(msg, 'blind_carbon_copy_bot')
+    const command = telegram.extractCommand(msg)
     if (command !== null && command.cmd !== '/add') {
         await execute(command.cmd, command.arg, msg)
         return
