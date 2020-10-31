@@ -114,12 +114,12 @@ actions.set('/update', async (_arg: string, msg: Message) => {
 
     const chat_id = msg.chat.id
     const tagList = await getTagList(chat_id)
-    if (msg.text === tagList) return
+    if (replied.text === tagList) return
 
     if (msg.chat.type === 'channel') {
         await telegram.send('sendMessage', {
             chat_id,
-            text: `backup\n${msg.text}`,
+            text: `backup\n${replied.text}`,
         })
     }
 
