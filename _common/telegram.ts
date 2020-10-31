@@ -1,4 +1,4 @@
-import { InlineKeyboardMarkup, Message } from 'telegram-typings'
+import { InlineKeyboardMarkup, Message, ChatMember } from 'telegram-typings'
 
 export const encodeHtmlEntities = (raw: string): string => {
     const pairs: Record<string, string> = {
@@ -54,6 +54,20 @@ export class TelegramClient {
         return command || null
     }
 
+    async fromAdmin(msg: Message): Promise<boolean> {
+        const chatType = msg.chat.type
+        if (chatType === 'group' || chatType === 'supergroup') {
+            const member = await this.send('getChatMember', {
+                chat_id: msg.chat.id,
+                user_id: msg.from!.id,
+            })
+            return (
+                member.status === 'creator' || member.status === 'administrator'
+            )
+        }
+        return true
+    }
+
     async send(method: 'sendMessage', data: SendMessage): Promise<Message>
     async send(method: 'sendPhoto', data: SendPhoto): Promise<Message>
     async send(method: 'sendAnimation', data: SendAnimation): Promise<Message>
@@ -62,6 +76,10 @@ export class TelegramClient {
         method: 'editMessageText',
         data: EditMessageText,
     ): Promise<Message | boolean>
+    async send(
+        method: 'getChatMember',
+        data: GetChatMember,
+    ): Promise<ChatMember>
     async send(
         method: 'answerCallbackQuery',
         data: AnswerCallbackQuery,
@@ -164,4 +182,8 @@ type AnswerCallbackQuery = {
     show_alert?: boolean
     url?: string
     cache_time?: number
+}
+type GetChatMember = {
+    chat_id: number
+    user_id: number
 }

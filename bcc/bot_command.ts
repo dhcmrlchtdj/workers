@@ -107,7 +107,10 @@ actions.set('/list', async (_arg: string, msg: Message) => {
 actions.set('/update', async (_arg: string, msg: Message) => {
     const replied = msg.reply_to_message
     if (!replied) return
-    if (!telegram.sentByMe(replied)) return
+
+    if (msg.chat.type !== 'channel') {
+        if (!telegram.sentByMe(replied)) return
+    }
 
     const chat_id = msg.chat.id
     const tagList = await getTagList(chat_id)
@@ -119,6 +122,8 @@ actions.set('/update', async (_arg: string, msg: Message) => {
 })
 
 export const execute = async (cmd: string, arg: string, msg: Message) => {
+    const isAdmin = await telegram.fromAdmin(msg)
+    if (!isAdmin) return
     const act = actions.get(cmd)
     if (act !== undefined) {
         await act(arg, msg)
