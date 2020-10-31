@@ -114,6 +114,8 @@ actions.set('/update', async (_arg: string, msg: Message) => {
 
     const chat_id = msg.chat.id
     const tagList = await getTagList(chat_id)
+    if (msg.text === tagList) return
+
     await telegram.send('editMessageText', {
         chat_id,
         message_id: replied.message_id,
