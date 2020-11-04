@@ -5,11 +5,11 @@
         "lib": ["ESNext", "WebWorker"],
         "types": ["@cloudflare/workers-types"],
 
-        "removeComments": true,
+        "inlineSourceMap": false,
         "sourceMap": false,
-        "importHelpers": false,
         "declaration": false,
-        "noEmitOnError": false,
+        "importHelpers": false,
+        "removeComments": true,
         "moduleResolution": "node",
 
         "noFallthroughCasesInSwitch": true,
@@ -17,14 +17,14 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
 
-        "strict": true,
-        "noImplicitAny": true,
-        "strictPropertyInitialization": true,
-        "strictBindCallApply": true,
         "alwaysStrict": true,
+        "noImplicitAny": true,
         "noImplicitThis": true,
+        "strict": true,
+        "strictBindCallApply": true,
         "strictFunctionTypes": true,
         "strictNullChecks": true,
+        "strictPropertyInitialization": true,
 
         "pretty": true
     }
