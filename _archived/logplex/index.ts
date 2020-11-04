@@ -41,7 +41,7 @@ router.post(`/logplex/${FBOX_LOGPLEX_WEBHOOK_PATH}`, async (event) => {
     if (logs.length > 0) {
         const sendToInflux = influx
             .write(logs)
-            .catch((err) => rollbar.err(req, err))
+            .catch((err) => rollbar.error(err, req))
         event.waitUntil(sendToInflux)
     }
     return new Response('ok', { status: 200 })
@@ -52,7 +52,7 @@ const handle = async (event: FetchEvent) => {
         const resp = await router.route(event)
         return resp
     } catch (err) {
-        event.waitUntil(rollbar.err(event.request, err))
+        event.waitUntil(rollbar.error(err, event.request))
         const msg = `${err}\n${err.stack}`
         return new Response(msg, { status: 200 })
     }

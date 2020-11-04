@@ -11,8 +11,7 @@ export class Rollbar {
         this.token = token
         this.project = project
     }
-    private async send(request: Request, body: Record<string, unknown>) {
-        const url = new URL(request.url)
+    private async send(body: Record<string, unknown>) {
         const resp = await fetch('https://api.rollbar.com/api/1/item/', {
             method: 'POST',
             body: JSON.stringify({
@@ -23,33 +22,18 @@ export class Rollbar {
                     platform: 'cloudflare-worker',
                     language: 'javascript',
                     uuid: UUIDv4(),
-                    request: {
-                        url: `${url.protocol}//${url.hostname}${url.pathname}`,
-                        method: request.method,
-                        query_string: url.search,
-                        headers: (() => {
-                            const h: Record<string, string> = {}
-                            for (let [key, val] of request.headers.entries()) {
-                                h[key] = val
-                            }
-                            return h
-                        })(),
-                        user_ip: request.headers.get('CF-Connecting-IP'),
-                    },
+                    level: 'error',
                     ...body,
                 },
             }),
         })
         return resp
     }
-
-    err(request: Request, err: Error, metadata?: Record<string, unknown>) {
-        return this.send(request, {
-            level: 'error',
+    error(err: Error, request?: Request): Promise<Response> {
+        const body = {
             title: `${err.name}: ${err.message}`,
             body: {
                 trace: {
-                    ...metadata,
                     project: this.project,
                     exception: {
                         class: err.name,
@@ -58,7 +42,25 @@ export class Rollbar {
                     frames: parseError(err),
                 },
             },
-        })
+            request: undefined as unknown,
+        }
+        if (request) {
+            const url = new URL(request.url)
+            body.request = {
+                url: `${url.protocol}//${url.hostname}${url.pathname}`,
+                method: request.method,
+                query_string: url.search,
+                headers: (() => {
+                    const h: Record<string, string> = {}
+                    for (let [key, val] of request.headers.entries()) {
+                        h[key] = val
+                    }
+                    return h
+                })(),
+                user_ip: request.headers.get('CF-Connecting-IP'),
+            }
+        }
+        return this.send(body)
     }
 }
 

@@ -22,7 +22,7 @@ const handle = async (event: FetchEvent) => {
         const resp = await router.route(event)
         return resp
     } catch (err) {
-        event.waitUntil(rollbar.err(event.request, err))
+        event.waitUntil(rollbar.error(err, event.request))
         const msg = `${err}\n${err.stack}`
         return new Response(msg, { status: 200 })
     }
