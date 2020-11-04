@@ -44,10 +44,10 @@ jobs:
               working-directory: ./rollbar
               run: |
                   pnpm add @cloudflare/wrangler
-                  echo "$TELEGRAM_BOT_TOKEN" | pnpx wrangler secret put 'TELEGRAM_BOT_TOKEN'
-                  echo "$MY_TELEGRAM_CHAT_ID" | pnpx wrangler secret put 'MY_TELEGRAM_CHAT_ID'
+                  echo "$ROLLBAR_TG_BOT_TOKEN" | pnpx wrangler secret put 'ROLLBAR_TG_BOT_TOKEN'
+                  echo "$ROLLBAR_TG_CHAT_ID" | pnpx wrangler secret put 'ROLLBAR_TG_CHAT_ID'
                   pnpx wrangler publish
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-                  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-                  MY_TELEGRAM_CHAT_ID: ${{ secrets.MY_TELEGRAM_CHAT_ID }}
+                  ROLLBAR_TG_BOT_TOKEN: ${{ secrets.ROLLBAR_TG_BOT_TOKEN }}
+                  ROLLBAR_TG_CHAT_ID: ${{ secrets.ROLLBAR_TG_CHAT_ID }}
