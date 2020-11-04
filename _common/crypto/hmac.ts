@@ -2,8 +2,8 @@ import * as uint8 from './uint8_array'
 import * as buffer from './array_buffer'
 
 export class Hmac {
-    key: PromiseLike<CryptoKey>
-    data: Uint8Array[]
+    private key: PromiseLike<CryptoKey>
+    private data: Uint8Array[]
     constructor(
         algorithm: 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512',
         key: string | Uint8Array | ArrayBuffer,
@@ -51,7 +51,6 @@ export class Hmac {
     }
 }
 
-export const createHmac = (
-    algorithm: 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512',
-    key: string | Uint8Array | ArrayBuffer,
-) => new Hmac(algorithm, key)
+type params = ConstructorParameters<typeof Hmac>
+export const createHmac = (algorithm: params[0], key: params[1]) =>
+    new Hmac(algorithm, key)

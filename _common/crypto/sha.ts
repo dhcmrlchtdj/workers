@@ -4,7 +4,9 @@ import * as buffer from './array_buffer'
 export class Hash {
     private data: Uint8Array[]
     private algorithm: string
-    constructor(algorithm: 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512') {
+    constructor(
+        algorithm: 'MD5' | 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512',
+    ) {
         this.data = []
         this.algorithm = algorithm
     }
@@ -38,6 +40,5 @@ export class Hash {
     }
 }
 
-export const createHash = (
-    algorithm: 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512',
-) => new Hash(algorithm)
+type params = ConstructorParameters<typeof Hash>
+export const createHash = (algorithm: params[0]) => new Hash(algorithm)
