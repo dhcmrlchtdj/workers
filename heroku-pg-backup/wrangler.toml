@@ -4,3 +4,6 @@ account_id = "d36f6909d7981a482a32e5690c07bf87"
 type = "javascript"
 
 name = "heroku-pg-backup"
+
+[triggers]
+crons = ["0 10 * * *"]
