@@ -6,4 +6,4 @@ type = "javascript"
 name = "heroku-pg-backup"
 
 [triggers]
-crons = ["0 10 * * *"]
+crons = ["30 0 * * *"]
