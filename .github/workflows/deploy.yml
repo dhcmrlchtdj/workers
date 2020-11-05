@@ -19,7 +19,7 @@ jobs:
                   key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
                   restore-keys: |
                       ${{ runner.os }}-pnpm-
-            - run: npm i -g pnpm@5.9
+            - run: npm i -g pnpm@5.10
             - run: pnpm install
             - run: make all
             - name: bcc
@@ -51,3 +51,22 @@ jobs:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
                   ROLLBAR_TG_BOT_TOKEN: ${{ secrets.ROLLBAR_TG_BOT_TOKEN }}
                   ROLLBAR_TG_CHAT_ID: ${{ secrets.ROLLBAR_TG_CHAT_ID }}
+            - name: heroku-pg-backup
+              working-directory: ./heroku-pg-backup
+              run: |
+                  pnpm add @cloudflare/wrangler
+                  echo "$ROLLBAR_KEY" | pnpx wrangler secret put 'ROLLBAR_KEY'
+                  echo "$PG_BACKUP_HEROKU_APP" | pnpx wrangler secret put 'PG_BACKUP_HEROKU_APP'
+                  echo "$PG_BACKUP_HEROKU_TOKEN" | pnpx wrangler secret put 'PG_BACKUP_HEROKU_TOKEN'
+                  echo "$PG_BACKUP_B2_KEY_ID" | pnpx wrangler secret put 'PG_BACKUP_B2_KEY_ID'
+                  echo "$PG_BACKUP_B2_KEY" | pnpx wrangler secret put 'PG_BACKUP_B2_KEY'
+                  echo "$PG_BACKUP_B2_BUCKET_ID" | pnpx wrangler secret put 'PG_BACKUP_B2_BUCKET_ID'
+                  pnpx wrangler publish
+              env:
+                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+                  ROLLBAR_KEY: ${{ secrets.ROLLBAR_KEY }}
+                  PG_BACKUP_HEROKU_APP: ${{ secrets.PG_BACKUP_HEROKU_APP }}
+                  PG_BACKUP_HEROKU_TOKEN: ${{ secrets.PG_BACKUP_HEROKU_TOKEN }}
+                  PG_BACKUP_B2_KEY_ID: ${{ secrets.PG_BACKUP_B2_KEY_ID }}
+                  PG_BACKUP_B2_KEY: ${{ secrets.PG_BACKUP_B2_KEY }}
+                  PG_BACKUP_B2_BUCKET_ID: ${{ secrets.PG_BACKUP_B2_BUCKET_ID }}
