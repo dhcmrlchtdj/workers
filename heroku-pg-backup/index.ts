@@ -65,14 +65,14 @@ async function fetchBackup(): Promise<{
     )
     const created_at = last.created_at
         .replace(' +0000', '')
-        .replace(/[-:]/g, '')
         .replace(' ', '_')
+        .replace(/:/g, '')
 
     const resp = await fetch(download.url)
     await checkResp(resp)
     const content = await resp.arrayBuffer()
 
-    return { content, name: `${last.num}-${created_at}` }
+    return { content, name: `${created_at}_rev${last.num}.dump` }
 }
 
 async function uploadToB2(file: { content: ArrayBuffer; name: string }) {
