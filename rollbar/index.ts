@@ -19,7 +19,7 @@ async function handle(request: Request) {
             await dispatch(payload)
         } catch (_) {}
     }
-    return new Response(null, { status: 204 })
+    return new Response('ok', { status: 200 })
 }
 
 async function dispatch(payload: RollbarPayload) {
