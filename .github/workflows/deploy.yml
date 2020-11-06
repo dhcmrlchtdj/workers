@@ -51,6 +51,13 @@ jobs:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
                   ROLLBAR_TG_BOT_TOKEN: ${{ secrets.ROLLBAR_TG_BOT_TOKEN }}
                   ROLLBAR_TG_CHAT_ID: ${{ secrets.ROLLBAR_TG_CHAT_ID }}
+            - name: feedbox
+              working-directory: ./feedbox
+              run: |
+                  pnpm add @cloudflare/wrangler
+                  pnpx wrangler publish
+              env:
+                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
             - name: heroku-pg-backup
               working-directory: ./heroku-pg-backup
               run: |

@@ -9,10 +9,11 @@ declare const ROLLBAR_TG_CHAT_ID: string
 const telegram = new TelegramClient(ROLLBAR_TG_BOT_TOKEN)
 
 addEventListener('fetch', (event) => {
-    event.respondWith(handle(event.request))
+    event.respondWith(handle(event))
 })
 
-async function handle(request: Request) {
+async function handle(event: FetchEvent) {
+    const request = event.request
     if (request.method.toUpperCase() === 'POST') {
         try {
             const payload = await request.json()
