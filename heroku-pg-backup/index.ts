@@ -32,10 +32,7 @@ async function backup(_event: ScheduledEvent): Promise<void> {
     await uploadToB2(file)
 }
 
-async function fetchBackup(): Promise<{
-    content: ArrayBuffer
-    name: string
-} | null> {
+async function fetchBackup(): Promise<file | null> {
     // https://github.com/heroku/cli/blob/v7.47.0/packages/pg-v5/commands/backups/url.js
     const herokuFetch = async (method: 'GET' | 'POST', url: string) => {
         const resp = await fetch(url, {
@@ -72,10 +69,13 @@ async function fetchBackup(): Promise<{
     await checkResp(resp)
     const content = await resp.arrayBuffer()
 
-    return { content, name: `${created_at}_rev${last.num}.dump` }
+    return {
+        content,
+        name: `heroku-pg-backup/${created_at}_rev${last.num}.dump`,
+    }
 }
 
-async function uploadToB2(file: { content: ArrayBuffer; name: string }) {
+async function uploadToB2(file: file) {
     let resp: Response
 
     const ba = encode(PG_BACKUP_B2_KEY_ID + ':' + PG_BACKUP_B2_KEY)
@@ -125,6 +125,11 @@ async function checkResp(resp: Response) {
 }
 
 ///
+
+type file = {
+    content: ArrayBuffer
+    name: string
+}
 
 type HerokuBackup = {
     uuid: string
