@@ -2,6 +2,8 @@
 // https://docs.fauna.com/fauna/current/start/fql_for_sql_users.html
 // https://dashboard.fauna.com/webshell/@db/kv
 
+import { check } from './check_response'
+
 export class FaunaClient {
     private auth: string
     constructor(token: string) {
@@ -18,12 +20,9 @@ export class FaunaClient {
             },
             body,
         })
-        if (resp.ok) {
-            const json = await resp.json()
-            return json.resource
-        } else {
-            throw new Error(resp.statusText)
-        }
+        await check(resp)
+        const json = await resp.json()
+        return json.resource
     }
     async execute<T>(func: string, ...args: unknown[]): Promise<T> {
         return this.query<T>(

@@ -1,4 +1,5 @@
 import { encode } from './base64'
+import {check} from './check_response'
 
 export type PGArray<T> = [
     {
@@ -25,12 +26,8 @@ export class Database {
             },
             body: JSON.stringify({ sql, args }),
         })
-        if (resp.status === 200) {
-            return resp
-        } else {
-            const text = await resp.text()
-            throw new Error(resp.statusText + '\n' + text)
-        }
+        await check(resp)
+        return resp
     }
 
     async query<T>(sql: string, ...args: unknown[]): Promise<T[]> {

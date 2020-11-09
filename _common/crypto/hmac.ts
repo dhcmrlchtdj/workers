@@ -1,7 +1,7 @@
 import * as uint8 from './uint8_array'
 import * as buffer from './array_buffer'
 
-export class Hmac {
+export class HMAC {
     private key: PromiseLike<CryptoKey>
     private data: Uint8Array[]
     constructor(
@@ -21,9 +21,9 @@ export class Hmac {
         )
     }
 
-    update(data: Uint8Array | ArrayBuffer): void
-    update(data: string, encoding?: 'utf8'): void
-    update(data: string | Uint8Array | ArrayBuffer, _encoding?: 'utf8'): void {
+    update(data: Uint8Array | ArrayBuffer): HMAC
+    update(data: string, encoding?: 'utf8'): HMAC
+    update(data: string | Uint8Array | ArrayBuffer, _encoding?: 'utf8'): HMAC {
         if (typeof data === 'string') {
             this.data.push(uint8.fromStr(data))
         } else if (data instanceof ArrayBuffer) {
@@ -31,6 +31,7 @@ export class Hmac {
         } else {
             this.data.push(data)
         }
+        return this
     }
 
     async digest(): Promise<ArrayBuffer>
@@ -51,6 +52,6 @@ export class Hmac {
     }
 }
 
-type params = ConstructorParameters<typeof Hmac>
+type params = ConstructorParameters<typeof HMAC>
 export const createHmac = (algorithm: params[0], key: params[1]) =>
-    new Hmac(algorithm, key)
+    new HMAC(algorithm, key)

@@ -41,8 +41,8 @@ async function verifySignature(
     signature: string | null,
 ): Promise<boolean> {
     if (signature === null) return false
-    const hmac = createHmac('SHA-256', secret)
-    hmac.update(message)
-    const sig = await hmac.digest('hex')
+    const sig = await createHmac('SHA-256', secret)
+        .update(message)
+        .digest('hex')
     return sig === signature
 }

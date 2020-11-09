@@ -1,6 +1,7 @@
 import { Rollbar } from '../_common/rollbar'
 import { encode } from '../_common/base64'
-import { createHash } from '../_common/crypto'
+import { BackBlaze } from '../_common/backblaze'
+import { check } from '../_common/check_response'
 
 // from worker environment
 declare const ROLLBAR_KEY: string
@@ -26,13 +27,18 @@ async function handle(event: ScheduledEvent) {
 
 ///
 
+const b2 = new BackBlaze(PG_BACKUP_B2_KEY_ID, PG_BACKUP_B2_KEY)
+
 async function backup(_event: ScheduledEvent): Promise<void> {
     const file = await fetchBackup()
     if (file === null) return
-    await uploadToB2(file)
+    await b2.upload(PG_BACKUP_B2_BUCKET_ID, file.name, file.content)
 }
 
-async function fetchBackup(): Promise<file | null> {
+async function fetchBackup(): Promise<{
+    content: ArrayBuffer
+    name: string
+} | null> {
     // https://github.com/heroku/cli/blob/v7.47.0/packages/pg-v5/commands/backups/url.js
     const herokuFetch = async (method: 'GET' | 'POST', url: string) => {
         const resp = await fetch(url, {
@@ -42,7 +48,7 @@ async function fetchBackup(): Promise<file | null> {
                 authorization: 'Basic ' + encode(':' + PG_BACKUP_HEROKU_TOKEN),
             },
         })
-        await checkResp(resp)
+        await check(resp)
         return resp.json()
     }
 
@@ -66,7 +72,7 @@ async function fetchBackup(): Promise<file | null> {
         .replace(/:/g, '')
 
     const resp = await fetch(download.url)
-    await checkResp(resp)
+    await check(resp)
     const content = await resp.arrayBuffer()
 
     return {
@@ -75,61 +81,7 @@ async function fetchBackup(): Promise<file | null> {
     }
 }
 
-async function uploadToB2(file: file) {
-    let resp: Response
-
-    const ba = encode(PG_BACKUP_B2_KEY_ID + ':' + PG_BACKUP_B2_KEY)
-    resp = await fetch(
-        'https://api.backblazeb2.com/b2api/v2/b2_authorize_account',
-        {
-            headers: {
-                authorization: 'Basic ' + ba,
-            },
-        },
-    )
-    await checkResp(resp)
-    const b2AuthorizeAccount: B2AuthorizeAccount = await resp.json()
-
-    resp = await fetch(
-        b2AuthorizeAccount.apiUrl + '/b2api/v2/b2_get_upload_url',
-        {
-            method: 'POST',
-            headers: { authorization: b2AuthorizeAccount.authorizationToken },
-            body: JSON.stringify({ bucketId: PG_BACKUP_B2_BUCKET_ID }),
-        },
-    )
-    await checkResp(resp)
-    const b2GetUploadUrl: B2GetUploadUrl = await resp.json()
-
-    const hash = createHash('SHA-1')
-    hash.update(file.content)
-    resp = await fetch(b2GetUploadUrl.uploadUrl, {
-        method: 'POST',
-        headers: {
-            Authorization: b2GetUploadUrl.authorizationToken,
-            'Content-Type': 'application/octet-stream',
-            'Content-Length': String(file.content.byteLength),
-            'X-Bz-File-Name': file.name,
-            'X-Bz-Content-Sha1': await hash.digest('hex'),
-        },
-        body: file.content,
-    })
-    await checkResp(resp)
-}
-
-async function checkResp(resp: Response) {
-    if (resp.status !== 200) {
-        const text = await resp.text()
-        throw new Error(resp.statusText + '\n' + text)
-    }
-}
-
 ///
-
-type file = {
-    content: ArrayBuffer
-    name: string
-}
 
 type HerokuBackup = {
     uuid: string
@@ -161,25 +113,4 @@ type HerokuBackup = {
 type HerokuDownload = {
     expires_at: string
     url: string
-}
-
-type B2AuthorizeAccount = {
-    absoluteMinimumPartSize: number
-    recommendedPartSize: number
-    allowed: {
-        capabilities: string[]
-        bucketId: string | null
-        bucketName: string | null
-        namePrefix: null
-    }
-    accountId: string
-    apiUrl: string
-    authorizationToken: string
-    downloadUrl: string
-}
-
-type B2GetUploadUrl = {
-    authorizationToken: string
-    bucketId: string
-    uploadUrl: string
 }
