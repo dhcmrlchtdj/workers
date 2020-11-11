@@ -10,7 +10,7 @@ declare const PG_BACKUP_HEROKU_TOKEN: string
 declare const PG_BACKUP_B2_KEY_ID: string
 declare const PG_BACKUP_B2_KEY: string
 declare const PG_BACKUP_B2_REGION: string
-declare const PG_BACKUP_B2_BUCKET_ID: string
+declare const PG_BACKUP_B2_BUCKET: string
 
 const rollbar = new Rollbar(ROLLBAR_KEY, 'heroku-pg-backup')
 
@@ -38,7 +38,7 @@ async function backup(_event: ScheduledEvent): Promise<void> {
     const file = await fetchBackup()
     if (file === null) return
     await b2.putObject(
-        PG_BACKUP_B2_BUCKET_ID,
+        PG_BACKUP_B2_BUCKET,
         file.name,
         file.content,
         'application/octet-stream',

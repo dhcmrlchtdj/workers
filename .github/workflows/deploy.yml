@@ -68,7 +68,7 @@ jobs:
                   echo "$PG_BACKUP_B2_KEY_ID" | pnpx wrangler secret put 'PG_BACKUP_B2_KEY_ID'
                   echo "$PG_BACKUP_B2_KEY" | pnpx wrangler secret put 'PG_BACKUP_B2_KEY'
                   echo "$PG_BACKUP_B2_REGION" | pnpx wrangler secret put 'PG_BACKUP_B2_REGION'
-                  echo "$PG_BACKUP_B2_BUCKET_ID" | pnpx wrangler secret put 'PG_BACKUP_B2_BUCKET_ID'
+                  echo "$PG_BACKUP_B2_BUCKET" | pnpx wrangler secret put 'PG_BACKUP_B2_BUCKET'
                   pnpx wrangler publish
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -78,4 +78,4 @@ jobs:
                   PG_BACKUP_B2_KEY_ID: ${{ secrets.PG_BACKUP_B2_KEY_ID }}
                   PG_BACKUP_B2_KEY: ${{ secrets.PG_BACKUP_B2_KEY }}
                   PG_BACKUP_B2_REGION: ${{ secrets.PG_BACKUP_B2_REGION }}
-                  PG_BACKUP_B2_BUCKET_ID: ${{ secrets.PG_BACKUP_B2_BUCKET_ID }}
+                  PG_BACKUP_B2_BUCKET: ${{ secrets.PG_BACKUP_B2_BUCKET }}
