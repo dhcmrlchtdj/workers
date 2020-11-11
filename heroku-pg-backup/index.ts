@@ -37,7 +37,12 @@ const b2 = new BackBlaze(
 async function backup(_event: ScheduledEvent): Promise<void> {
     const file = await fetchBackup()
     if (file === null) return
-    await b2.putObject(PG_BACKUP_B2_BUCKET_ID, file.name, file.content)
+    await b2.putObject(
+        PG_BACKUP_B2_BUCKET_ID,
+        file.name,
+        file.content,
+        'application/octet-stream',
+    )
 }
 
 async function fetchBackup(): Promise<{

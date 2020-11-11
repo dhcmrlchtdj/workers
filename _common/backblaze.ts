@@ -6,8 +6,6 @@ import { createHash, createHMAC } from './crypto'
 import { check } from './check_response'
 import { format } from './format-date'
 
-export const mimeOctetStream = 'application/octet-stream'
-
 // https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L191
 const UNSIGNABLE_HEADERS = new Set([
     'authorization',
@@ -34,12 +32,12 @@ export class BackBlaze {
         bucket: string,
         filename: string,
         file: ArrayBuffer,
-        contentType: string = mimeOctetStream,
+        contentType: string,
     ) {
         const host = `${bucket}.s3.${this.region}.backblazeb2.com`
         const url = `https://${host}/${filename}`
 
-        const headers = await this.signV4(
+        const headers = await this.signAWS4(
             'PUT',
             '/' + filename,
             {
@@ -58,71 +56,83 @@ export class BackBlaze {
         return resp
     }
 
-    private async signV4(
+    private async signAWS4(
         method: string,
         uri: string,
         headers: Record<string, string>,
         body: ArrayBuffer,
     ): Promise<Record<string, string>> {
-        const date = new Date()
-        const yyyymmdd = format(date, 'YYYYMMDD', true)
+        const encodedUri = uriEncode(uri)
+
+        const d = new Date()
+        const date = format(d, 'YYYYMMDD', true)
+        const datetime = format(d, 'YYYYMMDDThhmmssZ', true)
+
+        const service = `${date}/${this.region}/s3/aws4_request`
+
+        const hashedPayload = await HASH_SHA256_HEX(body)
+
+        headers['x-amz-date'] = datetime
+        headers['x-amz-content-sha256'] = hashedPayload
+
+        const headerKeys = this.getSignedHeaderKeys(headers)
 
         const canonicalRequest = await this.getCanonicalRequest(
             method.toUpperCase(),
-            uri,
+            encodedUri,
+            headerKeys,
             headers,
-            body,
+            hashedPayload,
         )
         const stringToSign = [
             'AWS4-HMAC-SHA256',
-            format(date, 'YYYYMMDDThhmmssZ', true),
-            `${yyyymmdd}/${this.region}/s3/aws4_request`,
+            datetime,
+            service,
             canonicalRequest,
         ].join('\n')
 
-        const signingKey = await this.getSigningKey(yyyymmdd)
+        const signingKey = await this.getSigningKey(date)
 
         const signature = await HMAC_SHA256_HEX(signingKey, stringToSign)
-        const credential = `${this.accessKeyId}/${yyyymmdd}/${this.region}/s3/aws4_request`
-        const signedHeaders = this.getSignedHeaders(headers)
+        const credential = `${this.accessKeyId}/${service}`
+        const signedHeaders = headerKeys.join(';')
 
         const auth = `AWS4-HMAC-SHA256 Credential=${credential},SignedHeaders=${signedHeaders},Signature=${signature}`
-
         headers['authorization'] = auth
-        headers['date'] = date.toUTCString()
+
         return headers
     }
 
-    private async getSigningKey(yyyymmdd: string): Promise<ArrayBuffer> {
+    private async getSigningKey(date: string): Promise<ArrayBuffer> {
         const key = `AWS4${this.secretAccessKey}`
-        const dateKey = await HMAC_SHA256(key, yyyymmdd)
+        const dateKey = await HMAC_SHA256(key, date)
         const regionKey = await HMAC_SHA256(dateKey, this.region)
         const serviceKey = await HMAC_SHA256(regionKey, 's3')
         const signingKey = await HMAC_SHA256(serviceKey, 'aws4_request')
         return signingKey
     }
 
-    private getSignedHeaders(headers: Record<string, string>): string {
+    private getSignedHeaderKeys(headers: Record<string, string>): string[] {
         return Object.keys(headers)
             .map((h) => h.toLowerCase())
             .filter((h) => !UNSIGNABLE_HEADERS.has(h))
             .sort()
-            .join(';')
     }
 
     private async getCanonicalRequest(
         method: string,
         uri: string,
+        headerKeys: string[],
         headers: Record<string, string>,
-        body: ArrayBuffer,
+        hashedPayload: string,
     ): Promise<string> {
         const canonicalQueryString = ''
-        const canonicalHeaders = Object.entries(headers)
-            .map(([key, value]) => `${key.toLowerCase()}:${value.trim()}`)
-            .sort()
-            .join('\n')
-        const signedHeaders = this.getSignedHeaders(headers)
-        const hashedPayload = await HASH_SHA256_HEX(body)
+        // https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L155
+        const canonicalHeaders =
+            headerKeys
+                .map((k) => `${k}:${headers[k].trim().replace(/\s+/g, ' ')}`)
+                .join('\n') + '\n'
+        const signedHeaders = headerKeys.join(';')
         const canonicalRequest = [
             method,
             uri,
@@ -137,6 +147,18 @@ export class BackBlaze {
 }
 
 ///
+
+// https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/util.js#L51
+// https://github.com/mhart/aws4fetch/blob/v1.0.13/src/main.js#L367
+const uriEncode = (input: string): string => {
+    let output = encodeURIComponent(input)
+        .replace(/%2f/gi, '/')
+        .replace(
+            /[!'()*]/g,
+            (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase(),
+        )
+    return output
+}
 
 async function HMAC_SHA256(
     key: string | ArrayBuffer,
