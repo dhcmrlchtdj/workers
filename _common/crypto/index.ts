@@ -1,2 +1,2 @@
 export * from './hmac'
-export * from './sha'
+export * from './hash'

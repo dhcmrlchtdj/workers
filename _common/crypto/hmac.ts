@@ -12,10 +12,7 @@ export class HMAC {
         this.key = crypto.subtle.importKey(
             'raw',
             typeof key === 'string' ? uint8.fromStr(key) : key,
-            {
-                name: 'HMAC',
-                hash: algorithm,
-            },
+            { name: 'HMAC', hash: algorithm },
             false,
             ['sign'],
         )
