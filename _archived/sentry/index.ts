@@ -1,5 +1,5 @@
 import { TelegramClient } from '../../_common/telegram'
-import { createHmac } from '../../_common/crypto'
+import { createHMAC } from '../../_common/crypto'
 
 // from worker environment
 declare const SENTRY_HOOK_SECRET: string
@@ -41,7 +41,7 @@ async function verifySignature(
     signature: string | null,
 ): Promise<boolean> {
     if (signature === null) return false
-    const sig = await createHmac('SHA-256', secret)
+    const sig = await createHMAC('SHA-256', secret)
         .update(message)
         .digest('hex')
     return sig === signature

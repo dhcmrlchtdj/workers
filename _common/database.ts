@@ -1,5 +1,5 @@
 import { encode } from './base64'
-import {check} from './check_response'
+import { check } from './check_response'
 
 export type PGArray<T> = [
     {

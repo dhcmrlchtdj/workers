@@ -67,6 +67,7 @@ jobs:
                   echo "$PG_BACKUP_HEROKU_TOKEN" | pnpx wrangler secret put 'PG_BACKUP_HEROKU_TOKEN'
                   echo "$PG_BACKUP_B2_KEY_ID" | pnpx wrangler secret put 'PG_BACKUP_B2_KEY_ID'
                   echo "$PG_BACKUP_B2_KEY" | pnpx wrangler secret put 'PG_BACKUP_B2_KEY'
+                  echo "$PG_BACKUP_B2_REGION" | pnpx wrangler secret put 'PG_BACKUP_B2_REGION'
                   echo "$PG_BACKUP_B2_BUCKET_ID" | pnpx wrangler secret put 'PG_BACKUP_B2_BUCKET_ID'
                   pnpx wrangler publish
               env:
@@ -76,4 +77,5 @@ jobs:
                   PG_BACKUP_HEROKU_TOKEN: ${{ secrets.PG_BACKUP_HEROKU_TOKEN }}
                   PG_BACKUP_B2_KEY_ID: ${{ secrets.PG_BACKUP_B2_KEY_ID }}
                   PG_BACKUP_B2_KEY: ${{ secrets.PG_BACKUP_B2_KEY }}
+                  PG_BACKUP_B2_REGION: ${{ secrets.PG_BACKUP_B2_REGION }}
                   PG_BACKUP_B2_BUCKET_ID: ${{ secrets.PG_BACKUP_B2_BUCKET_ID }}

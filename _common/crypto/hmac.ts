@@ -21,9 +21,7 @@ export class HMAC {
         )
     }
 
-    update(data: Uint8Array | ArrayBuffer): HMAC
-    update(data: string, encoding?: 'utf8'): HMAC
-    update(data: string | Uint8Array | ArrayBuffer, _encoding?: 'utf8'): HMAC {
+    update(data: string | Uint8Array | ArrayBuffer): HMAC {
         if (typeof data === 'string') {
             this.data.push(uint8.fromStr(data))
         } else if (data instanceof ArrayBuffer) {
@@ -53,5 +51,5 @@ export class HMAC {
 }
 
 type params = ConstructorParameters<typeof HMAC>
-export const createHmac = (algorithm: params[0], key: params[1]) =>
+export const createHMAC = (algorithm: params[0], key: params[1]) =>
     new HMAC(algorithm, key)

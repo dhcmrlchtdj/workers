@@ -9,6 +9,7 @@ declare const PG_BACKUP_HEROKU_APP: string
 declare const PG_BACKUP_HEROKU_TOKEN: string
 declare const PG_BACKUP_B2_KEY_ID: string
 declare const PG_BACKUP_B2_KEY: string
+declare const PG_BACKUP_B2_REGION: string
 declare const PG_BACKUP_B2_BUCKET_ID: string
 
 const rollbar = new Rollbar(ROLLBAR_KEY, 'heroku-pg-backup')
@@ -27,12 +28,16 @@ async function handle(event: ScheduledEvent) {
 
 ///
 
-const b2 = new BackBlaze(PG_BACKUP_B2_KEY_ID, PG_BACKUP_B2_KEY)
+const b2 = new BackBlaze(
+    PG_BACKUP_B2_KEY_ID,
+    PG_BACKUP_B2_KEY,
+    PG_BACKUP_B2_REGION,
+)
 
 async function backup(_event: ScheduledEvent): Promise<void> {
     const file = await fetchBackup()
     if (file === null) return
-    await b2.upload(PG_BACKUP_B2_BUCKET_ID, file.name, file.content)
+    await b2.putObject(PG_BACKUP_B2_BUCKET_ID, file.name, file.content)
 }
 
 async function fetchBackup(): Promise<{
