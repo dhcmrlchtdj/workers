@@ -1,4 +1,4 @@
-import { encodeHtmlEntities, TelegramClient } from '../_common/telegram'
+import { encodeHtmlEntities, Telegram } from '../_common/telegram'
 
 // https://docs.rollbar.com/docs/webhooks
 
@@ -6,7 +6,7 @@ import { encodeHtmlEntities, TelegramClient } from '../_common/telegram'
 declare const ROLLBAR_TG_BOT_TOKEN: string
 declare const ROLLBAR_TG_CHAT_ID: string
 
-const telegram = new TelegramClient(ROLLBAR_TG_BOT_TOKEN)
+const telegram = new Telegram(ROLLBAR_TG_BOT_TOKEN)
 
 addEventListener('fetch', (event) => {
     event.respondWith(handle(event))
@@ -20,7 +20,7 @@ async function handle(event: FetchEvent) {
             await dispatch(payload)
         } catch (_) {}
     }
-    return new Response('ok', { status: 200 })
+    return new Response('ok')
 }
 
 async function dispatch(payload: RollbarPayload) {

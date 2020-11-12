@@ -75,7 +75,10 @@ export class BackBlaze {
         headers['x-amz-date'] = datetime
         headers['x-amz-content-sha256'] = hashedPayload
 
-        const headerKeys = this.getSignedHeaderKeys(headers)
+        const headerKeys = Object.keys(headers)
+            .map((h) => h.toLowerCase())
+            .filter((h) => !UNSIGNABLE_HEADERS.has(h))
+            .sort()
 
         const canonicalRequest = await this.getCanonicalRequest(
             method.toUpperCase(),
@@ -112,13 +115,6 @@ export class BackBlaze {
         return signingKey
     }
 
-    private getSignedHeaderKeys(headers: Record<string, string>): string[] {
-        return Object.keys(headers)
-            .map((h) => h.toLowerCase())
-            .filter((h) => !UNSIGNABLE_HEADERS.has(h))
-            .sort()
-    }
-
     private async getCanonicalRequest(
         method: string,
         uri: string,
@@ -141,7 +137,6 @@ export class BackBlaze {
             signedHeaders,
             hashedPayload,
         ].join('\n')
-
         return HASH_SHA256_HEX(canonicalRequest)
     }
 }
@@ -160,17 +155,11 @@ const uriEncode = (input: string): string => {
     return output
 }
 
-async function HMAC_SHA256(
-    key: string | ArrayBuffer,
-    data: string | ArrayBuffer,
-) {
+async function HMAC_SHA256(key: string | ArrayBuffer, data: string) {
     return createHMAC('SHA-256', key).update(data).digest()
 }
 
-async function HMAC_SHA256_HEX(
-    key: string | ArrayBuffer,
-    data: string | ArrayBuffer,
-) {
+async function HMAC_SHA256_HEX(key: ArrayBuffer, data: string) {
     return createHMAC('SHA-256', key).update(data).digest('hex')
 }
 

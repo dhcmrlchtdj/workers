@@ -1,4 +1,4 @@
-import { TelegramClient } from '../../_common/telegram'
+import { Telegram } from '../../_common/telegram'
 import { createHMAC } from '../../_common/crypto'
 
 // from worker environment
@@ -6,7 +6,7 @@ declare const SENTRY_HOOK_SECRET: string
 declare const TELEGRAM_BOT_TOKEN: string
 declare const MY_TELEGRAM_CHAT_ID: string
 
-const telegram = new TelegramClient(TELEGRAM_BOT_TOKEN)
+const telegram = new Telegram(TELEGRAM_BOT_TOKEN)
 
 addEventListener('fetch', (event) => {
     event.respondWith(handle(event.request))

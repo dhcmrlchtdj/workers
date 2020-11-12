@@ -11,22 +11,20 @@ declare const DB_TOKEN: string
 
 const rollbar = new Rollbar(ROLLBAR_KEY, 'bcc')
 
+addEventListener('fetch', (event) => {
+    event.respondWith(handle(event))
+})
+
 const router = new WorkerRouter().post(
     `/telegram/bcc/${BCC_WEBHOOK_PATH}`,
     (event) => webhook(event.request),
 )
 
-const handle = async (event: FetchEvent) => {
+async function handle(event: FetchEvent) {
     try {
-        const resp = await router.route(event)
-        return resp
+        await router.route(event)
     } catch (err) {
         event.waitUntil(rollbar.error(err, event.request))
-        const msg = `${err}\n${err.stack}`
-        return new Response(msg, { status: 200 })
     }
+    return new Response('ok')
 }
-
-addEventListener('fetch', (event) => {
-    event.respondWith(handle(event))
-})

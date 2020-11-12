@@ -30,8 +30,7 @@ export class HMAC {
     }
 
     async digest(): Promise<ArrayBuffer>
-    async digest(encoding: 'hex'): Promise<string>
-    async digest(encoding: 'utf8'): Promise<string>
+    async digest(encoding: 'hex' | 'utf8'): Promise<string>
     async digest(encoding?: 'hex' | 'utf8'): Promise<ArrayBuffer | string> {
         const data = uint8.concat(this.data)
         const key = await this.key

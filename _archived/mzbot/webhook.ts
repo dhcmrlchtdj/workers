@@ -1,11 +1,11 @@
 import { Update, Message, CallbackQuery } from 'telegram-typings'
-import { TelegramClient } from '../../_common/telegram'
+import { Telegram } from '../../_common/telegram'
 import { execute } from './callback_action'
 
 declare const MZBOT_BOT_TOKEN: string
 declare const MY_TELEGRAM_CHAT_ID: string
 
-const telegram = new TelegramClient(MZBOT_BOT_TOKEN)
+const telegram = new Telegram(MZBOT_BOT_TOKEN)
 
 const handleMsg = async (msg: Message | undefined) => {
     if (!msg) return

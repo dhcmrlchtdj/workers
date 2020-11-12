@@ -19,7 +19,7 @@ const handleMsg = async (msg: Message | undefined) => {
     }
 }
 
-export const webhook = async (request: Request) => {
+export const webhook = async (request: Request): Promise<Response> => {
     const payload: Update = await request.json()
     await Promise.all([
         handleMsg(payload.message),
@@ -27,5 +27,5 @@ export const webhook = async (request: Request) => {
         handleMsg(payload.channel_post),
         handleMsg(payload.edited_channel_post),
     ])
-    return new Response('ok', { status: 200 })
+    return new Response('ok')
 }

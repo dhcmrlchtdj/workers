@@ -1,9 +1,9 @@
 import { Message } from 'telegram-typings'
-import { TelegramClient } from '../../_common/telegram'
+import { Telegram } from '../../_common/telegram'
 
 declare const MZBOT_BOT_TOKEN: string
 
-const telegram = new TelegramClient(MZBOT_BOT_TOKEN)
+const telegram = new Telegram(MZBOT_BOT_TOKEN)
 
 const actions = new Map<
     string,

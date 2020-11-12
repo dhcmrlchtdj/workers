@@ -1,5 +1,5 @@
 import { Message } from 'telegram-typings'
-import { TelegramClient } from '../_common/telegram'
+import { Telegram } from '../_common/telegram'
 import { Database } from '../_common/database'
 import type { PGArray } from '../_common/database'
 
@@ -7,10 +7,7 @@ declare const BCC_BOT_TOKEN: string
 declare const DB_API: string
 declare const DB_TOKEN: string
 
-export const telegram = new TelegramClient(
-    BCC_BOT_TOKEN,
-    'blind_carbon_copy_bot',
-)
+export const telegram = new Telegram(BCC_BOT_TOKEN, 'blind_carbon_copy_bot')
 const database = new Database(DB_API, DB_TOKEN)
 const actions = new Map<string, (arg: string, msg: Message) => Promise<void>>()
 

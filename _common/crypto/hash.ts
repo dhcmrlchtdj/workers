@@ -23,8 +23,7 @@ export class Hash {
     }
 
     async digest(): Promise<ArrayBuffer>
-    async digest(encoding: 'hex'): Promise<string>
-    async digest(encoding: 'utf8'): Promise<string>
+    async digest(encoding: 'hex' | 'utf8'): Promise<string>
     async digest(encoding?: 'hex' | 'utf8'): Promise<ArrayBuffer | string> {
         const data = uint8.concat(this.data)
         const sig = await crypto.subtle.digest(this.algorithm, data)

@@ -10,7 +10,7 @@ export const encodeHtmlEntities = (raw: string): string => {
     return raw.replace(/[&<>"]/g, (matched) => pairs[matched])
 }
 
-export class TelegramClient {
+export class Telegram {
     private token: string
     private username: string | null
     constructor(token: string, username: string | null = null) {
