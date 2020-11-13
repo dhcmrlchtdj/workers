@@ -2,7 +2,10 @@
 // https://explorer.docs.rollbar.com/#operation/create-item
 // https://github.com/rollbar/rollbar.js
 // https://github.com/stacktracejs/error-stack-parser
+
 import { UUIDv4 } from './uuid'
+
+type Level = 'critical' | 'error' | 'warning' | 'info' | 'debug'
 
 export class Rollbar {
     token: string
@@ -11,8 +14,12 @@ export class Rollbar {
         this.token = token
         this.project = project
     }
-    private async send(body: Record<string, unknown>) {
-        const resp = await fetch('https://api.rollbar.com/api/1/item/', {
+
+    private send(
+        level: Level,
+        body: Record<string, unknown>,
+    ): Promise<Response> {
+        const resp = fetch('https://api.rollbar.com/api/1/item/', {
             method: 'POST',
             body: JSON.stringify({
                 access_token: this.token,
@@ -22,14 +29,15 @@ export class Rollbar {
                     platform: 'cloudflare-worker',
                     language: 'javascript',
                     uuid: UUIDv4(),
-                    level: 'error',
+                    level,
                     ...body,
                 },
             }),
         })
         return resp
     }
-    error(err: Error, request?: Request): Promise<Response> {
+
+    private log(level: Level, err: Error, req: Request | undefined) {
         const body = {
             title: `${err.name}: ${err.message}`,
             body: {
@@ -42,26 +50,37 @@ export class Rollbar {
                     frames: parseError(err),
                 },
             },
-            request: undefined as unknown,
+            request: parseRequest(req),
         }
-        if (request) {
-            const url = new URL(request.url)
-            body.request = {
-                url: `${url.protocol}//${url.hostname}${url.pathname}`,
-                method: request.method,
-                query_string: url.search,
-                headers: (() => {
-                    const h: Record<string, string> = {}
-                    for (let [key, val] of request.headers.entries()) {
-                        h[key] = val
-                    }
-                    return h
-                })(),
-                user_ip: request.headers.get('CF-Connecting-IP'),
-            }
-        }
-        return this.send(body)
+        return this.send(level, body)
     }
+
+    error(err: Error, req?: Request): Promise<Response> {
+        return this.log('error', err, req)
+    }
+
+    warn(err: Error, req?: Request): Promise<Response> {
+        return this.log('warning', err, req)
+    }
+}
+
+function parseRequest(req: Request | undefined) {
+    if (req === undefined) return undefined
+    const url = new URL(req.url)
+    const parsed = {
+        url: `${url.protocol}//${url.hostname}${url.pathname}`,
+        method: req.method,
+        headers: (() => {
+            const h: Record<string, string> = {}
+            for (let [key, val] of req.headers.entries()) {
+                h[key] = val
+            }
+            return h
+        })(),
+        query_string: url.search,
+        user_ip: req.headers.get('CF-Connecting-IP'),
+    }
+    return parsed
 }
 
 function parseError(error: Error) {
