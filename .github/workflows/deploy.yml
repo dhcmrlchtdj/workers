@@ -21,11 +21,11 @@ jobs:
                   key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
                   restore-keys: ${{ runner.os }}-pnpm-
             - run: |
-                npm install -g pnpm@5
-                pnpm add -g @cloudflare/wrangler@1.12.2
-                pnpm install
-                pnpm store prune
-                make all
+                  npm install -g pnpm@5
+                  pnpm add -g @cloudflare/wrangler@1.12.2
+                  pnpm install
+                  pnpm store prune
+                  make all
             - name: bcc
               working-directory: ./bcc
               run: |

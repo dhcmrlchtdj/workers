@@ -1,19 +1,24 @@
 {
     "compilerOptions": {
         "module": "ES6",
-        "target": "ES2019",
-        "lib": ["ESNext", "WebWorker"],
+        "target": "ES2017",
+        "lib": ["ES2017", "WebWorker"],
         "types": ["@cloudflare/workers-types"],
 
-        "inlineSourceMap": false,
         "sourceMap": false,
-        "declaration": false,
-        "importHelpers": false,
+        "inlineSourceMap": false,
+        "inlineSources": false,
         "removeComments": true,
+        "importHelpers": true,
+        "declaration": false,
+
         "moduleResolution": "node",
+        "esModuleInterop": false,
+        "resolveJsonModule": true,
 
         "noFallthroughCasesInSwitch": true,
         "noImplicitReturns": true,
+        //"noUncheckedIndexedAccess": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
 

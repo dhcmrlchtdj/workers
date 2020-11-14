@@ -1,6 +1,9 @@
-const host = 'fbox.herokuapp.com'
+addEventListener('fetch', (event) => {
+    event.respondWith(handle(event))
+})
 
-const handle = (event: FetchEvent) => {
+async function handle(event: FetchEvent) {
+    const host = 'fbox.herokuapp.com'
     const request = event.request
     const url = new URL(request.url)
     url.host = host
@@ -13,7 +16,3 @@ const handle = (event: FetchEvent) => {
     req.headers.set('host', host)
     return fetch(req)
 }
-
-addEventListener('fetch', (event) => {
-    event.respondWith(handle(event))
-})
