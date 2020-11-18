@@ -55,6 +55,7 @@ jobs:
                   wrangler publish
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+                  ROLLBAR_KEY: ${{ secrets.ROLLBAR_KEY }}
                   BACKUP_PASS_BEANCOUNT: ${{ secrets.BACKUP_PASS_BEANCOUNT }}
                   BACKUP_B2_KEY_ID: ${{ secrets.BACKUP_B2_KEY_ID }}
                   BACKUP_B2_KEY: ${{ secrets.BACKUP_B2_KEY }}
