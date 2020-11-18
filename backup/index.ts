@@ -2,6 +2,7 @@ import { Rollbar } from '../_common/rollbar'
 import { BackBlaze } from '../_common/backblaze'
 import { format } from '../_common/format-date'
 import { decode } from '../_common/base64'
+import { fromStr } from '../_common/crypto/array_buffer'
 
 // from worker environment
 declare const ROLLBAR_KEY: string
@@ -31,13 +32,18 @@ async function handle(event: FetchEvent) {
 async function backup(event: FetchEvent): Promise<void> {
     const req = event.request
     if (req.method.toUpperCase() !== 'POST')
-        throw new Error('method not allowed')
+        throw new Error('405 Method Not Allowed')
+    const ct = req.headers.get('content-type')
+    if (!ct || !ct.startsWith('multipart/form-data; boundary'))
+        throw new Error('415 Unsupported Media Type')
     const [user, pass] = getBA(req.headers.get('authorization'))
 
     if (user === 'beancount' && pass === BACKUP_PASS_BEANCOUNT) {
         const body = await req.formData()
-        const file = body.get('file') as File
-        const buf = await file.arrayBuffer()
+        // XXX: cloudflare BUG, it should be File
+        const file = body.get('file') as string
+        if (typeof file !== 'string') throw new Error('expect file')
+        const buf = fromStr(file)
         const date = format(new Date(), 'YYYYMMDD_hhmmss', true)
         await upload(
             BACKUP_B2_KEY_ID,
