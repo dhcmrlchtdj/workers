@@ -43,6 +43,23 @@ jobs:
                   DB_API: ${{ secrets.DB_API }}
                   DB_TOKEN: ${{ secrets.DB_TOKEN }}
                   ROLLBAR_KEY: ${{ secrets.ROLLBAR_KEY }}
+            - name: backup
+              working-directory: ./backup
+              run: |
+                  echo "$ROLLBAR_KEY" | wrangler secret put 'ROLLBAR_KEY'
+                  echo "$BACKUP_PASS_BEANCOUNT" | wrangler secret put 'BACKUP_PASS_BEANCOUNT'
+                  echo "$BACKUP_B2_KEY_ID" | wrangler secret put 'BACKUP_B2_KEY_ID'
+                  echo "$BACKUP_B2_KEY" | wrangler secret put 'BACKUP_B2_KEY'
+                  echo "$BACKUP_B2_REGION" | wrangler secret put 'BACKUP_B2_REGION'
+                  echo "$BACKUP_B2_BUCKET" | wrangler secret put 'BACKUP_B2_BUCKET'
+                  wrangler publish
+              env:
+                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+                  BACKUP_PASS_BEANCOUNT: ${{ secrets.BACKUP_PASS_BEANCOUNT }}
+                  BACKUP_B2_KEY_ID: ${{ secrets.BACKUP_B2_KEY_ID }}
+                  BACKUP_B2_KEY: ${{ secrets.BACKUP_B2_KEY }}
+                  BACKUP_B2_REGION: ${{ secrets.BACKUP_B2_REGION }}
+                  BACKUP_B2_BUCKET: ${{ secrets.BACKUP_B2_BUCKET }}
             - name: rollbar
               working-directory: ./rollbar
               run: |
