@@ -5,14 +5,14 @@ import { check } from '../_common/check_response'
 
 // from worker environment
 declare const ROLLBAR_KEY: string
-declare const PG_BACKUP_HEROKU_APP: string
-declare const PG_BACKUP_HEROKU_TOKEN: string
-declare const PG_BACKUP_B2_KEY_ID: string
-declare const PG_BACKUP_B2_KEY: string
-declare const PG_BACKUP_B2_REGION: string
-declare const PG_BACKUP_B2_BUCKET: string
+declare const BACKUP_B2_KEY_ID: string
+declare const BACKUP_B2_KEY: string
+declare const BACKUP_B2_REGION: string
+declare const BACKUP_B2_BUCKET: string
+declare const BACKUP_HEROKU_PG_APP: string
+declare const BACKUP_HEROKU_PG_TOKEN: string
 
-const rollbar = new Rollbar(ROLLBAR_KEY, 'heroku-pg-backup')
+const rollbar = new Rollbar(ROLLBAR_KEY, 'backup-heroku-pg')
 
 addEventListener('scheduled', (event) => {
     event.waitUntil(handle(event))
@@ -28,17 +28,13 @@ async function handle(event: ScheduledEvent) {
 
 ///
 
-const b2 = new BackBlaze(
-    PG_BACKUP_B2_KEY_ID,
-    PG_BACKUP_B2_KEY,
-    PG_BACKUP_B2_REGION,
-)
+const b2 = new BackBlaze(BACKUP_B2_KEY_ID, BACKUP_B2_KEY, BACKUP_B2_REGION)
 
 async function backup(_event: ScheduledEvent): Promise<void> {
     const file = await fetchBackup()
     if (file === null) return
     await b2.putObject(
-        PG_BACKUP_B2_BUCKET,
+        BACKUP_B2_BUCKET,
         file.name,
         file.content,
         'application/octet-stream',
@@ -55,7 +51,7 @@ async function fetchBackup(): Promise<{
             method,
             headers: {
                 accept: 'application/json',
-                authorization: 'Basic ' + encode(':' + PG_BACKUP_HEROKU_TOKEN),
+                authorization: 'Basic ' + encode(':' + BACKUP_HEROKU_PG_TOKEN),
             },
         })
         await check(resp)
@@ -65,7 +61,7 @@ async function fetchBackup(): Promise<{
     const host = 'postgres-starter-api.heroku.com'
     const backups: HerokuBackup[] = await herokuFetch(
         'GET',
-        `https://${host}/client/v11/apps/${PG_BACKUP_HEROKU_APP}/transfers`,
+        `https://${host}/client/v11/apps/${BACKUP_HEROKU_PG_APP}/transfers`,
     )
     const last = backups
         .sort((a, b) => b.num - a.num)
@@ -74,7 +70,7 @@ async function fetchBackup(): Promise<{
 
     const download: HerokuDownload = await herokuFetch(
         'POST',
-        `https://${host}/client/v11/apps/${PG_BACKUP_HEROKU_APP}/transfers/${last.num}/actions/public-url`,
+        `https://${host}/client/v11/apps/${BACKUP_HEROKU_PG_APP}/transfers/${last.num}/actions/public-url`,
     )
     const created_at = last.created_at
         .replace(' +0000', '')
