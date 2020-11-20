@@ -29,6 +29,8 @@ async function handle(event: FetchEvent) {
 
 ///
 
+const b2 = new BackBlaze(BACKUP_B2_KEY_ID, BACKUP_B2_KEY, BACKUP_B2_REGION)
+
 async function backup(event: FetchEvent): Promise<void> {
     const req = event.request
     if (req.method.toUpperCase() !== 'POST')
@@ -45,13 +47,11 @@ async function backup(event: FetchEvent): Promise<void> {
         if (typeof file !== 'string') throw new Error('expect file')
         const buf = fromStr(file)
         const date = format(new Date(), 'YYYYMMDD_hhmmss', true)
-        await upload(
-            BACKUP_B2_KEY_ID,
-            BACKUP_B2_KEY,
-            BACKUP_B2_REGION,
+        await b2.putObject(
             BACKUP_B2_BUCKET,
-            `beancount/${date}.tar.zst.gpg`,
+            `beancount/${date}.tar.zst.asc`,
             buf,
+            'application/octet-stream',
         )
     }
 }
@@ -63,16 +63,4 @@ function getBA(auth: string | null): [string, string] {
     const user_pass = /([^:]+):(\S+)/.exec(decode(match[1]!))
     if (!user_pass) throw new Error('expect user:pass')
     return [user_pass[1]!, user_pass[2]!]
-}
-
-async function upload(
-    id: string,
-    key: string,
-    region: string,
-    bucket: string,
-    filename: string,
-    file: ArrayBuffer,
-): Promise<void> {
-    const b2 = new BackBlaze(id, key, region)
-    await b2.putObject(bucket, filename, file, 'application/octet-stream')
 }
