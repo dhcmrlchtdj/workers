@@ -30,8 +30,11 @@ async function handle(event: ScheduledEvent) {
 const b2 = new BackBlaze(BACKUP_B2_KEY_ID, BACKUP_B2_KEY, BACKUP_B2_REGION)
 
 async function backup(_event: ScheduledEvent): Promise<void> {
-    // curl  -L -H "v: YOUR-HTTP-API-KEY" \
-    const date = format(new Date(), 'YYYY-MM-DD-hh', true)
+    // https://documentation.solarwinds.com/en/Success_Center/papertrail/Content/kb/how-it-works/permanent-log-archives.htm
+    // It takes approximately 6-7 hours for logs to be available in the archive.
+    const prev = new Date()
+    prev.setHours(prev.getHours() - 12)
+    const date = format(prev, 'YYYY-MM-DD-hh', true)
     const url = `https://papertrailapp.com/api/v1/archives/${date}/download`
     const resp = await fetch(url, {
         headers: { 'X-Papertrail-Token': BACKUP_PAPERTRAIL_TOKEN },
