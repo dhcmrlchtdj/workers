@@ -5,7 +5,7 @@ const handleMsg = async (msg: Message | undefined) => {
     if (!msg || !msg.text || !msg.entities) return
 
     const command = telegram.extractCommand(msg)
-    if (command !== null && command.cmd !== '/add') {
+    if (command !== undefined && command.cmd !== '/add') {
         await execute(command.cmd, command.arg, msg)
         return
     }

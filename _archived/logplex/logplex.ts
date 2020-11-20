@@ -29,13 +29,13 @@ export const parse = (s: string): Logplex | null => {
     if (m === null) return null
 
     const log: Logplex = {
-        priority: m[1],
-        version: m[2],
-        timestamp: new Date(m[3]),
-        hostname: m[4],
-        app: m[5],
-        proc: m[6],
-        msg: m[7],
+        priority: m[1]!,
+        version: m[2]!,
+        timestamp: new Date(m[3]!),
+        hostname: m[4]!,
+        app: m[5]!,
+        proc: m[6]!,
+        msg: m[7]!,
     }
     return log
 }

@@ -40,6 +40,6 @@ export class Database {
         const r = await this.query<T>(sql, ...args)
         if (r.length === 0) return null
         if (r.length > 1) throw new Error('query return more than 1 row')
-        return r[0]
+        return r[0]!
     }
 }

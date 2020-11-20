@@ -126,7 +126,7 @@ export class BackBlaze {
         // https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L155
         const canonicalHeaders =
             headerKeys
-                .map((k) => `${k}:${headers[k].trim().replace(/\s+/g, ' ')}`)
+                .map((k) => `${k}:${headers[k]!.trim().replace(/\s+/g, ' ')}`)
                 .join('\n') + '\n'
         const signedHeaders = headerKeys.join(';')
         const canonicalRequest = [

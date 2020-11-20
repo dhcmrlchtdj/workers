@@ -1,21 +1,23 @@
 import { InlineKeyboardMarkup, Message, ChatMember } from 'telegram-typings'
+import { check } from './check_response'
 
 export const encodeHtmlEntities = (raw: string): string => {
-    const pairs: Record<string, string> = {
+    const pairs = {
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
         '"': '&quot;',
     }
+    // @ts-ignore
     return raw.replace(/[&<>"]/g, (matched) => pairs[matched])
 }
 
 export class Telegram {
     private token: string
-    private username: string | null
-    constructor(token: string, username: string | null = null) {
+    private username: string | undefined
+    constructor(token: string, username: string | undefined = undefined) {
         this.token = token
-        this.username = username
+        this.username = username?.toLowerCase()
     }
 
     sentByMe(msg: Message): boolean {
@@ -27,9 +29,9 @@ export class Telegram {
         )
     }
 
-    extractCommand(msg: Message): { cmd: string; arg: string } | null {
-        if (this.username === null) throw new Error('username is null')
-        if (!msg || !msg.text || !msg.entities) return null
+    extractCommand(msg: Message): { cmd: string; arg: string } | undefined {
+        if (this.username === undefined) throw new Error('username undefined')
+        if (!msg || !msg.text || !msg.entities) return undefined
         const text = msg.text
         const command = msg.entities
             .filter((entity) => entity.type === 'bot_command')
@@ -41,17 +43,17 @@ export class Telegram {
                     cmds.length === 1 ||
                     (cmds.length === 2 && cmds[1] === this.username)
                 ) {
-                    const cmd = cmds[0]
+                    const cmd = cmds[0]!
                     const arg = text
                         .substring(entity.offset + entity.length)
                         .trim()
                     return { cmd, arg }
                 } else {
-                    return null
+                    return undefined
                 }
             })
-            .find((x) => x !== null)
-        return command || null
+            .find((x) => x !== undefined)
+        return command
     }
 
     async fromAdmin(msg: Message): Promise<boolean> {
@@ -94,6 +96,8 @@ export class Telegram {
             },
             body: JSON.stringify(data),
         })
+        await check(resp)
+
         const body: TGResponse = await resp.json()
         if (body.ok) {
             return body.result

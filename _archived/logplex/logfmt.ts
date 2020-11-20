@@ -38,7 +38,7 @@ export const parse = (line: string): Record<string, string> => {
             in_quote = !in_quote
         } else if (line[i] != ' ' && !in_value && !in_key) {
             in_key = true
-            key = line[i]
+            key = line[i]!
         } else if (in_key) {
             key += line[i]
         } else if (in_value) {

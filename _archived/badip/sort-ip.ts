@@ -15,8 +15,8 @@ const sortIPv6 = (a: string, b: string): number => {
     let i = 0
     const len = Math.min(pa.length, pb.length) + 1
     while (i < len) {
-        const na = pa[i]
-        const nb = pb[i]
+        const na = pa[i]!
+        const nb = pb[i]!
         if (na < nb) {
             return -1
         } else if (na > nb) {

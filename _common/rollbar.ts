@@ -91,7 +91,7 @@ function parseError(error: Error) {
         .map((line) => line.replace(/^\s+/, ''))
         .map((line) => {
             const loc = line.match(/ (\((.+):(\d+):(\d+)\)$)/)
-            if (loc) line = line.replace(loc[0], '')
+            if (loc) line = line.replace(loc[0]!, '')
             const tokens = line.split(/\s+/).slice(1)
             const method = tokens.join(' ') || undefined
             const locationParts = ((urlLike: string) => {
@@ -100,8 +100,8 @@ function parseError(error: Error) {
                 }
                 var regExp = /(.+?)(?::(\d+))?(?::(\d+))?$/
                 var parts = regExp.exec(urlLike.replace(/[()]/g, ''))!
-                return [parts[1], parts[2] || undefined, parts[3] || undefined]
-            })(loc ? loc[1] : tokens.pop()!)
+                return [parts[1], parts[2], parts[3]]
+            })(loc ? loc[1]! : tokens.pop()!)
             return {
                 method,
                 lineno: locationParts[1],
