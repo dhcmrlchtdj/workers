@@ -25,12 +25,15 @@ jobs:
                   pnpm add -g @cloudflare/wrangler@1.12.2
                   pnpm install
                   pnpm store prune
-                  make all
+
+            - run: make feedbox
             - working-directory: ./feedbox
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
                   wrangler publish
+
+            - run: make bcc
             - working-directory: ./bcc
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -42,6 +45,8 @@ jobs:
                   echo '${{ secrets.BCC_BOT_TOKEN }}' | wrangler secret put 'BCC_BOT_TOKEN'
                   wrangler publish
                   curl 'https://api.telegram.org/bot${{ secrets.BCC_BOT_TOKEN }}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${{ secrets.BCC_WEBHOOK_PATH }}'
+
+            - run: make rollbar
             - working-directory: ./rollbar
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -49,6 +54,8 @@ jobs:
                   echo '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | wrangler secret put 'ROLLBAR_TG_BOT_TOKEN'
                   echo '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | wrangler secret put 'ROLLBAR_TG_CHAT_ID'
                   wrangler publish
+
+            - run: make backup
             - working-directory: ./backup
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -60,6 +67,8 @@ jobs:
                   echo '${{ secrets.BACKUP_B2_BUCKET }}' | wrangler secret put 'BACKUP_B2_BUCKET'
                   echo '${{ secrets.BACKUP_PASS_BEANCOUNT }}' | wrangler secret put 'BACKUP_PASS_BEANCOUNT'
                   wrangler publish
+
+            - run: make backup-heroku-pg
             - working-directory: ./backup-heroku-pg
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -72,6 +81,8 @@ jobs:
                   echo '${{ secrets.BACKUP_HEROKU_PG_APP }}' | wrangler secret put 'BACKUP_HEROKU_PG_APP'
                   echo '${{ secrets.BACKUP_HEROKU_PG_TOKEN }}' | wrangler secret put 'BACKUP_HEROKU_PG_TOKEN'
                   wrangler publish
+
+            - run: make backup-papertrail
             - working-directory: ./backup-papertrail
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
