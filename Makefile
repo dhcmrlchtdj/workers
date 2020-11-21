@@ -10,9 +10,10 @@ fmt:
 	prettier --write .
 
 $(targets):
+	@tsc
 	@rollup --format=es --no-esModule \
-		--input=$@/index.ts \
-		--file=$@/index.js \
-		--plugin=typescript
+		--plugin=node-resolve \
+		--input=_build/$@/index.js \
+		--file=$@/index.js
 
 .PHONY: all fmt $(targets)
