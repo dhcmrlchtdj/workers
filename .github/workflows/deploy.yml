@@ -35,51 +35,51 @@ jobs:
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
-                  echo "${{ secrets.ROLLBAR_KEY }}" | wrangler secret put 'ROLLBAR_KEY'
-                  echo "${{ secrets.DB_API }}" | wrangler secret put 'DB_API'
-                  echo "${{ secrets.DB_TOKEN }}" | wrangler secret put 'DB_TOKEN'
-                  echo "${{ secrets.BCC_WEBHOOK_PATH }}" | wrangler secret put 'BCC_WEBHOOK_PATH'
-                  echo "${{ secrets.BCC_BOT_TOKEN }}" | wrangler secret put 'BCC_BOT_TOKEN'
+                  echo '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  echo '${{ secrets.DB_API }}' | wrangler secret put 'DB_API'
+                  echo '${{ secrets.DB_TOKEN }}' | wrangler secret put 'DB_TOKEN'
+                  echo '${{ secrets.BCC_WEBHOOK_PATH }}' | wrangler secret put 'BCC_WEBHOOK_PATH'
+                  echo '${{ secrets.BCC_BOT_TOKEN }}' | wrangler secret put 'BCC_BOT_TOKEN'
                   wrangler publish
-                  curl "https://api.telegram.org/bot${BCC_BOT_TOKEN}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${BCC_WEBHOOK_PATH}"
+                  curl 'https://api.telegram.org/bot${{ secrets.BCC_BOT_TOKEN }}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${{ secrets.BCC_WEBHOOK_PATH }}'
             - working-directory: ./rollbar
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
-                  echo "${{ secrets.ROLLBAR_TG_BOT_TOKEN }}" | wrangler secret put 'ROLLBAR_TG_BOT_TOKEN'
-                  echo "${{ secrets.ROLLBAR_TG_CHAT_ID }}" | wrangler secret put 'ROLLBAR_TG_CHAT_ID'
+                  echo '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | wrangler secret put 'ROLLBAR_TG_BOT_TOKEN'
+                  echo '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | wrangler secret put 'ROLLBAR_TG_CHAT_ID'
                   wrangler publish
             - working-directory: ./backup
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
-                  echo "${{ secrets.ROLLBAR_KEY }}" | wrangler secret put 'ROLLBAR_KEY'
-                  echo "${{ secrets.BACKUP_B2_KEY_ID }}" | wrangler secret put 'BACKUP_B2_KEY_ID'
-                  echo "${{ secrets.BACKUP_B2_KEY }}" | wrangler secret put 'BACKUP_B2_KEY'
-                  echo "${{ secrets.BACKUP_B2_REGION }}" | wrangler secret put 'BACKUP_B2_REGION'
-                  echo "${{ secrets.BACKUP_B2_BUCKET }}" | wrangler secret put 'BACKUP_B2_BUCKET'
-                  echo "${{ secrets.BACKUP_PASS_BEANCOUNT }}" | wrangler secret put 'BACKUP_PASS_BEANCOUNT'
+                  echo '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  echo '${{ secrets.BACKUP_B2_KEY_ID }}' | wrangler secret put 'BACKUP_B2_KEY_ID'
+                  echo '${{ secrets.BACKUP_B2_KEY }}' | wrangler secret put 'BACKUP_B2_KEY'
+                  echo '${{ secrets.BACKUP_B2_REGION }}' | wrangler secret put 'BACKUP_B2_REGION'
+                  echo '${{ secrets.BACKUP_B2_BUCKET }}' | wrangler secret put 'BACKUP_B2_BUCKET'
+                  echo '${{ secrets.BACKUP_PASS_BEANCOUNT }}' | wrangler secret put 'BACKUP_PASS_BEANCOUNT'
                   wrangler publish
             - working-directory: ./backup-heroku-pg
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
-                  echo "${{ secrets.ROLLBAR_KEY }}" | wrangler secret put 'ROLLBAR_KEY'
-                  echo "${{ secrets.BACKUP_B2_KEY_ID }}" | wrangler secret put 'BACKUP_B2_KEY_ID'
-                  echo "${{ secrets.BACKUP_B2_KEY }}" | wrangler secret put 'BACKUP_B2_KEY'
-                  echo "${{ secrets.BACKUP_B2_REGION }}" | wrangler secret put 'BACKUP_B2_REGION'
-                  echo "${{ secrets.BACKUP_B2_BUCKET }}" | wrangler secret put 'BACKUP_B2_BUCKET'
-                  echo "${{ secrets.BACKUP_HEROKU_PG_APP }}" | wrangler secret put 'BACKUP_HEROKU_PG_APP'
-                  echo "${{ secrets.BACKUP_HEROKU_PG_TOKEN }}" | wrangler secret put 'BACKUP_HEROKU_PG_TOKEN'
+                  echo '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  echo '${{ secrets.BACKUP_B2_KEY_ID }}' | wrangler secret put 'BACKUP_B2_KEY_ID'
+                  echo '${{ secrets.BACKUP_B2_KEY }}' | wrangler secret put 'BACKUP_B2_KEY'
+                  echo '${{ secrets.BACKUP_B2_REGION }}' | wrangler secret put 'BACKUP_B2_REGION'
+                  echo '${{ secrets.BACKUP_B2_BUCKET }}' | wrangler secret put 'BACKUP_B2_BUCKET'
+                  echo '${{ secrets.BACKUP_HEROKU_PG_APP }}' | wrangler secret put 'BACKUP_HEROKU_PG_APP'
+                  echo '${{ secrets.BACKUP_HEROKU_PG_TOKEN }}' | wrangler secret put 'BACKUP_HEROKU_PG_TOKEN'
                   wrangler publish
             - working-directory: ./backup-papertrail
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
-                  echo "${{ secrets.ROLLBAR_KEY }}" | wrangler secret put 'ROLLBAR_KEY'
-                  echo "${{ secrets.BACKUP_B2_KEY_ID }}" | wrangler secret put 'BACKUP_B2_KEY_ID'
-                  echo "${{ secrets.BACKUP_B2_KEY }}" | wrangler secret put 'BACKUP_B2_KEY'
-                  echo "${{ secrets.BACKUP_B2_REGION }}" | wrangler secret put 'BACKUP_B2_REGION'
-                  echo "${{ secrets.BACKUP_B2_BUCKET }}" | wrangler secret put 'BACKUP_B2_BUCKET'
-                  echo "${{ secrets.BACKUP_PAPERTRAIL_TOKEN }}" | wrangler secret put 'BACKUP_PAPERTRAIL_TOKEN'
+                  echo '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  echo '${{ secrets.BACKUP_B2_KEY_ID }}' | wrangler secret put 'BACKUP_B2_KEY_ID'
+                  echo '${{ secrets.BACKUP_B2_KEY }}' | wrangler secret put 'BACKUP_B2_KEY'
+                  echo '${{ secrets.BACKUP_B2_REGION }}' | wrangler secret put 'BACKUP_B2_REGION'
+                  echo '${{ secrets.BACKUP_B2_BUCKET }}' | wrangler secret put 'BACKUP_B2_BUCKET'
+                  echo '${{ secrets.BACKUP_PAPERTRAIL_TOKEN }}' | wrangler secret put 'BACKUP_PAPERTRAIL_TOKEN'
                   wrangler publish
