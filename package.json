@@ -12,5 +12,23 @@
         "rollup": "2.33.3",
         "telegram-typings": "4.0.0-beta",
         "typescript": "4.1.2"
+    },
+    "prettier": {
+        "printWidth": 80,
+        "tabWidth": 4,
+        "useTabs": false,
+        "semi": false,
+        "singleQuote": true,
+        "quoteProps": "as-needed",
+        "jsxSingleQuote": false,
+        "trailingComma": "all",
+        "bracketSpacing": true,
+        "jsxBracketSameLine": true,
+        "arrowParens": "always",
+        "proseWrap": "preserve",
+        "htmlWhitespaceSensitivity": "ignore",
+        "vueIndentScriptAndStyle": true,
+        "endOfLine": "lf",
+        "embeddedLanguageFormatting": "auto"
     }
 }
