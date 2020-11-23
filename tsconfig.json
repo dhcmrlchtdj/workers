@@ -1,11 +1,12 @@
 {
     "exclude": ["_archived"],
     "compilerOptions": {
-        "outDir": "_build",
+        "outDir": "node_modules",
+        "noEmit": true,
 
         "module": "ES6",
-        "target": "ES2017",
-        "lib": ["ES2017", "WebWorker"],
+        "target": "ES2018",
+        "lib": ["ES2018", "WebWorker"],
         "types": ["@cloudflare/workers-types"],
 
         "sourceMap": false,
@@ -19,6 +20,7 @@
         "moduleResolution": "node",
         "esModuleInterop": false,
         "resolveJsonModule": true,
+        "isolatedModules": true,
 
         "noFallthroughCasesInSwitch": true,
         "noImplicitReturns": true,

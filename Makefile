@@ -9,11 +9,10 @@ all: $(targets)
 fmt:
 	prettier --write .
 
-$(targets):
-	@tsc
-	@rollup --format=es --no-esModule \
-		--plugin=node-resolve \
-		--input=_build/$@/index.js \
-		--file=$@/index.js
+$(targets): node_modules/tsconfig.tsbuildinfo
+	esbuild --bundle --format=esm --target=es2018 --platform=browser --outfile=$@/index.js $@/index.ts
+
+node_modules/tsconfig.tsbuildinfo: $(wildcard **/*.ts)
+	tsc --noEmit
 
 .PHONY: all fmt $(targets)
