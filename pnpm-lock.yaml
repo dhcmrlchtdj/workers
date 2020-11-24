@@ -1,6 +1,6 @@
 devDependencies:
   '@cloudflare/workers-types': 2.1.0
-  esbuild: 0.8.12
+  esbuild: 0.8.13
   prettier: 2.2.0
   telegram-typings: 4.0.0-beta
   typescript: 4.1.2
@@ -10,12 +10,12 @@ packages:
     dev: true
     resolution:
       integrity: sha512-VmXaHTq0lt6Xre4aK1hUK25hjZjuEUkHtdUEt0FJamv+NzQO54Gwp6Zr5Cfu6SP5EQ/tTmTMP/tK9npA8zhcCg==
-  /esbuild/0.8.12:
+  /esbuild/0.8.13:
     dev: true
     hasBin: true
     requiresBuild: true
     resolution:
-      integrity: sha512-SWCUodYFOkKcu2Jbum12NbD98MoQq2EWWvHfQtpR2C9RkPzRr1BE4cavYjQpQV01hBR19UAftXl0TVLjka/i3Q==
+      integrity: sha512-2coHQuLEBa87GMgCo8uvBselsd3+QEy7lbOdS6nj6aESu8P01kH3sZPjPktDAXWZToU4eyz4jDGBGOui2IXvnA==
   /prettier/2.2.0:
     dev: true
     engines:
@@ -36,7 +36,7 @@ packages:
       integrity: sha512-thGloWsGH3SOxv1SoY7QojKi0tc+8FnOmiarEGMbd/lar7QOEd3hvlx3Fp5y6FlDUGl9L+pd4n2e+oToGMmhRQ==
 specifiers:
   '@cloudflare/workers-types': 2.1.0
-  esbuild: 0.8.12
+  esbuild: 0.8.13
   prettier: 2.2.0
   telegram-typings: 4.0.0-beta
   typescript: 4.1.2
