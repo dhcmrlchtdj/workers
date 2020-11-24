@@ -6,8 +6,8 @@
         "noEmit": true,
 
         "module": "ES6",
-        "target": "ES2018",
-        "lib": ["ES2018", "WebWorker"],
+        "target": "ESNext",
+        "lib": ["ESNext", "WebWorker"],
         "types": ["@cloudflare/workers-types"],
 
         "sourceMap": false,
