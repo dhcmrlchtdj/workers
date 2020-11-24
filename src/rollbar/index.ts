@@ -1,4 +1,4 @@
-import { encodeHtmlEntities, Telegram } from '../_common/telegram'
+import { encodeHtmlEntities, Telegram } from '../_common/service/telegram'
 
 // https://docs.rollbar.com/docs/webhooks
 

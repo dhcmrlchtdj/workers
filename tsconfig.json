@@ -1,7 +1,8 @@
 {
-    "exclude": ["_archived"],
+    "include": ["src/"],
+    "exclude": ["src/_archived/"],
     "compilerOptions": {
-        "outDir": "node_modules",
+        "outDir": "node_modules/",
         "noEmit": true,
 
         "module": "ES6",

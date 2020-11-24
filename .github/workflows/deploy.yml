@@ -26,8 +26,8 @@ jobs:
                   pnpm install
                   pnpm store prune
 
-            - run: make feedbox
-            - working-directory: ./feedbox
+            - run: make src/feedbox
+            - working-directory: src/feedbox
               env:
                   CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
@@ -35,8 +35,8 @@ jobs:
               run: |
                   wrangler publish
 
-            - run: make bcc
-            - working-directory: ./bcc
+            - run: make src/bcc
+            - working-directory: src/bcc
               env:
                   CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
@@ -50,8 +50,8 @@ jobs:
                   wrangler publish
                   curl 'https://api.telegram.org/bot${{ secrets.BCC_BOT_TOKEN }}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${{ secrets.BCC_WEBHOOK_PATH }}'
 
-            - run: make rollbar
-            - working-directory: ./rollbar
+            - run: make src/rollbar
+            - working-directory: src/rollbar
               env:
                   CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
@@ -61,8 +61,8 @@ jobs:
                   echo '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | wrangler secret put 'ROLLBAR_TG_CHAT_ID'
                   wrangler publish
 
-            - run: make backup
-            - working-directory: ./backup
+            - run: make src/backup
+            - working-directory: src/backup
               env:
                   CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
@@ -76,8 +76,8 @@ jobs:
                   echo '${{ secrets.BACKUP_PASS_BEANCOUNT }}' | wrangler secret put 'BACKUP_PASS_BEANCOUNT'
                   wrangler publish
 
-            - run: make backup-heroku-pg
-            - working-directory: ./backup-heroku-pg
+            - run: make src/backup-heroku-pg
+            - working-directory: src/backup-heroku-pg
               env:
                   CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
@@ -92,8 +92,8 @@ jobs:
                   echo '${{ secrets.BACKUP_HEROKU_PG_TOKEN }}' | wrangler secret put 'BACKUP_HEROKU_PG_TOKEN'
                   wrangler publish
 
-            - run: make backup-papertrail
-            - working-directory: ./backup-papertrail
+            - run: make src/backup-papertrail
+            - working-directory: src/backup-papertrail
               env:
                   CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}

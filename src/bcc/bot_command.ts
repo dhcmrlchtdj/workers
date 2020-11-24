@@ -1,7 +1,7 @@
 import { Message } from 'telegram-typings'
-import { Telegram } from '../_common/telegram'
-import { Database } from '../_common/database'
-import type { PGArray } from '../_common/database'
+import { Database } from '../_common/service/database'
+import { Telegram } from '../_common/service/telegram'
+import type { PGArray } from '../_common/service/database'
 
 declare const BCC_BOT_TOKEN: string
 declare const DB_API: string

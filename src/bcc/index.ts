@@ -1,4 +1,4 @@
-import { Rollbar } from '../_common/rollbar'
+import { Rollbar } from '../_common/service/rollbar'
 import { WorkerRouter } from '../_common/router'
 import { webhook } from './webhook'
 

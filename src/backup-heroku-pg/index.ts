@@ -1,7 +1,7 @@
-import { Rollbar } from '../_common/rollbar'
-import { encode } from '../_common/base64'
-import { BackBlaze } from '../_common/backblaze'
+import { BackBlaze } from '../_common/service/backblaze'
+import { Rollbar } from '../_common/service/rollbar'
 import { check } from '../_common/check_response'
+import { encode } from '../_common/base64'
 
 // from worker environment
 declare const ROLLBAR_KEY: string

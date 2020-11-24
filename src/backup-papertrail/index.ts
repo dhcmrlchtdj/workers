@@ -1,5 +1,5 @@
-import { Rollbar } from '../_common/rollbar'
-import { BackBlaze } from '../_common/backblaze'
+import { BackBlaze } from '../_common/service/backblaze'
+import { Rollbar } from '../_common/service/rollbar'
 import { check } from '../_common/check_response'
 import { format } from '../_common/format-date'
 

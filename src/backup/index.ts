@@ -1,8 +1,8 @@
-import { Rollbar } from '../_common/rollbar'
-import { BackBlaze } from '../_common/backblaze'
-import { format } from '../_common/format-date'
+import { BackBlaze } from '../_common/service/backblaze'
+import { Rollbar } from '../_common/service/rollbar'
 import { decode } from '../_common/base64'
-import { fromStr } from '../_common/crypto/array_buffer'
+import { format } from '../_common/format-date'
+import { fromStr } from '../_common/array_buffer'
 
 // from worker environment
 declare const ROLLBAR_KEY: string

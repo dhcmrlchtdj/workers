@@ -1,5 +1,9 @@
-import { InlineKeyboardMarkup, Message, ChatMember } from 'telegram-typings'
-import { check } from './check_response'
+import type {
+    InlineKeyboardMarkup,
+    Message,
+    ChatMember,
+} from 'telegram-typings'
+import { check } from '../check_response'
 
 export const encodeHtmlEntities = (raw: string): string => {
     const pairs = {

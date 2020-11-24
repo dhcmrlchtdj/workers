@@ -1,5 +1,5 @@
-import * as uint8 from './uint8_array'
-import * as buffer from './array_buffer'
+import * as buffer from '../array_buffer'
+import * as uint8 from '../uint8array'
 
 export class HMAC {
     private key: PromiseLike<CryptoKey>

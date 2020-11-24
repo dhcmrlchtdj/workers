@@ -3,7 +3,7 @@
 // https://github.com/rollbar/rollbar.js
 // https://github.com/stacktracejs/error-stack-parser
 
-import { UUIDv4 } from './uuid'
+import { UUIDv4 } from '../uuid'
 
 type Level = 'critical' | 'error' | 'warning' | 'info' | 'debug'
 
