@@ -1,3 +1,5 @@
+// https://documentation.solarwinds.com/en/Success_Center/papertrail/Content/kb/how-it-works/permanent-log-archives.htm
+
 import { BackBlaze } from '../_common/service/backblaze'
 import { Rollbar } from '../_common/service/rollbar'
 import { check } from '../_common/check_response'
@@ -30,22 +32,49 @@ async function handle(event: ScheduledEvent) {
 const b2 = new BackBlaze(BACKUP_B2_KEY_ID, BACKUP_B2_KEY, BACKUP_B2_REGION)
 
 async function backup(_event: ScheduledEvent): Promise<void> {
-    // https://documentation.solarwinds.com/en/Success_Center/papertrail/Content/kb/how-it-works/permanent-log-archives.htm
-    // It takes approximately 6-7 hours for logs to be available in the archive.
-    const prev = new Date()
-    prev.setHours(prev.getHours() - 12)
-    const date = format(prev, 'YYYY-MM-DD-hh', true)
-    const url = `https://papertrailapp.com/api/v1/archives/${date}/download`
-    const resp = await fetch(url, {
+    const yestoday = new Date()
+    yestoday.setUTCDate(yestoday.getUTCDate() - 1)
+    const prefix = format(yestoday, 'YYYY-MM-DD', true)
+
+    const archives = await getArchives()
+    const tasks = archives
+        .filter((x) => x.filename.startsWith(prefix))
+        .map(async (x) => {
+            const resp = await fetch(x._links.download.href, {
+                headers: { 'X-Papertrail-Token': BACKUP_PAPERTRAIL_TOKEN },
+            })
+            await check(resp)
+            const file = await resp.arrayBuffer()
+            await b2.putObject(
+                BACKUP_B2_BUCKET,
+                x.filename,
+                file,
+                'application/gzip',
+            )
+        })
+    await Promise.all(tasks)
+}
+
+async function getArchives(): Promise<archive[]> {
+    const resp = await fetch('https://papertrailapp.com/api/v1/archives.json', {
         headers: { 'X-Papertrail-Token': BACKUP_PAPERTRAIL_TOKEN },
     })
     await check(resp)
-    const file = await resp.arrayBuffer()
+    return resp.json()
+}
 
-    await b2.putObject(
-        BACKUP_B2_BUCKET,
-        `papertrail/${date}.tsv.gz`,
-        file,
-        'application/gzip',
-    )
+///
+
+type archive = {
+    start: string
+    end: string
+    start_formatted: string
+    duration_formatted: string
+    filename: string
+    filesize: string
+    _links: {
+        download: {
+            href: string
+        }
+    }
 }
