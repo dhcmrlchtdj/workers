@@ -33,7 +33,7 @@ async function backup(_event: ScheduledEvent): Promise<void> {
 
     await b2.putObject(
         BACKUP_B2_BUCKET,
-        `${date}.tsv.gz`,
+        `papertrail/${date}.tsv.gz`,
         file,
         'application/gzip',
     )
