@@ -1,6 +1,6 @@
 import { WorkerRouter } from '../_common/router'
 import { webhook } from './webhook'
-import { initFetchHandle } from '../_common/init_handle'
+import { listenFetch } from '../_common/listen'
 
 // from worker environment
 declare const BCC_WEBHOOK_PATH: string
@@ -16,4 +16,4 @@ const router = new WorkerRouter().post(
     (event) => webhook(event.request),
 )
 
-initFetchHandle('bcc', ROLLBAR_KEY, (e) => router.route(e))
+listenFetch('bcc', ROLLBAR_KEY, (e) => router.route(e))

@@ -3,7 +3,7 @@
 import { BackBlaze } from '../_common/service/backblaze'
 import { format } from '../_common/format-date'
 import { GET } from '../_common/feccan'
-import { initScheduleHandle } from '../_common/init_handle'
+import { listenSchedule } from '../_common/listen'
 
 // from worker environment
 declare const ROLLBAR_KEY: string
@@ -15,7 +15,7 @@ declare const BACKUP_PAPERTRAIL_TOKEN: string
 
 ///
 
-initScheduleHandle('backup-papertrail', ROLLBAR_KEY, backup)
+listenSchedule('backup-papertrail', ROLLBAR_KEY, backup)
 
 ///
 

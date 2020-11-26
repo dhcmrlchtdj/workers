@@ -1,4 +1,4 @@
-import { initFetchHandleSimple } from '../_common/init_handle'
+import { listenFetchSimple } from '../_common/listen'
 import { encodeHtmlEntities, Telegram } from '../_common/service/telegram'
 
 // https://docs.rollbar.com/docs/webhooks
@@ -9,7 +9,7 @@ declare const ROLLBAR_TG_CHAT_ID: string
 
 ///
 
-initFetchHandleSimple(notify)
+listenFetchSimple(notify)
 
 ///
 

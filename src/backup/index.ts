@@ -2,7 +2,7 @@ import { BackBlaze } from '../_common/service/backblaze'
 import { decode } from '../_common/base64'
 import { format } from '../_common/format-date'
 import { fromStr } from '../_common/array_buffer'
-import { initFetchHandle } from '../_common/init_handle'
+import { listenFetch } from '../_common/listen'
 
 // from worker environment
 declare const ROLLBAR_KEY: string
@@ -14,7 +14,7 @@ declare const BACKUP_B2_BUCKET: string
 
 ///
 
-initFetchHandle('backup', ROLLBAR_KEY, backup)
+listenFetch('backup', ROLLBAR_KEY, backup)
 
 ///
 

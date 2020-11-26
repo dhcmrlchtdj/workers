@@ -1,6 +1,6 @@
 import { Rollbar } from './service/rollbar'
 
-export function initScheduleHandle(
+export function listenSchedule(
     workerName: string,
     rollbarKey: string,
     handler: (e: ScheduledEvent) => Promise<unknown>,
@@ -16,7 +16,7 @@ export function initScheduleHandle(
     addEventListener('scheduled', (event) => event.waitUntil(h(event)))
 }
 
-export function initFetchHandle(
+export function listenFetch(
     workerName: string,
     rollbarKey: string,
     handler: (e: FetchEvent) => Promise<unknown>,
@@ -33,7 +33,7 @@ export function initFetchHandle(
     addEventListener('fetch', (event) => event.respondWith(h(event)))
 }
 
-export function initFetchHandleSimple(
+export function listenFetchSimple(
     handler: (e: FetchEvent) => Promise<unknown>,
 ) {
     const h = async (event: FetchEvent) => {

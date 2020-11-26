@@ -1,7 +1,7 @@
 import { BackBlaze } from '../_common/service/backblaze'
 import { encode } from '../_common/base64'
 import { GET, POST } from '../_common/feccan'
-import { initScheduleHandle } from '../_common/init_handle'
+import { listenSchedule } from '../_common/listen'
 
 // from worker environment
 declare const ROLLBAR_KEY: string
@@ -14,7 +14,7 @@ declare const BACKUP_HEROKU_PG_TOKEN: string
 
 ///
 
-initScheduleHandle('backup-heroku-pg', ROLLBAR_KEY, backup)
+listenSchedule('backup-heroku-pg', ROLLBAR_KEY, backup)
 
 ///
 
