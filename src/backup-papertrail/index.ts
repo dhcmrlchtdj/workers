@@ -1,9 +1,9 @@
 // https://documentation.solarwinds.com/en/Success_Center/papertrail/Content/kb/how-it-works/permanent-log-archives.htm
 
 import { BackBlaze } from '../_common/service/backblaze'
-import { Rollbar } from '../_common/service/rollbar'
 import { format } from '../_common/format-date'
 import { GET } from '../_common/feccan'
+import { initScheduleHandle } from '../_common/init_handle'
 
 // from worker environment
 declare const ROLLBAR_KEY: string
@@ -13,19 +13,9 @@ declare const BACKUP_B2_REGION: string
 declare const BACKUP_B2_BUCKET: string
 declare const BACKUP_PAPERTRAIL_TOKEN: string
 
-const rollbar = new Rollbar(ROLLBAR_KEY, 'backup-papertrail')
+///
 
-addEventListener('scheduled', (event) => {
-    event.waitUntil(handle(event))
-})
-
-async function handle(event: ScheduledEvent) {
-    try {
-        await backup(event)
-    } catch (err) {
-        event.waitUntil(rollbar.error(err))
-    }
-}
+initScheduleHandle('backup-papertrail', ROLLBAR_KEY, backup)
 
 ///
 

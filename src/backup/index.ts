@@ -1,8 +1,8 @@
 import { BackBlaze } from '../_common/service/backblaze'
-import { Rollbar } from '../_common/service/rollbar'
 import { decode } from '../_common/base64'
 import { format } from '../_common/format-date'
 import { fromStr } from '../_common/array_buffer'
+import { initFetchHandle } from '../_common/init_handle'
 
 // from worker environment
 declare const ROLLBAR_KEY: string
@@ -12,20 +12,9 @@ declare const BACKUP_B2_KEY: string
 declare const BACKUP_B2_REGION: string
 declare const BACKUP_B2_BUCKET: string
 
-const rollbar = new Rollbar(ROLLBAR_KEY, 'backup')
+///
 
-addEventListener('fetch', (event) => {
-    event.respondWith(handle(event))
-})
-
-async function handle(event: FetchEvent) {
-    try {
-        await backup(event)
-    } catch (err) {
-        event.waitUntil(rollbar.error(err, event.request))
-    }
-    return new Response('ok')
-}
+initFetchHandle('backup', ROLLBAR_KEY, backup)
 
 ///
 

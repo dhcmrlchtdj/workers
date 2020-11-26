@@ -1,7 +1,7 @@
 import { BackBlaze } from '../_common/service/backblaze'
-import { Rollbar } from '../_common/service/rollbar'
 import { encode } from '../_common/base64'
 import { GET, POST } from '../_common/feccan'
+import { initScheduleHandle } from '../_common/init_handle'
 
 // from worker environment
 declare const ROLLBAR_KEY: string
@@ -12,19 +12,9 @@ declare const BACKUP_B2_BUCKET: string
 declare const BACKUP_HEROKU_PG_APP: string
 declare const BACKUP_HEROKU_PG_TOKEN: string
 
-const rollbar = new Rollbar(ROLLBAR_KEY, 'backup-heroku-pg')
+///
 
-addEventListener('scheduled', (event) => {
-    event.waitUntil(handle(event))
-})
-
-async function handle(event: ScheduledEvent) {
-    try {
-        await backup(event)
-    } catch (err) {
-        event.waitUntil(rollbar.error(err))
-    }
-}
+initScheduleHandle('backup-heroku-pg', ROLLBAR_KEY, backup)
 
 ///
 
