@@ -2,8 +2,8 @@
 
 import { BackBlaze } from '../_common/service/backblaze'
 import { Rollbar } from '../_common/service/rollbar'
-import { check } from '../_common/check_response'
 import { format } from '../_common/format-date'
+import { GET } from '../_common/feccan'
 
 // from worker environment
 declare const ROLLBAR_KEY: string
@@ -36,15 +36,17 @@ async function backup(_event: ScheduledEvent): Promise<void> {
     yestoday.setUTCDate(yestoday.getUTCDate() - 1)
     const prefix = format(yestoday, 'YYYY-MM-DD', true)
 
-    const archives = await getArchives()
+    const archives: archive[] = await GET(
+        'https://papertrailapp.com/api/v1/archives.json',
+        { 'X-Papertrail-Token': BACKUP_PAPERTRAIL_TOKEN },
+    ).then((r) => r.json())
+
     const tasks = archives
         .filter((x) => x.filename.startsWith(prefix))
         .map(async (x) => {
-            const resp = await fetch(x._links.download.href, {
-                headers: { 'X-Papertrail-Token': BACKUP_PAPERTRAIL_TOKEN },
-            })
-            await check(resp)
-            const file = await resp.arrayBuffer()
+            const file = await GET(x._links.download.href, {
+                'X-Papertrail-Token': BACKUP_PAPERTRAIL_TOKEN,
+            }).then((r) => r.arrayBuffer())
             await b2.putObject(
                 BACKUP_B2_BUCKET,
                 x.filename,
@@ -53,14 +55,6 @@ async function backup(_event: ScheduledEvent): Promise<void> {
             )
         })
     await Promise.all(tasks)
-}
-
-async function getArchives(): Promise<archive[]> {
-    const resp = await fetch('https://papertrailapp.com/api/v1/archives.json', {
-        headers: { 'X-Papertrail-Token': BACKUP_PAPERTRAIL_TOKEN },
-    })
-    await check(resp)
-    return resp.json()
 }
 
 ///

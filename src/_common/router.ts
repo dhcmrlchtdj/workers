@@ -139,7 +139,6 @@ export class WorkerRouter {
         ]
         const matched = this._router.lookup(segments)
         const handler = matched.handler ?? this.defaultHandler
-        const resp = handler(event, matched.params)
-        return resp
+        return handler(event, matched.params)
     }
 }

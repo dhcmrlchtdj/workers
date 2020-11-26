@@ -3,7 +3,7 @@
 // https://github.com/mhart/aws4fetch/blob/master/src/main.js
 
 import { createHash, createHMAC } from '../crypto'
-import { check } from '../check_response'
+import { PUT } from '../feccan'
 import { format } from '../format-date'
 
 // https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L191
@@ -47,13 +47,7 @@ export class BackBlaze {
             file,
         )
 
-        const resp = await fetch(url, {
-            method: 'PUT',
-            headers,
-            body: file,
-        })
-        await check(resp)
-        return resp
+        return PUT(url, file, headers)
     }
 
     private async signAWS4(

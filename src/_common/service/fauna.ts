@@ -2,7 +2,7 @@
 // https://docs.fauna.com/fauna/current/start/fql_for_sql_users.html
 // https://dashboard.fauna.com/webshell/@db/kv
 
-import { check } from '../check_response'
+import { POST } from '../feccan'
 
 export class FaunaClient {
     private auth: string
@@ -10,18 +10,12 @@ export class FaunaClient {
         this.auth = `Basic ${btoa(token + ':')}`
     }
     async query<T>(body: string): Promise<T> {
-        const resp = await fetch('https://db.fauna.com', {
-            method: 'POST',
-            headers: {
-                authorization: this.auth,
-                connection: 'close',
-                'x-faunadb-api-version': '2.7',
-                'x-fauna-driver': 'JavascriptX',
-            },
-            body,
-        })
-        await check(resp)
-        const json = await resp.json()
+        const json = await POST('https://db.fauna.com', body, {
+            authorization: this.auth,
+            connection: 'close',
+            'x-faunadb-api-version': '2.7',
+            'x-fauna-driver': 'JavascriptX',
+        }).then((r) => r.json())
         return json.resource
     }
     async execute<T>(func: string, ...args: unknown[]): Promise<T> {

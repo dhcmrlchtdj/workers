@@ -3,7 +3,7 @@ import type {
     Message,
     ChatMember,
 } from 'telegram-typings'
-import { check } from '../check_response'
+import { POST } from '../feccan'
 
 export const encodeHtmlEntities = (raw: string): string => {
     const pairs = {
@@ -93,16 +93,10 @@ export class Telegram {
 
     async send(method: unknown, data: unknown): Promise<unknown> {
         const url = `https://api.telegram.org/bot${this.token}/${method}`
-        const resp = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        })
-        await check(resp)
+        const body: TGResponse = await POST(url, JSON.stringify(data), {
+            'Content-Type': 'application/json',
+        }).then((r) => r.json())
 
-        const body: TGResponse = await resp.json()
         if (body.ok) {
             return body.result
         } else {

@@ -1,3 +1,5 @@
+import { POST } from '../feccan'
+
 export const BASE_AWS_OREGON = 'https://us-west-2-1.aws.cloud2.influxdata.com'
 
 export class Line {
@@ -92,18 +94,6 @@ export class InfluxClient {
     async write(data: string): Promise<void> {
         // https://docs.influxdata.com/influxdb/v2.0/api/#operation/PostWrite
         const url = `${this.base}/api/v2/write?${this.query}`
-        const resp = await fetch(url, {
-            method: 'POST',
-            headers: {
-                Authorization: `Token ${this.token}`,
-            },
-            body: data,
-        })
-        const status = resp.status
-        if (status === 204 || status === 429 || status === 503) {
-            return
-        }
-        const body = await resp.text()
-        throw new Error(body)
+        await POST(url, data, { authorization: `Token ${this.token}` })
     }
 }

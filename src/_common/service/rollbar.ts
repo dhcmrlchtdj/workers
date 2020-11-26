@@ -3,6 +3,7 @@
 // https://github.com/rollbar/rollbar.js
 // https://github.com/stacktracejs/error-stack-parser
 
+import { POST } from '../feccan'
 import { UUIDv4 } from '../uuid'
 
 type Level = 'critical' | 'error' | 'warning' | 'info' | 'debug'
@@ -19,9 +20,9 @@ export class Rollbar {
         level: Level,
         body: Record<string, unknown>,
     ): Promise<Response> {
-        const resp = fetch('https://api.rollbar.com/api/1/item/', {
-            method: 'POST',
-            body: JSON.stringify({
+        return POST(
+            'https://api.rollbar.com/api/1/item/',
+            JSON.stringify({
                 access_token: this.token,
                 data: {
                     environment: 'production',
@@ -33,8 +34,7 @@ export class Rollbar {
                     ...body,
                 },
             }),
-        })
-        return resp
+        )
     }
 
     private log(level: Level, err: Error, req: Request | undefined) {

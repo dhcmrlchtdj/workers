@@ -1,7 +1,7 @@
 import { BackBlaze } from '../_common/service/backblaze'
 import { Rollbar } from '../_common/service/rollbar'
-import { check } from '../_common/check_response'
 import { encode } from '../_common/base64'
+import { GET, POST } from '../_common/feccan'
 
 // from worker environment
 declare const ROLLBAR_KEY: string
@@ -46,40 +46,32 @@ async function fetchBackup(): Promise<{
     name: string
 } | null> {
     // https://github.com/heroku/cli/blob/v7.47.0/packages/pg-v5/commands/backups/url.js
-    const herokuFetch = async (method: 'GET' | 'POST', url: string) => {
-        const resp = await fetch(url, {
-            method,
-            headers: {
-                accept: 'application/json',
-                authorization: 'Basic ' + encode(':' + BACKUP_HEROKU_PG_TOKEN),
-            },
-        })
-        await check(resp)
-        return resp.json()
+    const headers = {
+        accept: 'application/json',
+        authorization: 'Basic ' + encode(':' + BACKUP_HEROKU_PG_TOKEN),
     }
 
     const host = 'postgres-starter-api.heroku.com'
-    const backups: HerokuBackup[] = await herokuFetch(
-        'GET',
+    const backups: HerokuBackup[] = await GET(
         `https://${host}/client/v11/apps/${BACKUP_HEROKU_PG_APP}/transfers`,
-    )
+        headers,
+    ).then((r) => r.json())
     const last = backups
         .sort((a, b) => b.num - a.num)
         .find((x) => x.succeeded && x.to_type === 'gof3r')
     if (!last) return null
 
-    const download: HerokuDownload = await herokuFetch(
-        'POST',
+    const download: HerokuDownload = await POST(
         `https://${host}/client/v11/apps/${BACKUP_HEROKU_PG_APP}/transfers/${last.num}/actions/public-url`,
-    )
+        null,
+        headers,
+    ).then((r) => r.json())
     const created_at = last.created_at
         .replace(' +0000', '')
         .replace(' ', '_')
         .replace(/:/g, '')
 
-    const resp = await fetch(download.url)
-    await check(resp)
-    const content = await resp.arrayBuffer()
+    const content = await GET(download.url).then((r) => r.arrayBuffer())
 
     return {
         content,

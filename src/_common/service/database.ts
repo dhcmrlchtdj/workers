@@ -1,5 +1,5 @@
 import { encode } from '../base64'
-import { check } from '../check_response'
+import { POST } from '../feccan'
 
 export type PGArray<T> = [
     {
@@ -17,23 +17,15 @@ export class Database {
         this.auth = 'Basic ' + encode('token:' + token)
     }
 
-    async raw(sql: string, ...args: unknown[]): Promise<Response> {
-        const resp = await fetch(this.api, {
-            method: 'POST',
-            headers: {
-                authorization: this.auth,
-                'content-type': 'application/json',
-            },
-            body: JSON.stringify({ sql, args }),
+    raw(sql: string, ...args: unknown[]): Promise<Response> {
+        return POST(this.api, JSON.stringify({ sql, args }), {
+            authorization: this.auth,
+            'content-type': 'application/json',
         })
-        await check(resp)
-        return resp
     }
 
-    async query<T>(sql: string, ...args: unknown[]): Promise<T[]> {
-        const resp = await this.raw(sql, ...args)
-        const json: T[] = await resp.json()
-        return json
+    query<T>(sql: string, ...args: unknown[]): Promise<T[]> {
+        return this.raw(sql, ...args).then((r) => r.json())
     }
 
     async queryOne<T>(sql: string, ...args: unknown[]): Promise<T | null> {
