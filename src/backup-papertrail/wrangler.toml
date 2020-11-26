@@ -3,4 +3,4 @@ type = "javascript"
 name = "backup-papertrail"
 
 [triggers]
-crons = ["0 12 * * *"]
+crons = ["30 * * * *"]
