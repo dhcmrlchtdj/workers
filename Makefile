@@ -4,15 +4,13 @@ PATH := ./node_modules/.bin:$(PATH)
 
 targets := $(filter-out src/_%, $(wildcard src/*))
 
-all: $(targets)
+build: $(targets)
 
 check:
 	tsc --noEmit
-	@touch node_modules/tsconfig.tsbuildinfo # force update for make
+	@touch -cm node_modules/tsconfig.tsbuildinfo # force update mtime
 
-force:
-	@$(MAKE) --no-print-directory check
-	@$(MAKE) --no-print-directory all
+force: check build
 
 fmt:
 	prettier --write .
@@ -26,4 +24,4 @@ node_modules:
 node_modules/tsconfig.tsbuildinfo: node_modules $(shell ls src/**/*.ts)
 	@$(MAKE) --no-print-directory check
 
-.PHONY: all check force fmt $(targets)
+.PHONY: build check force fmt $(targets)
