@@ -1,14 +1,6 @@
 import { encode } from '../base64'
 import { POST } from '../feccan'
 
-export type PGArray<T> = [
-    {
-        Elements: T[] | null
-        Dimensions: Array<{ Length: number; LowerBound: number }> | null
-        Status: number
-    },
-]
-
 export class Database {
     private api: string
     private auth: string

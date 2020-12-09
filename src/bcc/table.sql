@@ -9,7 +9,7 @@ CREATE TABLE bcc (
 COMMIT;
 
 -- query tags (chat_id)
---  SELECT tags FROM bcc WHERE chat_id=$1;
+--  SELECT to_jsonb(tags) FROM bcc WHERE chat_id=$1;
 
 -- add tags (chat_id, tags)
 --  WITH t(tags) AS (

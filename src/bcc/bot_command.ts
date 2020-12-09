@@ -1,7 +1,6 @@
 import { Message } from 'telegram-typings'
 import { Database } from '../_common/service/database'
 import { Telegram } from '../_common/service/telegram'
-import type { PGArray } from '../_common/service/database'
 
 declare const BCC_BOT_TOKEN: string
 declare const DB_API: string
@@ -67,20 +66,16 @@ actions.set('/remove', async (arg: string, msg: Message) => {
 })
 
 const getTagList = async (chatId: Number): Promise<string | 'not found'> => {
-    const arr = await database.queryOne<PGArray<string>>(
-        'SELECT tags FROM bcc WHERE chat_id=$1',
+    const arr = await database.queryOne<Array<string[]>>(
+        'SELECT to_jsonb(tags) FROM bcc WHERE chat_id=$1',
         chatId,
     )
-    if (
-        arr === null ||
-        arr[0].Elements === null ||
-        arr[0].Elements.length === 0
-    ) {
+    if (arr === null) {
         return 'not found'
     } else {
-        const tags = arr[0].Elements.sort()
+        const tags = arr[0]!.sort()
         const text = tags.reduce(
-            (prev, curr) => {
+            (prev: { tag: string; text: string }, curr: string) => {
                 if (prev.tag[1] === curr[1]) {
                     prev.text += ' ' + curr
                 } else {
