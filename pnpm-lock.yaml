@@ -1,21 +1,21 @@
 devDependencies:
   '@cloudflare/workers-types': 2.1.0
-  esbuild: 0.8.28
+  esbuild: 0.9.0
   prettier: 2.2.1
-  telegram-typings: 4.0.0-beta
-  typescript: 4.1.3
+  telegram-typings: 5.0.0
+  typescript: 4.2.3
 lockfileVersion: 5.2
 packages:
   /@cloudflare/workers-types/2.1.0:
     dev: true
     resolution:
       integrity: sha512-VmXaHTq0lt6Xre4aK1hUK25hjZjuEUkHtdUEt0FJamv+NzQO54Gwp6Zr5Cfu6SP5EQ/tTmTMP/tK9npA8zhcCg==
-  /esbuild/0.8.28:
+  /esbuild/0.9.0:
     dev: true
     hasBin: true
     requiresBuild: true
     resolution:
-      integrity: sha512-8u4PliPrsELMwl0X4ChPJvlNfoSh5OSpLHcAFFiipi2m/k+9i4cEjQB8rztLiiqO7kXnL+IaNU36StgnpHhOwA==
+      integrity: sha512-IqYFO7ZKHf0y4uJpJfGqInmSRn8jMPMbyI1W0Y2PSjSjJcVP538tC8TleJAS4Y8QeqwajqBTwFKayWVzYlMIgg==
   /prettier/2.2.1:
     dev: true
     engines:
@@ -23,20 +23,20 @@ packages:
     hasBin: true
     resolution:
       integrity: sha512-PqyhM2yCjg/oKkFPtTGUojv7gnZAoG80ttl45O6x2Ug/rMJw4wcc9k6aaf2hibP7BGVCCM33gZoGjyvt9mm16Q==
-  /telegram-typings/4.0.0-beta:
+  /telegram-typings/5.0.0:
     dev: true
     resolution:
-      integrity: sha512-p5rH6xmotS4wvzQr3z0EyyMNGOceaZ1poUienbRFPUHTHQv4W+n40vORRwuc1myZ41E633l2UGdXl2V9hjX7Dw==
-  /typescript/4.1.3:
+      integrity: sha512-3xmQ9D87wEdMYUgzTekEP4hEPJz9lIW0tnumrbkH1Tfwt5e7ZMy5ZiUpGnjnQOpZTItrdeEeavRGLRvXepO35w==
+  /typescript/4.2.3:
     dev: true
     engines:
       node: '>=4.2.0'
     hasBin: true
     resolution:
-      integrity: sha512-B3ZIOf1IKeH2ixgHhj6la6xdwR9QrLC5d1VKeCSY4tvkqhF2eqd9O7txNlS0PO3GrBAFIdr3L1ndNwteUbZLYg==
+      integrity: sha512-qOcYwxaByStAWrBf4x0fibwZvMRG+r4cQoTjbPtUlrWjBHbmCAww1i448U0GJ+3cNNEtebDteo/cHOR3xJ4wEw==
 specifiers:
   '@cloudflare/workers-types': 2.1.0
-  esbuild: 0.8.28
+  esbuild: 0.9.0
   prettier: 2.2.1
-  telegram-typings: 4.0.0-beta
-  typescript: 4.1.3
+  telegram-typings: 5.0.0
+  typescript: 4.2.3
