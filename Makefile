@@ -24,4 +24,7 @@ node_modules:
 node_modules/tsconfig.tsbuildinfo: node_modules $(shell ls src/**/*.ts)
 	@$(MAKE) --no-print-directory check
 
+upgrade:
+	pnpm update --latest --interactive
+
 .PHONY: build check force fmt $(targets)

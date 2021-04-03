@@ -1,42 +1,43 @@
-devDependencies:
-  '@cloudflare/workers-types': 2.1.0
-  esbuild: 0.9.0
+lockfileVersion: 5.3
+
+specifiers:
+  '@cloudflare/workers-types': 2.2.2
+  esbuild: 0.11.16
   prettier: 2.2.1
   telegram-typings: 5.0.0
-  typescript: 4.2.3
-lockfileVersion: 5.2
+  typescript: 4.2.4
+
+devDependencies:
+  '@cloudflare/workers-types': 2.2.2
+  esbuild: 0.11.16
+  prettier: 2.2.1
+  telegram-typings: 5.0.0
+  typescript: 4.2.4
+
 packages:
-  /@cloudflare/workers-types/2.1.0:
+
+  /@cloudflare/workers-types/2.2.2:
+    resolution: {integrity: sha512-kaMn2rueJ0PL1TYVGknTCh0X0x0d9G+FNXAFep7/4uqecEZoQb/63o6rOmMuiqI09zLuHV6xhKRXinokV/MY9A==}
     dev: true
-    resolution:
-      integrity: sha512-VmXaHTq0lt6Xre4aK1hUK25hjZjuEUkHtdUEt0FJamv+NzQO54Gwp6Zr5Cfu6SP5EQ/tTmTMP/tK9npA8zhcCg==
-  /esbuild/0.9.0:
-    dev: true
+
+  /esbuild/0.11.16:
+    resolution: {integrity: sha512-34ZWjo4ouvM5cDe7uRoM9GFuMyEmpH9fnVYmomvS1cq9ED9d/0ZG1r+p4P2VbX7ihjv36zA2SWTmP8Zmt/EANA==}
     hasBin: true
     requiresBuild: true
-    resolution:
-      integrity: sha512-IqYFO7ZKHf0y4uJpJfGqInmSRn8jMPMbyI1W0Y2PSjSjJcVP538tC8TleJAS4Y8QeqwajqBTwFKayWVzYlMIgg==
+    dev: true
+
   /prettier/2.2.1:
-    dev: true
-    engines:
-      node: '>=10.13.0'
+    resolution: {integrity: sha512-PqyhM2yCjg/oKkFPtTGUojv7gnZAoG80ttl45O6x2Ug/rMJw4wcc9k6aaf2hibP7BGVCCM33gZoGjyvt9mm16Q==}
+    engines: {node: '>=10.13.0'}
     hasBin: true
-    resolution:
-      integrity: sha512-PqyhM2yCjg/oKkFPtTGUojv7gnZAoG80ttl45O6x2Ug/rMJw4wcc9k6aaf2hibP7BGVCCM33gZoGjyvt9mm16Q==
+    dev: true
+
   /telegram-typings/5.0.0:
+    resolution: {integrity: sha512-3xmQ9D87wEdMYUgzTekEP4hEPJz9lIW0tnumrbkH1Tfwt5e7ZMy5ZiUpGnjnQOpZTItrdeEeavRGLRvXepO35w==}
     dev: true
-    resolution:
-      integrity: sha512-3xmQ9D87wEdMYUgzTekEP4hEPJz9lIW0tnumrbkH1Tfwt5e7ZMy5ZiUpGnjnQOpZTItrdeEeavRGLRvXepO35w==
-  /typescript/4.2.3:
-    dev: true
-    engines:
-      node: '>=4.2.0'
+
+  /typescript/4.2.4:
+    resolution: {integrity: sha512-V+evlYHZnQkaz8TRBuxTA92yZBPotr5H+WhQ7bD3hZUndx5tGOa1fuCgeSjxAzM1RiN5IzvadIXTVefuuwZCRg==}
+    engines: {node: '>=4.2.0'}
     hasBin: true
-    resolution:
-      integrity: sha512-qOcYwxaByStAWrBf4x0fibwZvMRG+r4cQoTjbPtUlrWjBHbmCAww1i448U0GJ+3cNNEtebDteo/cHOR3xJ4wEw==
-specifiers:
-  '@cloudflare/workers-types': 2.1.0
-  esbuild: 0.9.0
-  prettier: 2.2.1
-  telegram-typings: 5.0.0
-  typescript: 4.2.3
+    dev: true
