@@ -2,15 +2,15 @@ lockfileVersion: 5.3
 
 specifiers:
   '@cloudflare/workers-types': 2.2.2
-  esbuild: 0.11.16
-  prettier: 2.2.1
+  esbuild: 0.11.20
+  prettier: 2.3.0
   telegram-typings: 5.0.0
   typescript: 4.2.4
 
 devDependencies:
   '@cloudflare/workers-types': 2.2.2
-  esbuild: 0.11.16
-  prettier: 2.2.1
+  esbuild: 0.11.20
+  prettier: 2.3.0
   telegram-typings: 5.0.0
   typescript: 4.2.4
 
@@ -20,14 +20,14 @@ packages:
     resolution: {integrity: sha512-kaMn2rueJ0PL1TYVGknTCh0X0x0d9G+FNXAFep7/4uqecEZoQb/63o6rOmMuiqI09zLuHV6xhKRXinokV/MY9A==}
     dev: true
 
-  /esbuild/0.11.16:
-    resolution: {integrity: sha512-34ZWjo4ouvM5cDe7uRoM9GFuMyEmpH9fnVYmomvS1cq9ED9d/0ZG1r+p4P2VbX7ihjv36zA2SWTmP8Zmt/EANA==}
+  /esbuild/0.11.20:
+    resolution: {integrity: sha512-QOZrVpN/Yz74xfat0H6euSgn3RnwLevY1mJTEXneukz1ln9qB+ieaerRMzSeETpz/UJWsBMzRVR/andBht5WKw==}
     hasBin: true
     requiresBuild: true
     dev: true
 
-  /prettier/2.2.1:
-    resolution: {integrity: sha512-PqyhM2yCjg/oKkFPtTGUojv7gnZAoG80ttl45O6x2Ug/rMJw4wcc9k6aaf2hibP7BGVCCM33gZoGjyvt9mm16Q==}
+  /prettier/2.3.0:
+    resolution: {integrity: sha512-kXtO4s0Lz/DW/IJ9QdWhAf7/NmPWQXkFr/r/WkR3vyI+0v8amTDxiaQSLzs8NBlytfLWX/7uQUMIW677yLKl4w==}
     engines: {node: '>=10.13.0'}
     hasBin: true
     dev: true
