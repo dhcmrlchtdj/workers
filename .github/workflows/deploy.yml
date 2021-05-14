@@ -92,14 +92,15 @@ jobs:
                   echo '${{ secrets.BACKUP_HEROKU_PG_TOKEN }}' | wrangler secret put 'BACKUP_HEROKU_PG_TOKEN'
                   wrangler publish
 
-            - run: make src/heroku-to-loki
-            - working-directory: src/heroku-to-loki
+            - run: make src/heroku-log
+            - working-directory: src/heroku-log
               env:
                   CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
                   echo '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
-                  echo '${{ secrets.LOGPLEX_WEBHOOK_PATH }}' | wrangler secret put 'LOGPLEX_WEBHOOK_PATH'
-                  echo '${{ secrets.LOGPLEX_DRAIN_TOKEN }}' | wrangler secret put 'LOGPLEX_DRAIN_TOKEN'
+                  echo '${{ secrets.HEROKU_LOG_WEBHOOK_PATH }}' | wrangler secret put 'HEROKU_LOG_WEBHOOK_PATH'
+                  echo '${{ secrets.HEROKU_LOG_DRAIN_TOKEN }}' | wrangler secret put 'HEROKU_LOG_DRAIN_TOKEN'
+                  echo '${{ secrets.HEROKU_LOG_INFLUX_TOKEN }}' | wrangler secret put 'HEROKU_LOG_INFLUX_TOKEN'
                   wrangler publish

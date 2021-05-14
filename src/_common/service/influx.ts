@@ -55,7 +55,7 @@ export class Line {
         this._field[key] = value.toString() + 'u'
         return this
     }
-    toString(): string {
+    serialize(): string {
         let tag = Object.keys(this._tag)
             .sort()
             .map((key) => `${key}=${this._tag[key]}`)

@@ -1,16 +1,17 @@
 import { Rollbar } from './service/rollbar'
+import type { Monitor } from './monitor'
 
 export function listenSchedule(
     workerName: string,
     rollbarKey: string,
     handler: (e: ScheduledEvent) => Promise<unknown>,
 ) {
-    const rollbar = new Rollbar(rollbarKey, workerName)
+    const monitor: Monitor = new Rollbar(rollbarKey, workerName)
     const h = async (event: ScheduledEvent) => {
         try {
             await handler(event)
         } catch (err) {
-            event.waitUntil(rollbar.error(err))
+            event.waitUntil(monitor.error(err))
         }
     }
     addEventListener('scheduled', (event) => event.waitUntil(h(event)))
@@ -21,12 +22,12 @@ export function listenFetch(
     rollbarKey: string,
     handler: (e: FetchEvent) => Promise<unknown>,
 ) {
-    const rollbar = new Rollbar(rollbarKey, workerName)
+    const monitor: Monitor = new Rollbar(rollbarKey, workerName)
     const h = async (event: FetchEvent) => {
         try {
             await handler(event)
         } catch (err) {
-            event.waitUntil(rollbar.error(err, event.request))
+            event.waitUntil(monitor.error(err, event.request))
         }
         return new Response('ok')
     }

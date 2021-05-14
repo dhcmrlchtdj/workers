@@ -2,27 +2,35 @@ import type { Logplex } from '../_common/logplex'
 import { WorkerRouter } from '../_common/router'
 import { listenFetch } from '../_common/listen'
 import { parse } from '../_common/logplex'
-import { transform } from './logplex_to_loki'
-import type { LokiLog } from '../_common/service/loki'
-import { Loki } from '../_common/service/loki'
+import { transform } from './transformer'
+import type { Line } from '../_common/service/influx'
+import { InfluxClient, BASE_AWS_OREGON } from '../_common/service/influx'
 
 ///
 
 // from worker environment
 declare const ROLLBAR_KEY: string
-declare const LOGPLEX_WEBHOOK_PATH: string // openssl rand -hex 16
-declare const LOGPLEX_DRAIN_TOKEN: string
-declare const LOKI_TOKEN: string
+declare const HEROKU_LOG_WEBHOOK_PATH: string // openssl rand -hex 16
+declare const HEROKU_LOG_DRAIN_TOKEN: string
+declare const HEROKU_LOG_INFLUX_TOKEN: string
 
 ///
 
+const influx = new InfluxClient(
+    HEROKU_LOG_INFLUX_TOKEN,
+    BASE_AWS_OREGON,
+    'h11',
+    'feedbox',
+    'ms',
+)
+
 const router = new WorkerRouter()
-router.post(`/heroku/logplex/${LOGPLEX_WEBHOOK_PATH}`, async (event) => {
+router.post(`/heroku-log/${HEROKU_LOG_WEBHOOK_PATH}`, async (event) => {
     const req = event.request
     if (req.headers.get('content-type') !== 'application/logplex-1') {
         throw new Error('415 Unsupported Media Type')
     }
-    if (req.headers.get('logplex-drain-token') !== LOGPLEX_DRAIN_TOKEN) {
+    if (req.headers.get('logplex-drain-token') !== HEROKU_LOG_DRAIN_TOKEN) {
         throw new Error('403 Forbidden')
     }
 
@@ -32,12 +40,14 @@ router.post(`/heroku/logplex/${LOGPLEX_WEBHOOK_PATH}`, async (event) => {
         .map(parse)
         .filter((x): x is Logplex => x !== null)
         .map(transform)
-        .filter((x): x is LokiLog => x !== null)
+        .filter((x): x is Line => x !== null)
+        .map((x) => x.serialize())
+        .join('\n')
 
     if (logs.length > 0) {
         const sendToInflux = influx
             .write(logs)
-            .catch((err) => rollbar.error(err, req))
+            // .catch((err) => rollbar.error(err, req))
         event.waitUntil(sendToInflux)
     }
 
@@ -46,4 +56,4 @@ router.post(`/heroku/logplex/${LOGPLEX_WEBHOOK_PATH}`, async (event) => {
 
 ///
 
-listenFetch('heroku-to-loki', ROLLBAR_KEY, router.route)
+listenFetch('heroku-log', ROLLBAR_KEY, router.route)

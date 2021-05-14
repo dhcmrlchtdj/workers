@@ -1,8 +1,8 @@
 import { Logplex } from '../_common/logplex'
 import { parse } from '../_common/logfmt'
-import { LokiLog } from '../_common/service/loki'
+import { Line } from '../_common/service/influx'
 
-const base = (log: Logplex): LokiLog => {
+const base = (log: Logplex): Line => {
     return new Line()
         .tag('priority', log.priority)
         .tag('version', log.version)
@@ -12,7 +12,7 @@ const base = (log: Logplex): LokiLog => {
         .tag('proc', log.proc)
 }
 
-const herokuRouter = (log: Logplex): LokiLog => {
+const herokuRouter = (log: Logplex): Line => {
     const slog = parse(log.msg)
     const line = base(log)
         .str('at', slog.at!)
@@ -30,7 +30,7 @@ const herokuRouter = (log: Logplex): LokiLog => {
     return line
 }
 
-const appLog = (log: Logplex): LokiLog => {
+const appLog = (log: Logplex): Line => {
     const line = base(log)
     if (!log.msg.startsWith('{')) {
         return line.str('msg', log.msg)
@@ -57,7 +57,7 @@ const appLog = (log: Logplex): LokiLog => {
     return line
 }
 
-export const transform = (log: Logplex): LokiLog | null => {
+export const transform = (log: Logplex): Line | null => {
     if (log.app === 'heroku' && log.proc === 'router') {
         return herokuRouter(log).measurement('heroku/router')
     } else if (log.app === 'app' && log.proc.startsWith('scheduler.')) {
