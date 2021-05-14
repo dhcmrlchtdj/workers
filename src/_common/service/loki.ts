@@ -2,3 +2,6 @@
 
 export class Loki {
 }
+
+export class LokiLog {
+}

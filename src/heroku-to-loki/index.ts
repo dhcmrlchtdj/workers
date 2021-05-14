@@ -2,6 +2,9 @@ import type { Logplex } from '../_common/logplex'
 import { WorkerRouter } from '../_common/router'
 import { listenFetch } from '../_common/listen'
 import { parse } from '../_common/logplex'
+import { transform } from './logplex_to_loki'
+import type { LokiLog } from '../_common/service/loki'
+import { Loki } from '../_common/service/loki'
 
 ///
 
@@ -29,15 +32,15 @@ router.post(`/heroku/logplex/${LOGPLEX_WEBHOOK_PATH}`, async (event) => {
         .map(parse)
         .filter((x): x is Logplex => x !== null)
         .map(transform)
-        .filter((x): x is Line => x !== null)
-        .map((x) => x.toString())
-        .join('\n')
+        .filter((x): x is LokiLog => x !== null)
+
     if (logs.length > 0) {
         const sendToInflux = influx
             .write(logs)
             .catch((err) => rollbar.error(err, req))
         event.waitUntil(sendToInflux)
     }
+
     return new Response('ok', { status: 200 })
 })
 
