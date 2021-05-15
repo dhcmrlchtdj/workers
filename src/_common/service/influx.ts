@@ -28,27 +28,33 @@ export class Line {
         }
         return this
     }
-    tag(key: string, value: string): Line {
+    tag(key: string, value: string | null | undefined): Line {
+        if (typeof value !== 'string') return this
         this._tag[key] = value
         return this
     }
-    bool(key: string, value: boolean): Line {
+    bool(key: string, value: boolean | null | undefined): Line {
+        if (typeof value !== 'boolean') return this
         this._field[key] = value ? 't' : 'f'
         return this
     }
-    str(key: string, value: string): Line {
+    str(key: string, value: string | null | undefined): Line {
+        if (typeof value !== 'string') return this
         this._field[key] = JSON.stringify(value)
         return this
     }
-    float(key: string, value: number): Line {
+    float(key: string, value: number | null | undefined): Line {
+        if (typeof value !== 'number') return this
         this._field[key] = value.toString()
         return this
     }
-    int(key: string, value: number): Line {
+    int(key: string, value: number | null | undefined): Line {
+        if (typeof value !== 'number') return this
         this._field[key] = value.toString() + 'i'
         return this
     }
-    uint(key: string, value: number): Line {
+    uint(key: string, value: number | null | undefined): Line {
+        if (typeof value !== 'number') return this
         this._field[key] = value.toString() + 'u'
         return this
     }
