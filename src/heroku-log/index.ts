@@ -58,4 +58,4 @@ router.post(
 
 ///
 
-routeFetch('heroku-log', ROLLBAR_KEY, router.route)
+routeFetch('heroku-log', ROLLBAR_KEY, (e) => router.route(e))

@@ -11,11 +11,9 @@ declare const DB_TOKEN: string
 
 ///
 
-const router = new WorkerRouter().post(
-    `/telegram/bcc/${BCC_WEBHOOK_PATH}`,
-    webhook,
-)
+const router = new WorkerRouter()
+router.post(`/telegram/bcc/${BCC_WEBHOOK_PATH}`, webhook)
 
 ///
 
-routeFetch('bcc', ROLLBAR_KEY, router.route)
+routeFetch('bcc', ROLLBAR_KEY, (e) => router.route(e))
