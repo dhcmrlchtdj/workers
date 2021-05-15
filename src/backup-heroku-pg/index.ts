@@ -1,6 +1,6 @@
 import { BackBlaze } from '../_common/service/backblaze'
-import { encode } from '../_common/base64'
 import { GET, POST } from '../_common/feccan'
+import { encode } from '../_common/base64'
 import { listenSchedule } from '../_common/listen'
 
 // from worker environment
@@ -20,7 +20,7 @@ listenSchedule('backup-heroku-pg', ROLLBAR_KEY, backup)
 
 const b2 = new BackBlaze(BACKUP_B2_KEY_ID, BACKUP_B2_KEY, BACKUP_B2_REGION)
 
-async function backup(_event: ScheduledEvent): Promise<void> {
+async function backup(): Promise<void> {
     const file = await fetchBackup()
     if (file === null) return
     await b2.putObject(

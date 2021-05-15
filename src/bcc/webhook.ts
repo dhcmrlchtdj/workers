@@ -1,5 +1,6 @@
 import { Update, Message } from 'telegram-typings'
 import { execute, telegram } from './bot_command'
+import type { Context } from '../_common/router'
 
 const handleMsg = async (msg: Message | undefined) => {
     if (!msg || !msg.text || !msg.entities) return
@@ -19,13 +20,19 @@ const handleMsg = async (msg: Message | undefined) => {
     }
 }
 
-export const webhook = async (request: Request): Promise<Response> => {
-    const payload: Update = await request.json()
-    await Promise.all([
-        handleMsg(payload.message),
-        handleMsg(payload.edited_message),
-        handleMsg(payload.channel_post),
-        handleMsg(payload.edited_channel_post),
-    ])
+export const webhook = async ({
+    event,
+    monitor,
+}: Context): Promise<Response> => {
+    const req = event.request
+    const handle = (m: Message | undefined) =>
+        event.waitUntil(handleMsg(m).catch((e) => monitor.error(e, req)))
+
+    const payload: Update = await req.json()
+    handle(payload.message)
+    handle(payload.edited_message)
+    handle(payload.channel_post)
+    handle(payload.edited_channel_post)
+
     return new Response('ok')
 }

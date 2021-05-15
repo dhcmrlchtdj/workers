@@ -1,5 +1,5 @@
-import { listenFetchSimple } from '../_common/listen'
 import { encodeHtmlEntities, Telegram } from '../_common/service/telegram'
+import { listenFetchSimple } from '../_common/listen'
 
 // https://docs.rollbar.com/docs/webhooks
 
@@ -15,7 +15,7 @@ listenFetchSimple(notify)
 
 const telegram = new Telegram(ROLLBAR_TG_BOT_TOKEN)
 
-async function notify(event: FetchEvent) {
+async function notify(event: FetchEvent): Promise<Response> {
     const req = event.request
     if (req.method.toUpperCase() !== 'POST')
         throw new Error('405 Method Not Allowed')
@@ -25,6 +25,8 @@ async function notify(event: FetchEvent) {
     if (evt === 'occurrence') {
         await handleOccurrence(payload.data)
     }
+
+    return new Response('ok')
 }
 
 async function handleOccurrence(data: Occurrence) {

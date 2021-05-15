@@ -20,7 +20,7 @@ listenFetch('backup', ROLLBAR_KEY, backup)
 
 const b2 = new BackBlaze(BACKUP_B2_KEY_ID, BACKUP_B2_KEY, BACKUP_B2_REGION)
 
-async function backup(event: FetchEvent): Promise<void> {
+async function backup(event: FetchEvent): Promise<Response> {
     const req = event.request
     if (req.method.toUpperCase() !== 'POST')
         throw new Error('405 Method Not Allowed')
@@ -43,6 +43,7 @@ async function backup(event: FetchEvent): Promise<void> {
             'application/octet-stream',
         )
     }
+    return new Response('ok')
 }
 
 function getBA(auth: string | null): [string, string] {

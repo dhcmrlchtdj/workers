@@ -1,10 +1,10 @@
-import type { Logplex } from '../_common/logplex'
-import { WorkerRouter } from '../_common/router'
-import { listenFetch } from '../_common/listen'
-import { parse } from '../_common/logplex'
-import { transform } from './transformer'
 import type { Line } from '../_common/service/influx'
+import type { Logplex } from '../_common/logplex'
 import { InfluxClient, BASE_AWS_OREGON } from '../_common/service/influx'
+import { WorkerRouter } from '../_common/router'
+import { parse } from '../_common/logplex'
+import { routeFetch } from '../_common/listen'
+import { transform } from './transformer'
 
 ///
 
@@ -25,35 +25,38 @@ const influx = new InfluxClient(
 )
 
 const router = new WorkerRouter()
-router.post(`/heroku-log/${HEROKU_LOG_WEBHOOK_PATH}`, async (event) => {
-    const req = event.request
-    if (req.headers.get('content-type') !== 'application/logplex-1') {
-        throw new Error('415 Unsupported Media Type')
-    }
-    if (req.headers.get('logplex-drain-token') !== HEROKU_LOG_DRAIN_TOKEN) {
-        throw new Error('403 Forbidden')
-    }
+router.post(
+    `/heroku-log/${HEROKU_LOG_WEBHOOK_PATH}`,
+    async ({ event, monitor }) => {
+        const req = event.request
+        if (req.headers.get('content-type') !== 'application/logplex-1') {
+            throw new Error('415 Unsupported Media Type')
+        }
+        if (req.headers.get('logplex-drain-token') !== HEROKU_LOG_DRAIN_TOKEN) {
+            throw new Error('403 Forbidden')
+        }
 
-    const text = await req.text()
-    const logs = text
-        .split('\n')
-        .map(parse)
-        .filter((x): x is Logplex => x !== null)
-        .map(transform)
-        .filter((x): x is Line => x !== null)
-        .map((x) => x.serialize())
-        .join('\n')
+        const text = await req.text()
+        const logs = text
+            .split('\n')
+            .map(parse)
+            .filter((x): x is Logplex => x !== null)
+            .map(transform)
+            .filter((x): x is Line => x !== null)
+            .map((x) => x.serialize())
+            .join('\n')
 
-    if (logs.length > 0) {
-        const sendToInflux = influx
-            .write(logs)
-            // .catch((err) => rollbar.error(err, req))
-        event.waitUntil(sendToInflux)
-    }
+        if (logs.length > 0) {
+            const sendToInflux = influx
+                .write(logs)
+                .catch((err) => monitor.error(err, req))
+            event.waitUntil(sendToInflux)
+        }
 
-    return new Response('ok', { status: 200 })
-})
+        return new Response('ok', { status: 200 })
+    },
+)
 
 ///
 
-listenFetch('heroku-log', ROLLBAR_KEY, router.route)
+routeFetch('heroku-log', ROLLBAR_KEY, router.route)

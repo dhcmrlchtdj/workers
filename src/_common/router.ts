@@ -1,3 +1,5 @@
+import type { Monitor } from './monitor'
+
 type Route<T> = {
     handler: T | null
     static: Map<string, Route<T>>
@@ -85,20 +87,20 @@ class BaseRouter<T> {
     }
 }
 
-export type Handler = (
-    event: FetchEvent,
-    params: Map<string, string>,
-) => Promise<Response>
+export type Params = Map<string, string>
+export type Handler = (ctx: Context) => Promise<Response>
+export type Context = {
+    event: FetchEvent
+    params: Params
+    monitor: Monitor
+}
 export class WorkerRouter {
     private _router: BaseRouter<Handler>
     constructor() {
         this._router = new BaseRouter<Handler>()
     }
 
-    private async defaultHandler(
-        _event: FetchEvent,
-        _params: Map<string, string>,
-    ) {
+    private async defaultHandler(_ctx: unknown) {
         return new Response('Handler Not Found', {
             status: 404,
             statusText: 'Not Found',
@@ -130,7 +132,7 @@ export class WorkerRouter {
         return this.add('DELETE', pathname, handler)
     }
 
-    route(event: FetchEvent): Promise<Response> {
+    route(event: FetchEvent): { handler: Handler; params: Params } {
         const request = event.request
         const url = new URL(request.url)
         const segments = [
@@ -139,6 +141,6 @@ export class WorkerRouter {
         ]
         const matched = this._router.lookup(segments)
         const handler = matched.handler ?? this.defaultHandler
-        return handler(event, matched.params)
+        return { handler, params: matched.params }
     }
 }
