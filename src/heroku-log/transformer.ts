@@ -4,29 +4,29 @@ import { Line } from '../_common/service/influx'
 
 const base = (log: Logplex): Line => {
     return new Line()
-        .tag('priority', log.priority)
-        .tag('version', log.version)
+        .str('log_priority', log.priority)
+        .str('log_version', log.version)
         .timestamp(log.timestamp)
-        .tag('hostname', log.hostname)
-        .tag('app', log.app)
-        .tag('proc', log.proc)
+        .str('log_hostname', log.hostname)
+        .str('log_app', log.app)
+        .str('log_proc', log.proc)
 }
 
 const herokuRouter = (log: Logplex): Line => {
-    const slog = parse(log.msg)
+    const msg = parse(log.msg)
     const line = base(log)
-        .str('at', slog.at!)
-        .str('method', slog.method!)
-        .str('path', slog.path!)
-        .str('host', slog.host!)
-        .str('request_id', slog.request_id!)
-        .str('fwd', slog.fwd!)
-        .str('dyno', slog.dyno!)
-        .str('protocol', slog.protocol!)
-        .int('connect', parseInt(slog.connect!))
-        .int('service', parseInt(slog.service!))
-        .int('status', parseInt(slog.status!))
-        .int('bytes', parseInt(slog.bytes!))
+        .str('at', msg.at!)
+        .tag('method', msg.method!)
+        .tag('path', msg.path!)
+        .str('host', msg.host!)
+        .str('request_id', msg.request_id!)
+        .str('fwd', msg.fwd!)
+        .str('dyno', msg.dyno!)
+        .str('protocol', msg.protocol!)
+        .int('connect', parseInt(msg.connect!))
+        .int('service', parseInt(msg.service!))
+        .int('status', parseInt(msg.status!))
+        .int('bytes', parseInt(msg.bytes!))
     return line
 }
 
@@ -39,12 +39,12 @@ const appLog = (log: Logplex): Line => {
     if (jsonlog.module === 'pgx') {
         line.str('module', 'pgx').str('message', jsonlog.message)
         if (jsonlog.sql) {
-            line.str('sql', jsonlog.sql).float('latency', jsonlog.time)
+            line.tag('sql', jsonlog.sql).float('latency', jsonlog.time)
         }
     } else if (jsonlog.module === 'server') {
         line.str('module', 'server')
-            .str('method', jsonlog.method)
-            .str('path', jsonlog.path)
+            .tag('method', jsonlog.method)
+            .tag('path', jsonlog.path)
             .int('status', jsonlog.status)
             .int('bytes', jsonlog.bytes)
             .float('latency', jsonlog.latency)
