@@ -10,19 +10,17 @@ jobs:
         runs-on: ubuntu-20.04
         steps:
             - uses: actions/checkout@v2.3.4
-            - uses: actions/setup-node@v2.1.2
+            - uses: actions/setup-node@v2.1.5
               with:
-                  node-version: '14.x'
+                  node-version: '16.x'
             - uses: actions/cache@v2.1.2
               with:
-                  path: |
-                      ~/.npm
-                      ~/.pnpm-store
+                  path: ~/.pnpm-store
                   key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
                   restore-keys: ${{ runner.os }}-pnpm-
             - run: |
-                  npm install -g pnpm@5
-                  pnpm add -g @cloudflare/wrangler@1.12.2
+                  npm install -g pnpm@6
+                  pnpm add -g @cloudflare/wrangler@1.16.1
                   pnpm install
                   pnpm store prune
 
