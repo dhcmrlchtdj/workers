@@ -2,6 +2,7 @@ import { POST } from '../feccan'
 
 export const BASE_AWS_OREGON = 'https://us-west-2-1.aws.cloud2.influxdata.com'
 
+// https://docs.influxdata.com/influxdb/v2.0/reference/syntax/line-protocol/
 export class Line {
     private _measurement: string
     private _ts: string
@@ -32,11 +33,7 @@ export class Line {
         return this
     }
     bool(key: string, value: boolean): Line {
-        if (value) {
-            this._field[key] = 'true'
-        } else {
-            this._field[key] = 'false'
-        }
+        this._field[key] = value ? 't' : 'f'
         return this
     }
     str(key: string, value: string): Line {
@@ -55,19 +52,35 @@ export class Line {
         this._field[key] = value.toString() + 'u'
         return this
     }
+
     serialize(): string {
+        const measurement = this.escape(this._measurement, /[, \n]/g)
         let tag = Object.keys(this._tag)
+            .map((k) => this.escape(k, /[,= \n]/g))
             .sort()
-            .map((key) => `${key}=${this._tag[key]}`)
-            .join(',')
-        if (tag.length > 0) {
-            tag = ',' + tag
-        }
+            .map((key) => `,${key}=${this.escape(this._tag[key]!, /[,= \n]/g)}`)
+            .join('')
         const field = Object.keys(this._field)
+            .map((k) => this.escape(k, /[,= \n]/g))
             .sort()
-            .map((key) => `${key}=${this._field[key]}`)
+            .map(
+                (key) => `${key}=${this.escape(this._field[key]!, /["\\\n]/g)}`,
+            )
             .join(',')
-        return `${this._measurement}${tag} ${field} ${this._ts}`
+        return `${measurement}${tag} ${field} ${this._ts}`
+    }
+
+    private escape(value: string, pattern: RegExp): string {
+        const pairs = {
+            ',': '\\,',
+            '=': '\\=',
+            ' ': '\\ ',
+            '"': '\\"',
+            '\\': '\\\\',
+            '\n': '\\ ',
+        }
+        // @ts-ignore
+        return value.replace(pattern, (matched) => pairs[matched])
     }
 }
 
