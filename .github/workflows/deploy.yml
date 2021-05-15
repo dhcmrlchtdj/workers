@@ -101,6 +101,6 @@ jobs:
               run: |
                   echo '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
                   echo '${{ secrets.HEROKU_LOG_WEBHOOK_PATH }}' | wrangler secret put 'HEROKU_LOG_WEBHOOK_PATH'
-                  echo '${{ secrets.HEROKU_LOG_DRAIN_TOKEN }}' | wrangler secret put 'HEROKU_LOG_DRAIN_TOKEN'
+                  echo '${{ secrets.HEROKU_LOG_BA_TOKEN }}' | wrangler secret put 'HEROKU_LOG_BA_TOKEN'
                   echo '${{ secrets.HEROKU_LOG_INFLUX_TOKEN }}' | wrangler secret put 'HEROKU_LOG_INFLUX_TOKEN'
                   wrangler publish

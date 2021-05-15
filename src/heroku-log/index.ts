@@ -5,13 +5,14 @@ import { WorkerRouter } from '../_common/router'
 import { parse } from '../_common/logplex'
 import { routeFetch } from '../_common/listen'
 import { transform } from './transformer'
+import { validate } from '../_common/basic_auth'
 
 ///
 
 // from worker environment
 declare const ROLLBAR_KEY: string
 declare const HEROKU_LOG_WEBHOOK_PATH: string // openssl rand -hex 16
-declare const HEROKU_LOG_DRAIN_TOKEN: string
+declare const HEROKU_LOG_BA_TOKEN: string
 declare const HEROKU_LOG_INFLUX_TOKEN: string
 
 ///
@@ -32,9 +33,7 @@ router.post(
         if (req.headers.get('content-type') !== 'application/logplex-1') {
             throw new Error('415 Unsupported Media Type')
         }
-        if (req.headers.get('logplex-drain-token') !== HEROKU_LOG_DRAIN_TOKEN) {
-            throw new Error('403 Forbidden')
-        }
+        validate(req, 'token', HEROKU_LOG_BA_TOKEN)
 
         const text = await req.text()
         const logs = text
