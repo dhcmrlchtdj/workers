@@ -39,7 +39,7 @@ const appLog = (log: Logplex): Line => {
     if (jsonlog.module === 'pgx') {
         line.str('module', 'pgx').str('message', jsonlog.message)
         if (jsonlog.sql) {
-            line.tag('sql', jsonlog.sql).float('latency', jsonlog.time)
+            line.str('sql', jsonlog.sql).float('latency', jsonlog.time)
         }
     } else if (jsonlog.module === 'server') {
         line.str('module', 'server')
