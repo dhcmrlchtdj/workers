@@ -35,12 +35,12 @@ export class Line {
     }
     bool(key: string, value: boolean | null | undefined): Line {
         if (typeof value !== 'boolean') return this
-        this._field[key] = value ? 't' : 'f'
+        this._field[key] = value ? 'true' : 'false'
         return this
     }
     str(key: string, value: string | null | undefined): Line {
         if (typeof value !== 'string') return this
-        this._field[key] = JSON.stringify(value)
+        this._field[key] = JSON.stringify(this.escape(value, /["\\\n]/g))
         return this
     }
     float(key: string, value: number | null | undefined): Line {
@@ -69,9 +69,7 @@ export class Line {
         const field = Object.keys(this._field)
             .map((k) => this.escape(k, /[,= \n]/g))
             .sort()
-            .map(
-                (key) => `${key}=${this.escape(this._field[key]!, /["\\\n]/g)}`,
-            )
+            .map((key) => `${key}=${this._field[key]}`)
             .join(',')
         return `${measurement}${tag} ${field} ${this._ts}`
     }
