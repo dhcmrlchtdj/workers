@@ -1,6 +1,6 @@
-import { WorkerRouter } from '../_common/router'
-import { routeFetch } from '../_common/listen'
-import { webhook } from './webhook'
+import { WorkerRouter } from "../_common/router"
+import { routeFetch } from "../_common/listen"
+import { webhook } from "./webhook"
 
 // from worker environment
 declare const BCC_WEBHOOK_PATH: string
@@ -16,4 +16,4 @@ router.post(`/telegram/bcc/${BCC_WEBHOOK_PATH}`, webhook)
 
 ///
 
-routeFetch('bcc', ROLLBAR_KEY, (e) => router.route(e))
+routeFetch("bcc", ROLLBAR_KEY, (e) => router.route(e))

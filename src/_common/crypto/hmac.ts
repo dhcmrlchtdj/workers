@@ -1,25 +1,25 @@
-import * as buffer from '../array_buffer'
-import * as uint8 from '../uint8array'
+import * as buffer from "../array_buffer"
+import * as uint8 from "../uint8array"
 
 export class HMAC {
     private key: PromiseLike<CryptoKey>
     private data: Uint8Array[]
     constructor(
-        algorithm: 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512',
+        algorithm: "SHA-1" | "SHA-256" | "SHA-384" | "SHA-512",
         key: string | Uint8Array | ArrayBuffer,
     ) {
         this.data = []
         this.key = crypto.subtle.importKey(
-            'raw',
-            typeof key === 'string' ? uint8.fromStr(key) : key,
-            { name: 'HMAC', hash: algorithm },
+            "raw",
+            typeof key === "string" ? uint8.fromStr(key) : key,
+            { name: "HMAC", hash: algorithm },
             false,
-            ['sign'],
+            ["sign"],
         )
     }
 
     update(data: string | Uint8Array | ArrayBuffer): HMAC {
-        if (typeof data === 'string') {
+        if (typeof data === "string") {
             this.data.push(uint8.fromStr(data))
         } else if (data instanceof ArrayBuffer) {
             this.data.push(uint8.fromBuf(data))
@@ -30,15 +30,15 @@ export class HMAC {
     }
 
     async digest(): Promise<ArrayBuffer>
-    async digest(encoding: 'hex' | 'utf8'): Promise<string>
-    async digest(encoding?: 'hex' | 'utf8'): Promise<ArrayBuffer | string> {
+    async digest(encoding: "hex" | "utf8"): Promise<string>
+    async digest(encoding?: "hex" | "utf8"): Promise<ArrayBuffer | string> {
         const data = uint8.concat(this.data)
         const key = await this.key
-        const sig = await crypto.subtle.sign('HMAC', key, data)
+        const sig = await crypto.subtle.sign("HMAC", key, data)
         switch (encoding) {
-            case 'hex':
+            case "hex":
                 return buffer.toHex(sig)
-            case 'utf8':
+            case "utf8":
                 return buffer.toStr(sig)
             default:
                 return sig

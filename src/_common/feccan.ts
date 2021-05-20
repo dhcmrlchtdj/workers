@@ -5,7 +5,7 @@ async function feccan(
     const resp = await fetch(input, init)
     if (resp.status < 200 || resp.status >= 300) {
         const text = await resp.text()
-        throw new Error(resp.statusText + '\n' + text)
+        throw new Error(resp.statusText + "\n" + text)
     }
     return resp
 }
@@ -22,7 +22,7 @@ export async function PUT(
     body: BodyInit | null,
     headers?: HeadersInit,
 ): Promise<Response> {
-    return feccan(input, { method: 'PUT', body, headers })
+    return feccan(input, { method: "PUT", body, headers })
 }
 
 export async function POST(
@@ -30,5 +30,5 @@ export async function POST(
     body: BodyInit | null,
     headers?: HeadersInit,
 ): Promise<Response> {
-    return feccan(input, { method: 'POST', body, headers })
+    return feccan(input, { method: "POST", body, headers })
 }

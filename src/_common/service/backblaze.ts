@@ -2,19 +2,19 @@
 // https://www.backblaze.com/b2/docs/s3_compatible_api.html
 // https://github.com/mhart/aws4fetch/blob/master/src/main.js
 
-import { createHash, createHMAC } from '../crypto'
-import { PUT } from '../feccan'
-import { format } from '../format-date'
+import { createHash, createHMAC } from "../crypto"
+import { PUT } from "../feccan"
+import { format } from "../format-date"
 
 // https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L191
 const UNSIGNABLE_HEADERS = new Set([
-    'authorization',
-    'content-type',
-    'content-length',
-    'user-agent',
-    'presigned-expires',
-    'expect',
-    'x-amzn-trace-id',
+    "authorization",
+    "content-type",
+    "content-length",
+    "user-agent",
+    "presigned-expires",
+    "expect",
+    "x-amzn-trace-id",
 ])
 
 export class BackBlaze {
@@ -38,11 +38,11 @@ export class BackBlaze {
         const url = `https://${host}/${filename}`
 
         const headers = await this.signAWS4(
-            'PUT',
-            '/' + filename,
+            "PUT",
+            "/" + filename,
             {
                 host,
-                'content-type': contentType,
+                "content-type": contentType,
             },
             file,
         )
@@ -59,15 +59,15 @@ export class BackBlaze {
         const encodedUri = uriEncode(uri)
 
         const d = new Date()
-        const date = format(d, 'YYYYMMDD', true)
-        const datetime = format(d, 'YYYYMMDDThhmmssZ', true)
+        const date = format(d, "YYYYMMDD", true)
+        const datetime = format(d, "YYYYMMDDThhmmssZ", true)
 
         const service = `${date}/${this.region}/s3/aws4_request`
 
         const hashedPayload = await HASH_SHA256_HEX(body)
 
-        headers['x-amz-date'] = datetime
-        headers['x-amz-content-sha256'] = hashedPayload
+        headers["x-amz-date"] = datetime
+        headers["x-amz-content-sha256"] = hashedPayload
 
         const headerKeys = Object.keys(headers)
             .map((h) => h.toLowerCase())
@@ -82,20 +82,20 @@ export class BackBlaze {
             hashedPayload,
         )
         const stringToSign = [
-            'AWS4-HMAC-SHA256',
+            "AWS4-HMAC-SHA256",
             datetime,
             service,
             canonicalRequest,
-        ].join('\n')
+        ].join("\n")
 
         const signingKey = await this.getSigningKey(date)
 
         const signature = await HMAC_SHA256_HEX(signingKey, stringToSign)
         const credential = `${this.accessKeyId}/${service}`
-        const signedHeaders = headerKeys.join(';')
+        const signedHeaders = headerKeys.join(";")
 
         const auth = `AWS4-HMAC-SHA256 Credential=${credential},SignedHeaders=${signedHeaders},Signature=${signature}`
-        headers['authorization'] = auth
+        headers["authorization"] = auth
 
         return headers
     }
@@ -104,8 +104,8 @@ export class BackBlaze {
         const key = `AWS4${this.secretAccessKey}`
         const dateKey = await HMAC_SHA256(key, date)
         const regionKey = await HMAC_SHA256(dateKey, this.region)
-        const serviceKey = await HMAC_SHA256(regionKey, 's3')
-        const signingKey = await HMAC_SHA256(serviceKey, 'aws4_request')
+        const serviceKey = await HMAC_SHA256(regionKey, "s3")
+        const signingKey = await HMAC_SHA256(serviceKey, "aws4_request")
         return signingKey
     }
 
@@ -116,13 +116,13 @@ export class BackBlaze {
         headers: Record<string, string>,
         hashedPayload: string,
     ): Promise<string> {
-        const canonicalQueryString = ''
+        const canonicalQueryString = ""
         // https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L155
         const canonicalHeaders =
             headerKeys
-                .map((k) => `${k}:${headers[k]!.trim().replace(/\s+/g, ' ')}`)
-                .join('\n') + '\n'
-        const signedHeaders = headerKeys.join(';')
+                .map((k) => `${k}:${headers[k]!.trim().replace(/\s+/g, " ")}`)
+                .join("\n") + "\n"
+        const signedHeaders = headerKeys.join(";")
         const canonicalRequest = [
             method,
             uri,
@@ -130,7 +130,7 @@ export class BackBlaze {
             canonicalHeaders,
             signedHeaders,
             hashedPayload,
-        ].join('\n')
+        ].join("\n")
         return HASH_SHA256_HEX(canonicalRequest)
     }
 }
@@ -141,22 +141,22 @@ export class BackBlaze {
 // https://github.com/mhart/aws4fetch/blob/v1.0.13/src/main.js#L367
 const uriEncode = (input: string): string => {
     let output = encodeURIComponent(input)
-        .replace(/%2f/gi, '/')
+        .replace(/%2f/gi, "/")
         .replace(
             /[!'()*]/g,
-            (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase(),
+            (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase(),
         )
     return output
 }
 
 async function HMAC_SHA256(key: string | ArrayBuffer, data: string) {
-    return createHMAC('SHA-256', key).update(data).digest()
+    return createHMAC("SHA-256", key).update(data).digest()
 }
 
 async function HMAC_SHA256_HEX(key: ArrayBuffer, data: string) {
-    return createHMAC('SHA-256', key).update(data).digest('hex')
+    return createHMAC("SHA-256", key).update(data).digest("hex")
 }
 
 async function HASH_SHA256_HEX(data: string | ArrayBuffer) {
-    return createHash('SHA-256').update(data).digest('hex')
+    return createHash("SHA-256").update(data).digest("hex")
 }

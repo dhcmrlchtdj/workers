@@ -1,5 +1,5 @@
-import { Telegram } from '../../_common/telegram'
-import { createHMAC } from '../../_common/crypto'
+import { Telegram } from "../../_common/telegram"
+import { createHMAC } from "../../_common/crypto"
 
 // from worker environment
 declare const SENTRY_HOOK_SECRET: string
@@ -8,15 +8,15 @@ declare const MY_TELEGRAM_CHAT_ID: string
 
 const telegram = new Telegram(TELEGRAM_BOT_TOKEN)
 
-addEventListener('fetch', (event) => {
+addEventListener("fetch", (event) => {
     event.respondWith(handle(event.request))
 })
 
 async function handle(request: Request) {
-    if (request.method.toUpperCase() === 'POST') {
+    if (request.method.toUpperCase() === "POST") {
         try {
             const text = await request.text()
-            const sig = request.headers.get('Sentry-Hook-Signature')
+            const sig = request.headers.get("Sentry-Hook-Signature")
             const fromSentry = await verifySignature(
                 SENTRY_HOOK_SECRET,
                 text,
@@ -24,7 +24,7 @@ async function handle(request: Request) {
             )
             if (fromSentry) {
                 const body = JSON.parse(text)
-                await telegram.send('sendMessage', {
+                await telegram.send("sendMessage", {
                     chat_id: Number(MY_TELEGRAM_CHAT_ID),
                     text: JSON.stringify(body, null, 4),
                 })
@@ -41,8 +41,8 @@ async function verifySignature(
     signature: string | null,
 ): Promise<boolean> {
     if (signature === null) return false
-    const sig = await createHMAC('SHA-256', secret)
+    const sig = await createHMAC("SHA-256", secret)
         .update(message)
-        .digest('hex')
+        .digest("hex")
     return sig === signature
 }

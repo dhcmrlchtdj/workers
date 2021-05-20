@@ -11,8 +11,8 @@ export const fromHex = (hex: string) =>
 
 export const toHex = (u: Uint8Array) =>
     Array.from(u)
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('')
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
 
 export const concat = (bufs: Uint8Array[]): Uint8Array => {
     const len = bufs.reduce((acc, b) => acc + b.length, 0)

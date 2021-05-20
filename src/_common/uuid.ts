@@ -1,4 +1,4 @@
-import { toHex } from './uint8array'
+import { toHex } from "./uint8array"
 
 export const UUIDv4 = (): string => {
     const id = new Uint8Array(16)

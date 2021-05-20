@@ -1,4 +1,4 @@
-import * as uint8 from './uint8array'
+import * as uint8 from "./uint8array"
 
 export const fromU8 = (u: Uint8Array) => u.buffer
 

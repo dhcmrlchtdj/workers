@@ -1,6 +1,6 @@
-import type { Context, Params } from './router'
-import type { Monitor } from './monitor'
-import { Rollbar } from './service/rollbar'
+import type { Context, Params } from "./router"
+import type { Monitor } from "./monitor"
+import { Rollbar } from "./service/rollbar"
 
 export function listenSchedule(
     workerName: string,
@@ -18,7 +18,7 @@ export function listenSchedule(
             event.waitUntil(monitor.error(err))
         }
     }
-    addEventListener('scheduled', (event) => event.waitUntil(h(event)))
+    addEventListener("scheduled", (event) => event.waitUntil(h(event)))
 }
 
 export function listenFetch(
@@ -33,10 +33,10 @@ export function listenFetch(
             return resp
         } catch (err) {
             event.waitUntil(monitor.error(err, event.request))
-            return new Response('ok')
+            return new Response("ok")
         }
     }
-    addEventListener('fetch', (event) => event.respondWith(h(event)))
+    addEventListener("fetch", (event) => event.respondWith(h(event)))
 }
 
 export function listenFetchSimple(
@@ -47,10 +47,10 @@ export function listenFetchSimple(
             const resp = await handler(event)
             return resp
         } catch (_) {
-            return new Response('ok')
+            return new Response("ok")
         }
     }
-    addEventListener('fetch', (event) => event.respondWith(h(event)))
+    addEventListener("fetch", (event) => event.respondWith(h(event)))
 }
 
 export function routeFetch(
@@ -70,8 +70,8 @@ export function routeFetch(
             return resp
         } catch (err) {
             event.waitUntil(monitor.error(err, event.request))
-            return new Response('ok')
+            return new Response("ok")
         }
     }
-    addEventListener('fetch', (event) => event.respondWith(h(event)))
+    addEventListener("fetch", (event) => event.respondWith(h(event)))
 }

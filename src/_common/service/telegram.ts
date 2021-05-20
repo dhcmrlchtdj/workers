@@ -2,15 +2,15 @@ import type {
     InlineKeyboardMarkup,
     Message,
     ChatMember,
-} from 'telegram-typings'
-import { POST } from '../feccan'
+} from "telegram-typings"
+import { POST } from "../feccan"
 
 export const encodeHtmlEntities = (raw: string): string => {
     const pairs = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
     }
     // @ts-ignore
     return raw.replace(/[&<>"]/g, (matched) => pairs[matched])
@@ -25,7 +25,7 @@ export class Telegram {
     }
 
     sentByMe(msg: Message): boolean {
-        if (this.username === null) throw new Error('username is null')
+        if (this.username === null) throw new Error("username is null")
         return !!(
             msg.from &&
             msg.from.is_bot &&
@@ -34,15 +34,15 @@ export class Telegram {
     }
 
     extractCommand(msg: Message): { cmd: string; arg: string } | undefined {
-        if (this.username === undefined) throw new Error('username undefined')
+        if (this.username === undefined) throw new Error("username undefined")
         if (!msg || !msg.text || !msg.entities) return undefined
         const text = msg.text
         const command = msg.entities
-            .filter((entity) => entity.type === 'bot_command')
+            .filter((entity) => entity.type === "bot_command")
             .map((entity) => {
                 const cmds = text
                     .substr(entity.offset, entity.length)
-                    .split('@')
+                    .split("@")
                 if (
                     cmds.length === 1 ||
                     (cmds.length === 2 && cmds[1] === this.username)
@@ -62,39 +62,39 @@ export class Telegram {
 
     async fromAdmin(msg: Message): Promise<boolean> {
         const chatType = msg.chat.type
-        if (chatType === 'group' || chatType === 'supergroup') {
-            const member = await this.send('getChatMember', {
+        if (chatType === "group" || chatType === "supergroup") {
+            const member = await this.send("getChatMember", {
                 chat_id: msg.chat.id,
                 user_id: msg.from!.id,
             })
             return (
-                member.status === 'creator' || member.status === 'administrator'
+                member.status === "creator" || member.status === "administrator"
             )
         }
         return true
     }
 
-    async send(method: 'sendMessage', data: SendMessage): Promise<Message>
-    async send(method: 'sendPhoto', data: SendPhoto): Promise<Message>
-    async send(method: 'sendAnimation', data: SendAnimation): Promise<Message>
-    async send(method: 'sendVideo', data: SendVideo): Promise<Message>
+    async send(method: "sendMessage", data: SendMessage): Promise<Message>
+    async send(method: "sendPhoto", data: SendPhoto): Promise<Message>
+    async send(method: "sendAnimation", data: SendAnimation): Promise<Message>
+    async send(method: "sendVideo", data: SendVideo): Promise<Message>
     async send(
-        method: 'editMessageText',
+        method: "editMessageText",
         data: EditMessageText,
     ): Promise<Message | boolean>
     async send(
-        method: 'getChatMember',
+        method: "getChatMember",
         data: GetChatMember,
     ): Promise<ChatMember>
     async send(
-        method: 'answerCallbackQuery',
+        method: "answerCallbackQuery",
         data: AnswerCallbackQuery,
     ): Promise<boolean>
 
     async send(method: unknown, data: unknown): Promise<unknown> {
         const url = `https://api.telegram.org/bot${this.token}/${method}`
         const body: TGResponse = await POST(url, JSON.stringify(data), {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         }).then((r) => r.json())
 
         if (body.ok) {
@@ -120,7 +120,7 @@ type TGResponse =
 type SendMessage = {
     chat_id: number
     text: string
-    parse_mode?: 'MarkdownV2' | 'HTML'
+    parse_mode?: "MarkdownV2" | "HTML"
     disable_web_page_preview?: boolean
     disable_notification?: boolean
     reply_to_message_id?: number
@@ -130,7 +130,7 @@ type SendPhoto = {
     chat_id: number
     photo: string // file_id
     caption?: string
-    parse_mode?: 'MarkdownV2' | 'HTML'
+    parse_mode?: "MarkdownV2" | "HTML"
     disable_notification?: boolean
     reply_to_message_id?: number
     reply_markup?: InlineKeyboardMarkup
@@ -143,7 +143,7 @@ type SendAnimation = {
     height?: number
     thumb?: string // file_id
     caption?: string
-    parse_mode?: 'MarkdownV2' | 'HTML'
+    parse_mode?: "MarkdownV2" | "HTML"
     disable_notification?: boolean
     reply_to_message_id?: number
     reply_markup?: InlineKeyboardMarkup
@@ -156,7 +156,7 @@ type SendVideo = {
     height?: number
     thumb?: string // file_id
     caption?: string
-    parse_mode?: 'MarkdownV2' | 'HTML'
+    parse_mode?: "MarkdownV2" | "HTML"
     supports_streaming?: boolean
     disable_notification?: boolean
     reply_to_message_id?: number
@@ -167,14 +167,14 @@ type EditMessageText =
           chat_id: number
           message_id: number
           text: string
-          parse_mode?: 'MarkdownV2' | 'HTML'
+          parse_mode?: "MarkdownV2" | "HTML"
           disable_web_page_preview?: boolean
           reply_markup?: InlineKeyboardMarkup
       }
     | {
           inline_message_id: string
           text: string
-          parse_mode?: 'MarkdownV2' | 'HTML'
+          parse_mode?: "MarkdownV2" | "HTML"
           disable_web_page_preview?: boolean
           reply_markup?: InlineKeyboardMarkup
       }

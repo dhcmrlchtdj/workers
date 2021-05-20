@@ -2,19 +2,19 @@
 // https://docs.fauna.com/fauna/current/start/fql_for_sql_users.html
 // https://dashboard.fauna.com/webshell/@db/kv
 
-import { POST } from '../feccan'
+import { POST } from "../feccan"
 
 export class FaunaClient {
     private auth: string
     constructor(token: string) {
-        this.auth = `Basic ${btoa(token + ':')}`
+        this.auth = `Basic ${btoa(token + ":")}`
     }
     async query<T>(body: string): Promise<T> {
-        const json = await POST('https://db.fauna.com', body, {
+        const json = await POST("https://db.fauna.com", body, {
             authorization: this.auth,
-            connection: 'close',
-            'x-faunadb-api-version': '2.7',
-            'x-fauna-driver': 'JavascriptX',
+            connection: "close",
+            "x-faunadb-api-version": "2.7",
+            "x-fauna-driver": "JavascriptX",
         }).then((r) => r.json())
         return json.resource
     }

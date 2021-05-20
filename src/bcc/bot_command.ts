@@ -1,16 +1,16 @@
-import { Message } from 'telegram-typings'
-import { Database } from '../_common/service/database'
-import { Telegram } from '../_common/service/telegram'
+import { Message } from "telegram-typings"
+import { Database } from "../_common/service/database"
+import { Telegram } from "../_common/service/telegram"
 
 declare const BCC_BOT_TOKEN: string
 declare const DB_API: string
 declare const DB_TOKEN: string
 
-export const telegram = new Telegram(BCC_BOT_TOKEN, 'blind_carbon_copy_bot')
+export const telegram = new Telegram(BCC_BOT_TOKEN, "blind_carbon_copy_bot")
 const database = new Database(DB_API, DB_TOKEN)
 const actions = new Map<string, (arg: string, msg: Message) => Promise<void>>()
 
-actions.set('/whoami', async (_arg: string, msg: Message) => {
+actions.set("/whoami", async (_arg: string, msg: Message) => {
     const chat_id = msg.chat.id
     const text = JSON.stringify(
         {
@@ -20,7 +20,7 @@ actions.set('/whoami', async (_arg: string, msg: Message) => {
         null,
         4,
     )
-    await telegram.send('sendMessage', {
+    await telegram.send("sendMessage", {
         chat_id,
         text,
         reply_to_message_id: msg.message_id,
@@ -35,7 +35,7 @@ const modifyTags = async (sql: string, arg: string, msg: Message) => {
     await database.raw(sql, msg.chat.id, tags)
 }
 
-actions.set('/add', async (arg: string, msg: Message) => {
+actions.set("/add", async (arg: string, msg: Message) => {
     const sql = `
         WITH t(tags) AS (
             SELECT ARRAY(
@@ -51,7 +51,7 @@ actions.set('/add', async (arg: string, msg: Message) => {
     await modifyTags(sql, arg, msg)
 })
 
-actions.set('/remove', async (arg: string, msg: Message) => {
+actions.set("/remove", async (arg: string, msg: Message) => {
     const sql = `
         WITH t(tags) AS (
             SELECT ARRAY(
@@ -65,42 +65,42 @@ actions.set('/remove', async (arg: string, msg: Message) => {
     await modifyTags(sql, arg, msg)
 })
 
-const getTagList = async (chatId: Number): Promise<string | 'not found'> => {
+const getTagList = async (chatId: Number): Promise<string | "not found"> => {
     const arr = await database.queryOne<Array<string[]>>(
-        'SELECT to_jsonb(tags) FROM bcc WHERE chat_id=$1',
+        "SELECT to_jsonb(tags) FROM bcc WHERE chat_id=$1",
         chatId,
     )
     if (arr === null) {
-        return 'not found'
+        return "not found"
     } else {
         const tags = arr[0]!.sort()
         const text = tags.reduce(
             (prev: { tag: string; text: string }, curr: string) => {
                 if (prev.tag[1] === curr[1]) {
-                    prev.text += ' ' + curr
+                    prev.text += " " + curr
                 } else {
-                    prev.text += '\n' + curr
+                    prev.text += "\n" + curr
                     prev.tag = curr
                 }
                 return prev
             },
-            { tag: '', text: '' },
+            { tag: "", text: "" },
         )
         return text.text
     }
 }
 
-actions.set('/list', async (_arg: string, msg: Message) => {
+actions.set("/list", async (_arg: string, msg: Message) => {
     const chat_id = msg.chat.id
     const tagList = await getTagList(chat_id)
-    await telegram.send('sendMessage', { chat_id, text: tagList })
+    await telegram.send("sendMessage", { chat_id, text: tagList })
 })
 
-actions.set('/update', async (_arg: string, msg: Message) => {
+actions.set("/update", async (_arg: string, msg: Message) => {
     const replied = msg.reply_to_message
     if (!replied) return
 
-    if (msg.chat.type !== 'channel') {
+    if (msg.chat.type !== "channel") {
         if (!telegram.sentByMe(replied)) return
     }
 
@@ -108,14 +108,14 @@ actions.set('/update', async (_arg: string, msg: Message) => {
     const tagList = await getTagList(chat_id)
     if (replied.text === tagList) return
 
-    if (msg.chat.type === 'channel') {
-        await telegram.send('sendMessage', {
+    if (msg.chat.type === "channel") {
+        await telegram.send("sendMessage", {
             chat_id,
             text: `backup\n${replied.text}`,
         })
     }
 
-    await telegram.send('editMessageText', {
+    await telegram.send("editMessageText", {
         chat_id,
         message_id: replied.message_id,
         text: tagList,

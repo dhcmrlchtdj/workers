@@ -1,5 +1,5 @@
-import { encodeHtmlEntities, Telegram } from '../_common/service/telegram'
-import { listenFetchSimple } from '../_common/listen'
+import { encodeHtmlEntities, Telegram } from "../_common/service/telegram"
+import { listenFetchSimple } from "../_common/listen"
 
 // https://docs.rollbar.com/docs/webhooks
 
@@ -17,24 +17,24 @@ const telegram = new Telegram(ROLLBAR_TG_BOT_TOKEN)
 
 async function notify(event: FetchEvent): Promise<Response> {
     const req = event.request
-    if (req.method.toUpperCase() !== 'POST')
-        throw new Error('405 Method Not Allowed')
+    if (req.method.toUpperCase() !== "POST")
+        throw new Error("405 Method Not Allowed")
 
     const payload: RollbarPayload = await req.json()
     const evt = payload.event_name
-    if (evt === 'occurrence') {
+    if (evt === "occurrence") {
         await handleOccurrence(payload.data)
     }
 
-    return new Response('ok')
+    return new Response("ok")
 }
 
 async function handleOccurrence(data: Occurrence) {
     const url = encodeHtmlEntities(data.url)
     const error = encodeHtmlEntities(data.occurrence.title)
     const text = `${url}\n<pre>${error}</pre>`
-    await telegram.send('sendMessage', {
-        parse_mode: 'HTML',
+    await telegram.send("sendMessage", {
+        parse_mode: "HTML",
         chat_id: Number(ROLLBAR_TG_CHAT_ID),
         text,
     })
@@ -43,7 +43,7 @@ async function handleOccurrence(data: Occurrence) {
 ///
 
 type RollbarPayload = {
-    event_name: 'occurrence'
+    event_name: "occurrence"
     data: Occurrence
 }
 

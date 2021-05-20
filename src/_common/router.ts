@@ -1,4 +1,4 @@
-import type { Monitor } from './monitor'
+import type { Monitor } from "./monitor"
 
 type Route<T> = {
     handler: T | null
@@ -25,12 +25,12 @@ class BaseRouter<T> {
             route.handler = handler
         } else {
             const seg = segments[0]!
-            if (seg === '*') {
+            if (seg === "*") {
                 route.wildcard = handler
                 if (segments.length > 1) {
                     throw new Error('"*" must be the last segment')
                 }
-            } else if (seg[0] === ':') {
+            } else if (seg[0] === ":") {
                 const param = seg.slice(1)
                 const r = route.parameter.get(param) ?? this._newRoute()
                 this._add(segments.slice(1), handler, r)
@@ -65,7 +65,7 @@ class BaseRouter<T> {
                 if (matched.handler !== null) return matched
             }
 
-            if (seg !== '') {
+            if (seg !== "") {
                 for (const [param, paramRoute] of route.parameter) {
                     const matched = this._lookup(subSeg, params, paramRoute)
                     if (matched.handler !== null) {
@@ -76,7 +76,7 @@ class BaseRouter<T> {
             }
 
             if (route.wildcard !== null) {
-                params.set('*', segments.join('/'))
+                params.set("*", segments.join("/"))
                 return { handler: route.wildcard, params }
             }
         }
@@ -101,9 +101,9 @@ export class WorkerRouter {
     }
 
     private async defaultHandler(_ctx: unknown) {
-        return new Response('Handler Not Found', {
+        return new Response("Handler Not Found", {
             status: 404,
-            statusText: 'Not Found',
+            statusText: "Not Found",
         })
     }
     fallback(handler: Handler): this {
@@ -112,24 +112,24 @@ export class WorkerRouter {
     }
 
     private add(method: string, pathname: string, handler: Handler): this {
-        const segments = [method.toUpperCase(), ...pathname.split('/')]
+        const segments = [method.toUpperCase(), ...pathname.split("/")]
         this._router.add(segments, handler)
         return this
     }
     head(pathname: string, handler: Handler): this {
-        return this.add('HEAD', pathname, handler)
+        return this.add("HEAD", pathname, handler)
     }
     get(pathname: string, handler: Handler): this {
-        return this.add('GET', pathname, handler)
+        return this.add("GET", pathname, handler)
     }
     post(pathname: string, handler: Handler): this {
-        return this.add('POST', pathname, handler)
+        return this.add("POST", pathname, handler)
     }
     put(pathname: string, handler: Handler): this {
-        return this.add('PUT', pathname, handler)
+        return this.add("PUT", pathname, handler)
     }
     delete(pathname: string, handler: Handler): this {
-        return this.add('DELETE', pathname, handler)
+        return this.add("DELETE", pathname, handler)
     }
 
     route(event: FetchEvent): { handler: Handler; params: Params } {
@@ -137,7 +137,7 @@ export class WorkerRouter {
         const url = new URL(request.url)
         const segments = [
             request.method.toUpperCase(),
-            ...url.pathname.split('/'),
+            ...url.pathname.split("/"),
         ]
         const matched = this._router.lookup(segments)
         const handler = matched.handler ?? this.defaultHandler

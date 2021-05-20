@@ -21,7 +21,7 @@ const RE_LOGPLEX = new RegExp(
         /(.*)/, // msg
     ]
         .map((re) => re.source)
-        .join(''),
+        .join(""),
 )
 
 export const parse = (s: string): Logplex | null => {
