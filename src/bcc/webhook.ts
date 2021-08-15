@@ -1,4 +1,4 @@
-import { Update, Message } from "telegram-typings"
+import type { Update, Message } from "telegram-typings"
 import { execute, telegram } from "./bot_command"
 import type { Context } from "../_common/router"
 

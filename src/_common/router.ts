@@ -26,10 +26,10 @@ class BaseRouter<T> {
         } else {
             const seg = segments[0]!
             if (seg === "*") {
-                route.wildcard = handler
                 if (segments.length > 1) {
                     throw new Error('"*" must be the last segment')
                 }
+                route.wildcard = handler
             } else if (seg[0] === ":") {
                 const param = seg.slice(1)
                 const r = route.parameter.get(param) ?? this._newRoute()

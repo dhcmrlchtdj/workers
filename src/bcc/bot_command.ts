@@ -1,4 +1,4 @@
-import { Message } from "telegram-typings"
+import type { Message } from "telegram-typings"
 import { Database } from "../_common/service/database"
 import { Telegram } from "../_common/service/telegram"
 
