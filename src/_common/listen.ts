@@ -15,7 +15,7 @@ export function listenSchedule(
         try {
             await handler({ event, monitor })
         } catch (err) {
-            event.waitUntil(monitor.error(err))
+            event.waitUntil(monitor.error(err as Error))
         }
     }
     addEventListener("scheduled", (event) => event.waitUntil(h(event)))
@@ -32,7 +32,7 @@ export function listenFetch(
             const resp = await handler(event)
             return resp
         } catch (err) {
-            event.waitUntil(monitor.error(err, event.request))
+            event.waitUntil(monitor.error(err as Error, event.request))
             return new Response("ok")
         }
     }
@@ -69,7 +69,7 @@ export function routeFetch(
             const resp = await router.handler(ctx)
             return resp
         } catch (err) {
-            event.waitUntil(monitor.error(err, event.request))
+            event.waitUntil(monitor.error(err as Error, event.request))
             return new Response("ok")
         }
     }

@@ -14,7 +14,9 @@ export async function GET(
     input: RequestInfo,
     headers?: HeadersInit,
 ): Promise<Response> {
-    return feccan(input, { headers })
+    const opt: RequestInit = {}
+    if (headers) opt.headers = headers
+    return feccan(input, opt)
 }
 
 export async function PUT(
@@ -22,7 +24,9 @@ export async function PUT(
     body: BodyInit | null,
     headers?: HeadersInit,
 ): Promise<Response> {
-    return feccan(input, { method: "PUT", body, headers })
+    const opt: RequestInit = { method: "PUT", body }
+    if (headers) opt.headers = headers
+    return feccan(input, opt)
 }
 
 export async function POST(
@@ -30,5 +34,7 @@ export async function POST(
     body: BodyInit | null,
     headers?: HeadersInit,
 ): Promise<Response> {
-    return feccan(input, { method: "POST", body, headers })
+    const opt: RequestInit = { method: "POST", body }
+    if (headers) opt.headers = headers
+    return feccan(input, opt)
 }
