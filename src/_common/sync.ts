@@ -231,21 +231,27 @@ export class Condition {
 ///
 
 export class Channel<T = unknown> {
-    private capacity: number
     private closed: boolean
-    private mailbox: T[]
-    private cond: Condition
-    constructor(capacity: number) {
-        if (capacity <= 0) throw new Error("capacity must greater than 0")
-        this.capacity = capacity
+    private mutex: Mutex
+    private readers: Deferred<Option<T>>[]
+    private writers: [T, Deferred<boolean>][]
+    constructor() {
         this.closed = false
-        this.mailbox = []
-        this.cond = new Condition(new Mutex())
+        this.mutex = new Mutex()
+        this.readers = []
+        this.writers = []
     }
 
-    close() {
+    async close() {
+        if (this.closed) return
+
         this.closed = true
-        this.cond.broadcast()
+        await this.mutex.withLock(async () => {
+            this.readers.forEach((r) => r.resolve(None))
+            this.readers = []
+            this.writers.forEach(([_, w]) => w.resolve(false))
+            this.writers = []
+        })
     }
     isClosed(): boolean {
         return this.closed
@@ -253,27 +259,30 @@ export class Channel<T = unknown> {
 
     async send(data: T): Promise<boolean> {
         if (this.closed) return false
-        await this.cond.withLock(async () => {
-            while (this.mailbox.length === this.capacity) {
-                await this.cond.wait()
+        return this.mutex.withLock(async () => {
+            if (this.readers.length > 0) {
+                const r = this.readers.shift()!
+                r.resolve(Some(data))
+                return true
+            } else {
+                const w = new Deferred<boolean>()
+                this.writers.push([data, w])
+                return w.promise
             }
-            this.mailbox.push(data)
-            await this.cond.signal()
         })
-        return true
     }
     async receive(): Promise<Option<T>> {
-        return this.cond.withLock(async () => {
-            while (this.mailbox.length === 0) {
-                if (this.closed) {
-                    return None
-                } else {
-                    await this.cond.wait()
-                }
+        if (this.closed) return None
+        return this.mutex.withLock(async () => {
+            if (this.writers.length > 0) {
+                const [data, w] = this.writers.shift()!
+                w.resolve(true)
+                return Some(data)
+            } else {
+                const r = new Deferred<Option<T>>()
+                this.readers.push(r)
+                return r.promise
             }
-            const x = this.mailbox.shift()!
-            this.cond.signal()
-            return Some(x)
         })
     }
 }
@@ -284,16 +293,16 @@ export const ChanUtil = {
         }
     },
     async createWorker<T>(
-        ch: Channel<T>,
+        chan: Channel<T>,
         cb: (x: T) => Promise<void>,
         n: number = 1,
     ) {
         const startWorker = async <T>(
-            ch: Channel<T>,
+            chan: Channel<T>,
             cb: (x: T) => Promise<void>,
         ) => {
             while (true) {
-                const x = await ch.receive()
+                const x = await chan.receive()
                 if (x.isSome) {
                     await cb(x.getExn())
                 } else {
@@ -303,7 +312,7 @@ export const ChanUtil = {
         }
         const workers: Promise<void>[] = []
         for (let i = 0; i < n; i++) {
-            workers.push(startWorker(ch, cb))
+            workers.push(startWorker(chan, cb))
         }
         await Promise.all(workers)
     },
