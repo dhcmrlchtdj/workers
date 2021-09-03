@@ -63,7 +63,15 @@ export class Mutex {
             this.locked = true
         }
     }
-    async unlock(): Promise<void> {
+    tryLock(): boolean {
+        if (this.locked) {
+            return false
+        } else {
+            this.locked = true
+            return true
+        }
+    }
+    unlock(): void {
         if (this.locked) {
             if (this.queue.length === 0) {
                 this.locked = false
@@ -107,7 +115,14 @@ export class Semaphore {
             this.used += 1
         }
     }
-    async unlock(): Promise<void> {
+    tryLock(): boolean {
+        if (this.used >= this.capacity) {
+            return false
+        } else {
+            return true
+        }
+    }
+    unlock(): void {
         if (this.used > 0) {
             if (this.queue.length === 0) {
                 this.used -= 1
@@ -138,26 +153,26 @@ export class RWLock {
         this.reader = 0
     }
 
-    async lock(): Promise<void> {
-        await this.globalLock.lock()
+    lock(): Promise<void> {
+        return this.globalLock.lock()
     }
-    async unlock(): Promise<void> {
-        await this.globalLock.unlock()
+    unlock(): void {
+        return this.globalLock.unlock()
     }
-    async withLock<T>(f: () => Promise<T>): Promise<T> {
+    withLock<T>(f: () => Promise<T>): Promise<T> {
         return this.globalLock.withLock(f)
     }
 
-    async lockRead(): Promise<void> {
-        await this.readerLock.withLock(async () => {
+    lockRead(): Promise<void> {
+        return this.readerLock.withLock(async () => {
             this.reader += 1
             if (this.reader === 1) {
                 await this.globalLock.lock()
             }
         })
     }
-    async unlockRead(): Promise<void> {
-        await this.readerLock.withLock(async () => {
+    unlockRead(): Promise<void> {
+        return this.readerLock.withLock(async () => {
             this.reader -= 1
             if (this.reader === 0) {
                 await this.globalLock.unlock()
@@ -169,7 +184,7 @@ export class RWLock {
         try {
             return await f()
         } finally {
-            this.unlockRead()
+            await this.unlockRead()
         }
     }
 }
@@ -177,43 +192,31 @@ export class RWLock {
 export class Condition {
     /*
     Usage:
-    const cond = new Condition(new Mutex());
+    const lock = new Mutex()
+    const cond = new Condition();
     const thread1 = async () => {
-        await cond.lock();
-        while (true) {
-            await cond.wait();
+        await lock.lock();
+        while (...) {
+            await cond.wait(lock);
         }
-        await cond.unlock();
+        lock.unlock();
     }
     const thread2 = async () => {
-        await cond.lock();
+        await lock.lock();
         cond.signal();
-        await cond.unlock();
+        lock.unlock();
     }
     */
-    private mutex: Mutex
     private queue: Deferred[]
-    constructor(mutex: Mutex) {
-        this.mutex = mutex
+    constructor() {
         this.queue = []
     }
-
-    async lock(): Promise<void> {
-        await this.mutex.lock()
-    }
-    async unlock(): Promise<void> {
-        await this.mutex.unlock()
-    }
-    async withLock<T>(f: () => Promise<T>): Promise<T> {
-        return this.mutex.withLock(f)
-    }
-
-    async wait(): Promise<void> {
+    async wait(mutex: Mutex): Promise<void> {
         const d = new Deferred()
         this.queue.push(d)
-        await this.mutex.unlock()
-        await d.promise
-        await this.mutex.lock()
+        await mutex.unlock()
+        await d.promise // waiting for `signal/broadcast`
+        await mutex.lock()
     }
     signal(): void {
         if (this.queue.length > 0) {
@@ -222,68 +225,43 @@ export class Condition {
         }
     }
     broadcast(): void {
-        const prevQueue = this.queue
-        this.queue = []
-        prevQueue.forEach((d) => d.resolve())
+        if (this.queue.length > 0) {
+            const prev = this.queue
+            this.queue = []
+            prev.forEach((d) => d.resolve())
+        }
     }
 }
 
 ///
 
 export class Channel<T = unknown> {
-    private closed: boolean
-    private mutex: Mutex
     private readers: Deferred<Option<T>>[]
-    private writers: [T, Deferred<boolean>][]
+    private writers: [T, Deferred][]
     constructor() {
-        this.closed = false
-        this.mutex = new Mutex()
         this.readers = []
         this.writers = []
     }
-
-    async close() {
-        if (this.closed) return
-
-        this.closed = true
-        await this.mutex.withLock(async () => {
-            this.readers.forEach((r) => r.resolve(None))
-            this.readers = []
-            this.writers.forEach(([_, w]) => w.resolve(false))
-            this.writers = []
-        })
-    }
-    isClosed(): boolean {
-        return this.closed
-    }
-
-    async send(data: T): Promise<boolean> {
-        if (this.closed) return false
-        return this.mutex.withLock(async () => {
-            if (this.readers.length > 0) {
-                const r = this.readers.shift()!
-                r.resolve(Some(data))
-                return true
-            } else {
-                const w = new Deferred<boolean>()
-                this.writers.push([data, w])
-                return w.promise
-            }
-        })
+    async send(data: T): Promise<void> {
+        if (this.readers.length > 0) {
+            const r = this.readers.shift()!
+            r.resolve(Some(data))
+        } else {
+            const w = new Deferred()
+            this.writers.push([data, w])
+            return w.promise
+        }
     }
     async receive(): Promise<Option<T>> {
-        if (this.closed) return None
-        return this.mutex.withLock(async () => {
-            if (this.writers.length > 0) {
-                const [data, w] = this.writers.shift()!
-                w.resolve(true)
-                return Some(data)
-            } else {
-                const r = new Deferred<Option<T>>()
-                this.readers.push(r)
-                return r.promise
-            }
-        })
+        if (this.writers.length > 0) {
+            const [data, w] = this.writers.shift()!
+            w.resolve()
+            return Some(data)
+        } else {
+            const r = new Deferred<Option<T>>()
+            this.readers.push(r)
+            return r.promise
+        }
     }
 }
 export const ChanUtil = {
