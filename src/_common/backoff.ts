@@ -21,6 +21,7 @@ export class Backoff {
             Math.min(this.maxDelay, this.initialValue * 2 ** this.attempt) *
             Math.random()
         this.attempt++
+        // @ts-ignore // FIXME: what happened?
         await new Promise((r) => setTimeout(r, delay))
     }
 }

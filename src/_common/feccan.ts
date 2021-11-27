@@ -1,3 +1,5 @@
+type RequestInfo = Request | string
+
 async function feccan(
     input: RequestInfo,
     init?: RequestInit,

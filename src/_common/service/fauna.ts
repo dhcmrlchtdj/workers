@@ -15,7 +15,7 @@ export class FaunaClient {
             connection: "close",
             "x-faunadb-api-version": "2.7",
             "x-fauna-driver": "JavascriptX",
-        }).then((r) => r.json())
+        }).then((r) => r.json<{ resource: T }>())
         return json.resource
     }
     async execute<T>(func: string, ...args: unknown[]): Promise<T> {
