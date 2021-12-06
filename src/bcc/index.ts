@@ -17,3 +17,12 @@ router.post(`/telegram/bcc/${BCC_WEBHOOK_PATH}`, webhook)
 ///
 
 routeFetch("bcc", ROLLBAR_KEY, (e) => router.route(e))
+
+///
+
+// whoami - WHO AM I
+// list - list all #HASHTAG
+// update - update #HASHTAG list
+// remove - [#HASHTAG] remove #HASHTAG
+// get_credit - get credit
+// update_credit - [score] update credit
