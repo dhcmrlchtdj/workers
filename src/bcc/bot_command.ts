@@ -70,24 +70,23 @@ const getTagList = async (chatId: Number): Promise<string | "not found"> => {
         "SELECT to_jsonb(tags) FROM bcc WHERE chat_id=$1",
         chatId,
     )
-    if (arr === null) {
+    const tags = arr?.[0]?.sort() ?? []
+    if (tags.length === 0) {
         return "not found"
-    } else {
-        const tags = arr[0]!.sort()
-        const text = tags.reduce(
-            (prev: { tag: string; text: string }, curr: string) => {
-                if (prev.tag[1] === curr[1]) {
-                    prev.text += " " + curr
-                } else {
-                    prev.text += "\n" + curr
-                    prev.tag = curr
-                }
-                return prev
-            },
-            { tag: "", text: "" },
-        )
-        return text.text
     }
+    const text = tags!.reduce(
+        (prev: { tag: string; text: string }, curr: string) => {
+            if (prev.tag[1] === curr[1]) {
+                prev.text += " " + curr
+            } else {
+                prev.text += "\n" + curr
+                prev.tag = curr
+            }
+            return prev
+        },
+        { tag: "", text: "" },
+    )
+    return text.text
 }
 
 actions.set("/list", async (_arg: string, msg: Message) => {
@@ -130,7 +129,7 @@ actions.set("/get_credit", async (_arg: string, msg: Message) => {
         chat_id,
     )
     if (score === null) {
-        text = "not found"
+        text = "0"
     } else {
         text = "${score}"
     }
