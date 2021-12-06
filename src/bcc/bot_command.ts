@@ -135,13 +135,11 @@ actions.set("/get_credit", async (_arg: string, msg: Message) => {
 actions.set("/update_credit", async (arg: string, msg: Message) => {
     const chat_id = msg.chat.id
     const sql = `
-        WITH (
-            INSERT INTO credit(chat_id, score)
-            SELECT $1, COALESCE((SELECT score FROM credit WHERE chat_id=$1), 0) + $2
-            ON CONFLICT(chat_id)
-            DO UPDATE SET score = EXCLUDED.score
-        )
-        SELECT score FROM credit WHERE chat_id=$1
+        INSERT INTO credit(chat_id, score)
+        SELECT $1, COALESCE((SELECT score FROM credit WHERE chat_id=$1), 0) + $2
+        ON CONFLICT(chat_id)
+        DO UPDATE SET score = EXCLUDED.score
+        RETURNING score
     `
     const score = await database.queryOne<number>(sql, chat_id, Number(arg))
     const text = `current credit: ${score}`
