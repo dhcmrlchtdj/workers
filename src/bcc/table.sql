@@ -46,7 +46,7 @@ CREATE TABLE credit (
 COMMIT;
 
 -- getScore(chat_id)
---  SELECT score FROM credit WHERE chat_id=$1
+--  SELECT COALESCE((SELECT score FROM credit WHERE chat_id=$1), 0)
 
 -- setScore(chat_id, change)
 --  INSERT INTO credit(chat_id, score)

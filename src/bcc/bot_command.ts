@@ -121,20 +121,36 @@ actions.set("/update", async (_arg: string, msg: Message) => {
     })
 })
 
+// credit
 actions.set("/get_credit", async (_arg: string, msg: Message) => {
     const chat_id = msg.chat.id
-    let text = ""
     const score = await database.queryOne<number>(
-        "SELECT score FROM credit WHERE chat_id=$1",
+        "SELECT COALESCE((SELECT score FROM credit WHERE chat_id=$1), 0)",
         chat_id,
     )
-    if (score === null) {
-        text = "0"
-    } else {
-        text = "${score}"
-    }
+    const text = `current credit: ${score}`
 
     await telegram.send("sendMessage", { chat_id, text })
+})
+actions.set("/update_credit", async (arg: string, msg: Message) => {
+    const chat_id = msg.chat.id
+    const sql = `
+        WITH (
+            INSERT INTO credit(chat_id, score)
+            SELECT $1, COALESCE((SELECT score FROM credit WHERE chat_id=$1), 0) + $2
+            ON CONFLICT(chat_id)
+            DO UPDATE SET score = EXCLUDED.score
+        )
+        SELECT score FROM credit WHERE chat_id=$1
+    `
+    const score = await database.queryOne<number>(sql, chat_id, Number(arg))
+    const text = `current credit: ${score}`
+
+    await telegram.send("sendMessage", {
+        chat_id,
+        reply_to_message_id: msg.message_id,
+        text,
+    })
 })
 
 export const execute = async (cmd: string, arg: string, msg: Message) => {
