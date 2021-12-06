@@ -122,6 +122,22 @@ actions.set("/update", async (_arg: string, msg: Message) => {
     })
 })
 
+actions.set("/get_credit", async (_arg: string, msg: Message) => {
+    const chat_id = msg.chat.id
+    let text = ""
+    const score = await database.queryOne<number>(
+        "SELECT score FROM credit WHERE chat_id=$1",
+        chat_id,
+    )
+    if (score === null) {
+        text = "not found"
+    } else {
+        text = "${score}"
+    }
+
+    await telegram.send("sendMessage", { chat_id, text })
+})
+
 export const execute = async (cmd: string, arg: string, msg: Message) => {
     const isAdmin = await telegram.fromAdmin(msg)
     if (!isAdmin) return

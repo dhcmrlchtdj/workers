@@ -31,4 +31,25 @@ COMMIT;
 --          SELECT UNNEST($2::TEXT[])
 --      )
 --  )
---  update bcc set tags = t.tags from t where bcc.chat_id=$1
+--  UPDATE bcc SET tags = t.tags FROM t WHERE bcc.chat_id=$1
+
+---
+
+BEGIN;
+
+CREATE TABLE credit (
+    id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    chat_id BIGINT NOT NULL UNIQUE,
+    score INT NOT NULL
+);
+
+COMMIT;
+
+-- getScore(chat_id)
+--  SELECT score FROM credit WHERE chat_id=$1
+
+-- setScore(chat_id, change)
+--  INSERT INTO credit(chat_id, score)
+--  SELECT $1, COALESCE((SELECT score FROM credit WHERE chat_id=$1), 0) + $2
+--  ON CONFLICT(chat_id)
+--  DO UPDATE SET score = EXCLUDED.score
