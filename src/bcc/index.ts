@@ -24,5 +24,3 @@ routeFetch("bcc", ROLLBAR_KEY, (e) => router.route(e))
 // list - list all #HASHTAG
 // update - update #HASHTAG list
 // remove - [#HASHTAG] remove #HASHTAG
-// get_credit - get credit
-// update_credit - [score] update credit
