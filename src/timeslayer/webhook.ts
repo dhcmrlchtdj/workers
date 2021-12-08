@@ -24,8 +24,10 @@ const handleCommand = async (
         const text = history
             .map((x) => {
                 const time = format(new Date(x.time), "YYYY-MM-DD hh:mm")
-                return `${time} | ${x.score} | ${x.reason}`
+                const score = x.score > 0 ? `+${x.score}` : x.score
+                return `${time} | ${score} | ${x.reason}`
             })
+            .reverse()
             .join("\n")
         await telegram.send("sendMessage", { chat_id: msg.chat.id, text })
     } else {
