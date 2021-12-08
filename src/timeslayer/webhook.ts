@@ -2,6 +2,7 @@ import type { Context } from "../_common/router"
 import type { Update, Message } from "telegram-typings"
 import { Telegram } from "../_common/service/telegram"
 import * as query from "./query"
+import { format } from "../_common/format-date"
 
 declare const TIMESLAYER_BOT_TOKEN: string
 export const telegram = new Telegram(TIMESLAYER_BOT_TOKEN, "timeslayer_bot")
@@ -18,12 +19,15 @@ const handleCommand = async (
         })
     } else if (command.cmd === "/history") {
         const arg = Number(command.arg)
-        const limit = Number.isInteger(arg) ? arg : 10
+        const limit = Number.isInteger(arg) && arg > 0 ? arg : 10
         const history = await query.getHistory(msg.chat.id, limit)
-        await telegram.send("sendMessage", {
-            chat_id: msg.chat.id,
-            text: JSON.stringify(history) || "empty",
-        })
+        const text = history
+            .map((x) => {
+                const time = format(new Date(x.time), "YYYY-MM-DD hh:mm")
+                return `${time} | ${x.score} | ${x.reason}`
+            })
+            .join("\n")
+        await telegram.send("sendMessage", { chat_id: msg.chat.id, text })
     } else {
         // unknown command
     }
@@ -43,15 +47,6 @@ const handleMsg = async (msg: Message | undefined) => {
         const score = match[1]!
         const reason = match[2]!.trim()
         await query.addScore(msg.chat.id, Number(score), reason)
-        await telegram.send("sendMessage", {
-            chat_id: msg.chat.id,
-            text: "recorded",
-        })
-    } else {
-        await telegram.send("sendMessage", {
-            chat_id: msg.chat.id,
-            text: "unknown directive",
-        })
     }
 }
 
