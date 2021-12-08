@@ -17,3 +17,8 @@ router.post(`/telegram/timeslayer/${TIMESLAYER_WEBHOOK_PATH}`, webhook)
 ///
 
 routeFetch("timeslayer", ROLLBAR_KEY, (e) => router.route(e))
+
+///
+
+// score - show score
+// history - [n] list history
