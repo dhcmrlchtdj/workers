@@ -38,12 +38,20 @@ const handleMsg = async (msg: Message | undefined) => {
         return
     }
 
-    const match = /^\s*([+-]\d+)\s+(\S.*)$/.exec(msg.text)
+    const match = /^\s*([+-]\d+)\s(\S.*)$/.exec(msg.text)
     if (match) {
         const score = match[1]!
         const reason = match[2]!.trim()
         await query.addScore(msg.chat.id, Number(score), reason)
-        return
+        await telegram.send("sendMessage", {
+            chat_id: msg.chat.id,
+            text: "recorded",
+        })
+    } else {
+        await telegram.send("sendMessage", {
+            chat_id: msg.chat.id,
+            text: "unknown directive",
+        })
     }
 }
 
