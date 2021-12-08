@@ -3,8 +3,8 @@ import type { Update, Message } from "telegram-typings"
 import { Telegram } from "../_common/service/telegram"
 import * as query from "./query"
 
-declare const BCC_BOT_TOKEN: string
-export const telegram = new Telegram(BCC_BOT_TOKEN, "timeslayer_bot")
+declare const TIMESLAYER_BOT_TOKEN: string
+export const telegram = new Telegram(TIMESLAYER_BOT_TOKEN, "timeslayer_bot")
 
 const handleCommand = async (
     msg: Message,
