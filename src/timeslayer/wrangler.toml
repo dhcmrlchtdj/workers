@@ -1,0 +1,4 @@
+type = "javascript"
+
+name = "timeslayer"
+route = "worker.h11.io/telegram/timeslayer/*"
