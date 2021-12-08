@@ -16,7 +16,7 @@ export const addScore = async (
     score: number,
     reason: string,
 ): Promise<void> => {
-    const sql = `INSERT INTO credit(chat_id, score, reason) VALUES (chat_id, score, reason)`
+    const sql = `INSERT INTO credit(chat_id, score, reason) VALUES ($1, $2, $3)`
     await database.raw(sql, chatId, score, reason)
 }
 

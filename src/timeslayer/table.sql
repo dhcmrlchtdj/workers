@@ -14,7 +14,11 @@ COMMIT;
 --  SELECT COALESCE(SUM(score), 0) FROM credit WHERE chat_id=$1
 
 -- addScore(chat_id, score, reason)
---  INSERT INTO credit(chat_id, score, reason) VALUES (chat_id, score, reason)
+--  INSERT INTO credit(chat_id, score, reason) VALUES ($1, $2, $3)
 
 -- getHistory(chat_id, limit)
---  SELECT created_at, score, reason FROM credit WHERE chat_id=$1 LIMIT $2
+--  SELECT created_at, score, reason
+--  FROM credit
+--  WHERE chat_id=$1
+--  ORDER BY created_at DESC
+--  LIMIT $2

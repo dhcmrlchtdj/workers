@@ -22,7 +22,7 @@ const handleCommand = async (
         const history = await query.getHistory(msg.chat.id, limit)
         await telegram.send("sendMessage", {
             chat_id: msg.chat.id,
-            text: `${history}`,
+            text: JSON.stringify(history) || "empty",
         })
     } else {
         // unknown command
@@ -38,10 +38,10 @@ const handleMsg = async (msg: Message | undefined) => {
         return
     }
 
-    const match = /^\s*([+-]\d+)\s+(\S+)\s*$/.exec(msg.text)
+    const match = /^\s*([+-]\d+)\s+(\S.*)$/.exec(msg.text)
     if (match) {
         const score = match[1]!
-        const reason = match[2]!
+        const reason = match[2]!.trim()
         await query.addScore(msg.chat.id, Number(score), reason)
         return
     }
