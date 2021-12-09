@@ -22,3 +22,4 @@ routeFetch("timeslayer", ROLLBAR_KEY, (e) => router.route(e))
 
 // score - show score
 // history - show history
+// delete - delete score
