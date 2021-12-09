@@ -44,7 +44,7 @@ const handleMsg = async (msg: Message | undefined) => {
         return
     }
 
-    const match = /^\s*([+-]\d+)\s(\S.*)$/.exec(msg.text)
+    const match = /^([+-]\d+)\s(.*)$/.exec(msg.text.trim())
     if (match) {
         const score = match[1]!
         const reason = match[2]!.trim()
