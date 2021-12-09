@@ -36,7 +36,7 @@ export const deleteScore = async (
 ): Promise<null | scoreLog> => {
     const sql = `
         DELETE FROM credit WHERE chat_id=$1 AND message_id=$2
-        RETURNING createdAt, score, reason
+        RETURNING created_at, score, reason
     `
     const log = await database.queryOne<[string, number, string]>(
         sql,
