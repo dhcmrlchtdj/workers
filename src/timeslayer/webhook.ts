@@ -10,7 +10,7 @@ export const telegram = new Telegram(TIMESLAYER_BOT_TOKEN, "timeslayer_bot")
 const formatScoreLog = (x: query.scoreLog): string => {
     const time = format(x.createdAt, "YYYY-MM-DD hh:mm")
     const score = x.score > 0 ? `+${x.score}` : x.score
-    return `${time} | ${score} | ${x.reason}`
+    return `${time} | ${score} ${x.reason}`
 }
 
 const handleCommand = async (
@@ -28,7 +28,10 @@ const handleCommand = async (
         const limit = Number.isInteger(arg) && arg > 0 ? arg : 10
         const history = await query.getHistory(msg.chat.id, limit)
         const text = history.map(formatScoreLog).reverse().join("\n")
-        await telegram.send("sendMessage", { chat_id: msg.chat.id, text })
+        await telegram.send("sendMessage", {
+            chat_id: msg.chat.id,
+            text: text || "not found",
+        })
     } else if (command.cmd === "/delete") {
         let msgId = undefined
         if (msg.reply_to_message) {
