@@ -1,6 +1,6 @@
 const pad = (value: number) => `0${value}`.slice(-2)
 
-export const format = (date: Date, fmt: string, utc: boolean = false) => {
+export const format = (date: Date, fmt: string, utc: boolean = true) => {
     const _year = utc ? date.getUTCFullYear() : date.getFullYear()
     const _month = (utc ? date.getUTCMonth() : date.getMonth()) + 1
     const _date = utc ? date.getUTCDate() : date.getDate()
