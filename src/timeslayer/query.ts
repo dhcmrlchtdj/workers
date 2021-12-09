@@ -12,7 +12,7 @@ export type scoreLog = {
 }
 
 export const getScore = async (chatId: number): Promise<number> => {
-    const sql = `SELECT COALESCE(SUM(score), 0) FROM credit WHERE chat_id=$1`
+    const sql = `SELECT COALESCE(SUM(score), 0) FROM credit WHERE chatId=$1`
     const score = await database.queryOne<number>(sql, chatId)
     return score ?? 0
 }
@@ -24,7 +24,7 @@ export const addScore = async (
     reason: string,
 ): Promise<void> => {
     const sql = `
-        INSERT INTO credit(chat_id, message_id, score, reason)
+        INSERT INTO credit(chatId, messageId, score, reason)
         VALUES ($1, $2, $3, $4)
     `
     await database.raw(sql, chatId, messageId, score, reason)
@@ -35,8 +35,8 @@ export const deleteScore = async (
     messageId: number,
 ): Promise<null | scoreLog> => {
     const sql = `
-        DELETE FROM credit WHERE chat_id=$1 AND message_id=$2
-        RETURNING created_at, score, reason
+        DELETE FROM credit WHERE chatId=$1 AND messageId=$2
+        RETURNING createdAt, score, reason
     `
     const log = await database.queryOne<[string, number, string]>(
         sql,
@@ -52,10 +52,10 @@ export const getHistory = async (
     limit: number,
 ): Promise<Array<scoreLog>> => {
     const sql = `
-        SELECT created_at, score, reason
+        SELECT createdAt, score, reason
         FROM credit
-        WHERE chat_id=$1
-        ORDER BY created_at DESC
+        WHERE chatId=$1
+        ORDER BY createdAt DESC
         LIMIT $2
     `
     const log = await database.query<[string, number, string]>(
