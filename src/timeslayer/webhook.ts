@@ -8,9 +8,12 @@ declare const TIMESLAYER_BOT_TOKEN: string
 export const telegram = new Telegram(TIMESLAYER_BOT_TOKEN, "timeslayer_bot")
 
 const formatScoreLog = (x: query.scoreLog): string => {
-    const time = format(x.createdAt, "YYYY-MM-DD hh:mm")
+    const localtime = x.createdAt.toLocaleString("en-US", {
+        timeZone: "Asia/Shanghai",
+    })
+    const createdAt = format(new Date(localtime), "YYYY-MM-DD hh:mm")
     const score = x.score > 0 ? `+${x.score}` : x.score
-    return `${time} | ${score} ${x.reason}`
+    return `${createdAt} | ${score} ${x.reason}`
 }
 
 const handleCommand = async (
