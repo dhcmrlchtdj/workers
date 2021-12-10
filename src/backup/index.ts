@@ -35,7 +35,7 @@ async function backup(event: FetchEvent): Promise<Response> {
         const file = body.get("file") as string
         if (typeof file !== "string") throw new Error("expect file")
         const buf = fromStr(file)
-        const date = format(new Date(), "YYYYMMDD_hhmmss", true)
+        const date = format(new Date(), "YYYYMMDD_hhmmss")
         await b2.putObject(
             BACKUP_B2_BUCKET,
             `beancount/${date}.tar.zst.asc`,

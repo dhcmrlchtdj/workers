@@ -1,12 +1,12 @@
 const pad = (value: number) => `0${value}`.slice(-2)
 
-export const format = (date: Date, fmt: string, utc: boolean = true) => {
-    const _year = utc ? date.getUTCFullYear() : date.getFullYear()
-    const _month = (utc ? date.getUTCMonth() : date.getMonth()) + 1
-    const _date = utc ? date.getUTCDate() : date.getDate()
-    const _hour = utc ? date.getUTCHours() : date.getHours()
-    const _minute = utc ? date.getUTCMinutes() : date.getMinutes()
-    const _second = utc ? date.getUTCSeconds() : date.getSeconds()
+export const format = (date: Date, fmt: string): string => {
+    const _year = date.getUTCFullYear()
+    const _month = date.getUTCMonth()
+    const _date = date.getUTCDate()
+    const _hour = date.getUTCHours()
+    const _minute = date.getUTCMinutes()
+    const _second = date.getUTCSeconds()
     const pairs = {
         YYYY: _year,
         M: _month,

@@ -59,8 +59,8 @@ export class BackBlaze {
         const encodedUri = uriEncode(uri)
 
         const d = new Date()
-        const date = format(d, "YYYYMMDD", true)
-        const datetime = format(d, "YYYYMMDDThhmmssZ", true)
+        const date = format(d, "YYYYMMDD")
+        const datetime = format(d, "YYYYMMDDThhmmssZ")
 
         const service = `${date}/${this.region}/s3/aws4_request`
 
