@@ -2,7 +2,7 @@ const pad = (value: number) => `0${value}`.slice(-2)
 
 export const format = (date: Date, fmt: string): string => {
     const _year = date.getUTCFullYear()
-    const _month = date.getUTCMonth()
+    const _month = date.getUTCMonth() + 1
     const _date = date.getUTCDate()
     const _hour = date.getUTCHours()
     const _minute = date.getUTCMinutes()
