@@ -32,6 +32,7 @@ async function backup(event: FetchEvent): Promise<Response> {
     if (user === "beancount" && pass === BACKUP_PASS_BEANCOUNT) {
         const body = await req.formData()
         // XXX: cloudflare BUG, it should be File
+        // https://stackoverflow.com/a/54099205
         const file = body.get("file") as string
         if (typeof file !== "string") throw new Error("expect file")
         const buf = fromStr(file)
