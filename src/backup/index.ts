@@ -39,7 +39,7 @@ async function backup(event: FetchEvent): Promise<Response> {
         const date = format(new Date(), "YYYYMMDD_hhmmss")
         await b2.putObject(
             BACKUP_B2_BUCKET,
-            `beancount/${date}.tar.zst.asc`,
+            `beancount/${date}.tar.zst.age`,
             buf,
             "application/octet-stream",
         )
