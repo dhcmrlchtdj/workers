@@ -28,9 +28,7 @@ actions.set("/whoami", async (_arg: string, msg: Message) => {
 })
 
 const modifyTags = async (sql: string, arg: string, msg: Message) => {
-    const tag = arg.trim()
-    if (tag.length < 1) return
-    const tags = tag.split(/\s+/)
+    const tags = arg.trim().split(/\s+/).filter(Boolean)
     if (tags.length < 1) return
     await database.raw(sql, msg.chat.id, tags)
 }
