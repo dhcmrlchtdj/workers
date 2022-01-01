@@ -6,11 +6,11 @@
     "author": "h11 <nirisix@gmail.com>",
     "license": "MIT",
     "devDependencies": {
-        "@cloudflare/workers-types": "3.2.0",
-        "esbuild": "0.14.2",
+        "@cloudflare/workers-types": "3.3.0",
+        "esbuild": "0.14.10",
         "prettier": "2.5.1",
         "telegram-typings": "5.0.0",
-        "typescript": "4.5.2"
+        "typescript": "4.5.4"
     },
     "prettier": {
         "printWidth": 80,
