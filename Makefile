@@ -16,7 +16,7 @@ fmt:
 	prettier --write .
 
 $(targets): node_modules/tsconfig.tsbuildinfo
-	esbuild --bundle --format=esm --target=es2020 --platform=browser --outfile=$@/index.js $@/index.ts
+	esbuild --bundle --format=esm --target=es2020 --platform=neutral --outfile=$@/index.js $@/index.ts
 
 node_modules:
 	pnpm install

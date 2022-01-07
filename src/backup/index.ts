@@ -1,6 +1,5 @@
 import { BackBlaze } from "../_common/service/backblaze"
 import { format } from "../_common/format-date"
-import { fromStr } from "../_common/array_buffer"
 import { listenFetch } from "../_common/listen"
 import { getBA } from "../_common/basic_auth"
 
@@ -31,11 +30,11 @@ async function backup(event: FetchEvent): Promise<Response> {
 
     if (user === "beancount" && pass === BACKUP_PASS_BEANCOUNT) {
         const body = await req.formData()
-        // XXX: cloudflare BUG, it should be File
-        // https://stackoverflow.com/a/54099205
-        const file = body.get("file") as string
-        if (typeof file !== "string") throw new Error("expect file")
-        const buf = fromStr(file)
+        const file = body.get("file")
+        if (!(file instanceof File)) {
+            throw new Error("`file` is not a file")
+        }
+        const buf = await file.arrayBuffer()
         const date = format(new Date(), "YYYYMMDD_hhmmss")
         await b2.putObject(
             BACKUP_B2_BUCKET,
