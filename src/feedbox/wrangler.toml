@@ -2,3 +2,5 @@ type = "javascript"
 
 name = "feedbox"
 route = "feedbox.h11.io/*"
+
+compatibility_date = "2022-01-01"

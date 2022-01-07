@@ -46,7 +46,7 @@ jobs:
                   echo '${{ secrets.BCC_WEBHOOK_PATH }}' | wrangler secret put 'BCC_WEBHOOK_PATH'
                   echo '${{ secrets.BCC_BOT_TOKEN }}' | wrangler secret put 'BCC_BOT_TOKEN'
                   wrangler publish
-                  curl 'https://api.telegram.org/bot${{ secrets.BCC_BOT_TOKEN }}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${{ secrets.BCC_WEBHOOK_PATH }}'
+                  curl -s -f 'https://api.telegram.org/bot${{ secrets.BCC_BOT_TOKEN }}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${{ secrets.BCC_WEBHOOK_PATH }}'
 
             - run: make src/timeslayer
             - working-directory: src/timeslayer
@@ -61,7 +61,7 @@ jobs:
                   echo '${{ secrets.TIMESLAYER_WEBHOOK_PATH }}' | wrangler secret put 'TIMESLAYER_WEBHOOK_PATH'
                   echo '${{ secrets.TIMESLAYER_BOT_TOKEN }}' | wrangler secret put 'TIMESLAYER_BOT_TOKEN'
                   wrangler publish
-                  curl 'https://api.telegram.org/bot${{ secrets.TIMESLAYER_BOT_TOKEN }}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Ftimeslayer%2F${{ secrets.TIMESLAYER_WEBHOOK_PATH }}'
+                  curl -s -f 'https://api.telegram.org/bot${{ secrets.TIMESLAYER_BOT_TOKEN }}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Ftimeslayer%2F${{ secrets.TIMESLAYER_WEBHOOK_PATH }}'
 
             - run: make src/rollbar
             - working-directory: src/rollbar

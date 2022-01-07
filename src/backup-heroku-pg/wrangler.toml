@@ -2,5 +2,7 @@ type = "javascript"
 
 name = "backup-heroku-pg"
 
+compatibility_date = "2022-01-01"
+
 [triggers]
 crons = ["30 0 * * *"]

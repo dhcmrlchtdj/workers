@@ -2,3 +2,5 @@ type = "javascript"
 
 name = "bcc"
 route = "worker.h11.io/telegram/bcc/*"
+
+compatibility_date = "2022-01-01"

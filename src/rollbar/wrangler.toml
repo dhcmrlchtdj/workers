@@ -2,3 +2,5 @@ type = "javascript"
 
 name = "rollbar"
 route = "worker.h11.io/rollbar*"
+
+compatibility_date = "2022-01-01"
