@@ -4,3 +4,8 @@ name = "backup"
 route = "worker.h11.io/backup*"
 
 compatibility_date = "2022-01-01"
+
+[build.upload]
+format = "modules"
+dir = "."
+main = "./index.js"

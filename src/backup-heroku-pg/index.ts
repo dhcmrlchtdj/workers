@@ -1,49 +1,66 @@
 import { BackBlaze } from "../_common/service/backblaze"
+import { Rollbar } from "../_common/service/rollbar"
 import { GET, POST } from "../_common/feccan"
 import { encode } from "../_common/base64"
-import { listenSchedule } from "../_common/listen"
 
 // from worker environment
-declare const ROLLBAR_KEY: string
-declare const BACKUP_B2_KEY_ID: string
-declare const BACKUP_B2_KEY: string
-declare const BACKUP_B2_REGION: string
-declare const BACKUP_B2_BUCKET: string
-declare const BACKUP_HEROKU_PG_APP: string
-declare const BACKUP_HEROKU_PG_TOKEN: string
+type ENV = {
+    ROLLBAR_KEY: string
+    BACKUP_B2_KEY_ID: string
+    BACKUP_B2_KEY: string
+    BACKUP_B2_REGION: string
+    BACKUP_B2_BUCKET: string
+    BACKUP_HEROKU_PG_APP: string
+    BACKUP_HEROKU_PG_TOKEN: string
+}
 
 ///
 
-listenSchedule("backup-heroku-pg", ROLLBAR_KEY, backup)
+const worker: ExportedHandler<ENV> = {
+    async scheduled(_event, env, ctx) {
+        const monitor = new Rollbar(env.ROLLBAR_KEY, "backup-heroku-pg")
+        try {
+            await handler(env)
+        } catch (err) {
+            ctx.waitUntil(monitor.error(err as Error))
+        }
+    },
+}
+
+export default worker
 
 ///
 
-const b2 = new BackBlaze(BACKUP_B2_KEY_ID, BACKUP_B2_KEY, BACKUP_B2_REGION)
-
-async function backup(): Promise<void> {
-    const file = await fetchBackup()
+async function handler(env: ENV) {
+    const file = await fetchBackup(env)
     if (file === null) return
+
+    const b2 = new BackBlaze(
+        env.BACKUP_B2_KEY_ID,
+        env.BACKUP_B2_KEY,
+        env.BACKUP_B2_REGION,
+    )
     await b2.putObject(
-        BACKUP_B2_BUCKET,
+        env.BACKUP_B2_BUCKET,
         file.name,
         file.content,
         "application/octet-stream",
     )
 }
 
-async function fetchBackup(): Promise<{
+async function fetchBackup(env: ENV): Promise<{
     content: ArrayBuffer
     name: string
 } | null> {
     // https://github.com/heroku/cli/blob/v7.47.0/packages/pg-v5/commands/backups/url.js
     const headers = {
         accept: "application/json",
-        authorization: "Basic " + encode(":" + BACKUP_HEROKU_PG_TOKEN),
+        authorization: "Basic " + encode(":" + env.BACKUP_HEROKU_PG_TOKEN),
     }
 
     const host = "postgres-starter-api.heroku.com"
     const backups: HerokuBackup[] = await GET(
-        `https://${host}/client/v11/apps/${BACKUP_HEROKU_PG_APP}/transfers`,
+        `https://${host}/client/v11/apps/${env.BACKUP_HEROKU_PG_APP}/transfers`,
         headers,
     ).then((r) => r.json())
     const last = backups
@@ -52,7 +69,7 @@ async function fetchBackup(): Promise<{
     if (!last) return null
 
     const download: HerokuDownload = await POST(
-        `https://${host}/client/v11/apps/${BACKUP_HEROKU_PG_APP}/transfers/${last.num}/actions/public-url`,
+        `https://${host}/client/v11/apps/${env.BACKUP_HEROKU_PG_APP}/transfers/${last.num}/actions/public-url`,
         null,
         headers,
     ).then((r) => r.json())
