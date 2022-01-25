@@ -33,6 +33,18 @@ jobs:
               run: |
                   wrangler publish
 
+            - run: make src/current-ip
+            - working-directory: src/current-ip
+              env:
+                  CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+                  CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+              run: |
+                  echo '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  echo '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | wrangler secret put 'ROLLBAR_TG_BOT_TOKEN'
+                  echo '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | wrangler secret put 'ROLLBAR_TG_CHAT_ID'
+                  wrangler publish
+
             - run: make src/bcc
             - working-directory: src/bcc
               env:

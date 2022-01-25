@@ -1,0 +1,11 @@
+type = "javascript"
+
+name = "current-ip"
+route = "worker.h11.io/current-ip*"
+
+compatibility_date = "2022-01-01"
+
+kv_namespaces = [{
+    binding = "IP",
+    id = "3c2b8c77135540e39669e16c79b980c1"
+}]
