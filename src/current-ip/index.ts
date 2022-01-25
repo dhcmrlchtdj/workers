@@ -36,7 +36,7 @@ async function saveCurrentIp(machine: string, currIp: string) {
         await telegram.send("sendMessage", {
             parse_mode: "HTML",
             chat_id: Number(ROLLBAR_TG_CHAT_ID),
-            text: `IP changed to ${currIp}`,
+            text: `IP changed<br><pre>${machine} => ${currIp}</pre>`,
         })
     }
 }
