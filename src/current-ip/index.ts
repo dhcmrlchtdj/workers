@@ -31,7 +31,7 @@ async function handle(event: FetchEvent): Promise<Response> {
 async function saveCurrentIp(machine: string, currIp: string) {
     const prevIp = await IP.get(machine)
     if (prevIp !== currIp) {
-        await IP.put("current", currIp)
+        await IP.put(machine, currIp)
         const telegram = new Telegram(ROLLBAR_TG_BOT_TOKEN)
         await telegram.send("sendMessage", {
             parse_mode: "HTML",
