@@ -1,4 +1,7 @@
-import { Telegram } from "../_common/service/telegram"
+import {
+    Telegram,
+    encodeHtmlEntities as enc,
+} from "../_common/service/telegram"
 import { getBA } from "../_common/basic_auth"
 import { listenFetch } from "../_common/listen"
 
@@ -36,7 +39,7 @@ async function saveCurrentIp(machine: string, currIp: string) {
         await telegram.send("sendMessage", {
             parse_mode: "HTML",
             chat_id: Number(ROLLBAR_TG_CHAT_ID),
-            text: `IP changed<br><pre>${machine} => ${currIp}</pre>`,
+            text: `IP changed\n<pre>${enc(machine)} => ${enc(currIp)}</pre>`,
         })
     }
 }
