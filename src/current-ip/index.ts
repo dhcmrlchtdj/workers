@@ -5,9 +5,8 @@ import {
 import { getBA } from "../_common/basic_auth"
 import { listenFetch } from "../_common/listen"
 
-declare const IP: KVNamespace
-
 // from worker environment
+declare const IP: KVNamespace
 declare const ROLLBAR_KEY: string
 declare const ROLLBAR_TG_BOT_TOKEN: string
 declare const ROLLBAR_TG_CHAT_ID: string
@@ -40,6 +39,7 @@ async function saveCurrentIp(machine: string, currIp: string) {
             parse_mode: "HTML",
             chat_id: Number(ROLLBAR_TG_CHAT_ID),
             text: `IP changed\n<pre>${enc(machine)} => ${enc(currIp)}</pre>`,
+            disable_web_page_preview: true,
         })
     }
 }
