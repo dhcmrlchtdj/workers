@@ -21,10 +21,10 @@ listenSchedule("backup-papertrail", ROLLBAR_KEY, backup)
 
 const b2 = new BackBlaze(BACKUP_B2_KEY_ID, BACKUP_B2_KEY, BACKUP_B2_REGION)
 
-async function backup(_event: ScheduledEvent): Promise<void> {
-    const yestoday = new Date()
-    yestoday.setUTCDate(yestoday.getUTCDate() - 1)
-    const date = format(yestoday, "YYYY-MM-DD-hh", true)
+async function backup(): Promise<void> {
+    const yesterday = new Date()
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1)
+    const date = format(yesterday, "YYYY-MM-DD-hh")
 
     const file = await GET(
         `https://papertrailapp.com/api/v1/archives/${date}/download`,
