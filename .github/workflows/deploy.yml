@@ -9,10 +9,13 @@ jobs:
     deploy:
         runs-on: ubuntu-20.04
         steps:
+            # https://github.com/marketplace/actions/checkout
             - uses: actions/checkout@v2.4.0
-            - uses: actions/setup-node@v2.5.1
+            # https://github.com/marketplace/actions/setup-node-js-environment
+            - uses: actions/setup-node@v3.0.0
               with:
-                  node-version: "16.x"
+                  node-version: "16"
+            # https://github.com/marketplace/actions/cache
             - uses: actions/cache@v2.1.7
               with:
                   path: ~/.pnpm-store
