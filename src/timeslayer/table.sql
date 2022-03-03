@@ -20,6 +20,9 @@ COMMIT;
 -- deleteScore(chatId, messageId)
 --  DELETE FROM credit WHERE chatId=$1 AND messageId=$2 RETURNING score, reason
 
+-- updateReason(chatId, messageId, score, reason)
+--  UPDATE credit SET score=$3, reason=$4 WHERE chatId=$1 AND messageId=$2
+
 -- getHistory(chatId, limit)
 --  SELECT createdAt, score, reason
 --  FROM credit

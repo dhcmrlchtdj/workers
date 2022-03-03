@@ -30,6 +30,19 @@ export const addScore = async (
     await database.raw(sql, chatId, messageId, score, reason)
 }
 
+export const updateScore = async (
+    chatId: number,
+    messageId: number,
+    score: number,
+    reason: string,
+): Promise<void> => {
+    const sql = `
+        UPDATE credit SET score=$3, reason=$4
+        WHERE chatId=$1 AND messageId=$2
+    `
+    await database.raw(sql, chatId, messageId, score, reason)
+}
+
 export const deleteScore = async (
     chatId: number,
     messageId: number,

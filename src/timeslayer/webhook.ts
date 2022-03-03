@@ -66,7 +66,7 @@ const handleCommand = async (
     }
 }
 
-const handleMsg = async (msg: Message | undefined) => {
+const handleMsg = async (msg: Message | undefined, isEdit: boolean) => {
     if (!msg || !msg.text) return
 
     const command = telegram.extractCommand(msg)
@@ -79,7 +79,21 @@ const handleMsg = async (msg: Message | undefined) => {
     if (match) {
         const score = match[1]!
         const reason = match[2]!.trim()
-        await query.addScore(msg.chat.id, msg.message_id, Number(score), reason)
+        if (isEdit) {
+            await query.updateScore(
+                msg.chat.id,
+                msg.message_id,
+                Number(score),
+                reason,
+            )
+        } else {
+            await query.addScore(
+                msg.chat.id,
+                msg.message_id,
+                Number(score),
+                reason,
+            )
+        }
     }
 }
 
@@ -88,14 +102,18 @@ export const webhook = async ({
     monitor,
 }: Context): Promise<Response> => {
     const req = event.request
-    const handle = (m: Message | undefined) =>
-        event.waitUntil(handleMsg(m).catch((e) => monitor.error(e, req)))
+    const handle = (m: Message | undefined, isEdit: boolean) =>
+        event.waitUntil(
+            handleMsg(m, isEdit).catch((e) => monitor.error(e, req)),
+        )
 
     const payload: Update = await req.json()
-    handle(payload.message)
-    handle(payload.edited_message)
-    handle(payload.channel_post)
-    handle(payload.edited_channel_post)
+
+    handle(payload.message, false)
+    handle(payload.channel_post, false)
+
+    handle(payload.edited_message, true)
+    handle(payload.edited_channel_post, true)
 
     return new Response("ok")
 }
