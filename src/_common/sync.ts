@@ -119,6 +119,7 @@ export class Semaphore {
         if (this.used >= this.capacity) {
             return false
         } else {
+            this.used += 1
             return true
         }
     }
@@ -237,30 +238,55 @@ export class Condition {
 
 export class Channel<T = unknown> {
     private readers: Deferred<Option<T>>[]
-    private writers: [T, Deferred][]
+    private writers: [Option<T>, Deferred<boolean>][]
+    private closed: boolean
     constructor() {
         this.readers = []
         this.writers = []
+        this.closed = false
     }
-    async send(data: T): Promise<void> {
+    close() {
+        this.closed = true
+        this.readers.forEach((r) => r.resolve(None))
+        this.readers = []
+        this.writers.forEach(([_, w]) => w.resolve(false))
+        this.writers = []
+    }
+    isClosed(): boolean {
+        return this.closed
+    }
+    // true means the message is sent to a reader
+    // false means the channel closed and the data is discarded
+    async send(data: T): Promise<boolean> {
         if (this.readers.length > 0) {
             const r = this.readers.shift()!
             r.resolve(Some(data))
+            return true
         } else {
-            const w = new Deferred()
-            this.writers.push([data, w])
-            return w.promise
+            if (this.closed) {
+                return false
+            } else {
+                const w = new Deferred<boolean>()
+                this.writers.push([Some(data), w])
+                return w.promise
+            }
         }
     }
+    // Some(T) means we receive a message from a writer
+    // None means the channel is closed
     async receive(): Promise<Option<T>> {
         if (this.writers.length > 0) {
             const [data, w] = this.writers.shift()!
-            w.resolve()
-            return Some(data)
+            w.resolve(true)
+            return data
         } else {
-            const r = new Deferred<Option<T>>()
-            this.readers.push(r)
-            return r.promise
+            if (this.closed) {
+                return None
+            } else {
+                const r = new Deferred<Option<T>>()
+                this.readers.push(r)
+                return r.promise
+            }
         }
     }
 }
