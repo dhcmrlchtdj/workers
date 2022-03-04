@@ -22,7 +22,7 @@ export interface Option<T> {
     bind<K>(f: (x: T) => Option<K>): Option<K>
 }
 
-export const None: Option<any> = {
+export const None: Option<never> = {
     isNone: true,
     isSome: false,
     getExn: () => {
@@ -237,6 +237,14 @@ export class Condition {
 ///
 
 export class Channel<T = unknown> {
+    /*
+    Usage:
+    const chan = new Channel<number>();
+    chan.send(10);
+    const box = await chan.receive();
+    const msg = box.getExn()
+    chan.close()
+    */
     private readers: Deferred<Option<T>>[]
     private writers: [Option<T>, Deferred<boolean>][]
     private closed: boolean
@@ -290,6 +298,7 @@ export class Channel<T = unknown> {
         }
     }
 }
+
 export const ChanUtil = {
     async sendAll<T>(ch: Channel<T>, xs: T[]) {
         for (const x of xs) {
