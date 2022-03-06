@@ -42,6 +42,13 @@ export const Some = <T>(x: T): Option<T> => ({
 
 ///
 
+export const sleep = async (ms: number) =>
+    new Promise<void>((resolve) => {
+        setTimeout(() => resolve(), ms)
+    })
+
+///
+
 export class Mutex {
     /*
     Usage:
@@ -195,18 +202,22 @@ export class Condition {
     Usage:
     const lock = new Mutex()
     const cond = new Condition();
-    const thread1 = async () => {
+    let someTest = false
+    const thread1 = (async () => {
         await lock.lock();
-        while (...) {
+        while (!someTest) {
             await cond.wait(lock);
         }
+        console.log("done")
         lock.unlock();
-    }
-    const thread2 = async () => {
+    })();
+    const thread2 = (async () => {
+        await sleep(1000);
         await lock.lock();
+        someTest = true;
         cond.signal();
         lock.unlock();
-    }
+    })();
     */
     private queue: Deferred[]
     constructor() {
@@ -234,7 +245,61 @@ export class Condition {
     }
 }
 
-///
+export class Barrier {
+    /*
+    Usage:
+    const barrier = new Barrier(5);
+    for (let i = 0; i < 10; i++) {
+        setTimeout(async () => {
+            console.log("before wait");
+            await barrier.wait();
+            console.log("after wait");
+        });
+    }
+    */
+    private next: number
+    private target: number
+    private queue: Deferred[]
+    constructor(n: number) {
+        this.next = 1
+        this.target = n
+        this.queue = []
+    }
+    async wait(): Promise<void> {
+        if (this.next === this.target) {
+            this.next = 1 // reset
+            const prev = this.queue
+            this.queue = [] // reset
+            prev.forEach((d) => d.resolve())
+        } else {
+            this.next++
+            const d = new Deferred()
+            this.queue.push(d)
+            await d.promise
+        }
+    }
+}
+
+export class Once {
+    /*
+    Usage:
+    const once = new Once();
+    once.do(() => console.log("init"));
+    console.log(init.isCompleted());
+    */
+    private completed: boolean
+    constructor() {
+        this.completed = false
+    }
+    do(fn: Function) {
+        if (this.completed) return
+        this.completed = true
+        fn()
+    }
+    isCompleted(): boolean {
+        return this.completed
+    }
+}
 
 export class Channel<T = unknown> {
     /*
@@ -246,7 +311,7 @@ export class Channel<T = unknown> {
     chan.close()
     */
     private readers: Deferred<Option<T>>[]
-    private writers: [Option<T>, Deferred<boolean>][]
+    private writers: [T, Deferred<boolean>][]
     private closed: boolean
     constructor() {
         this.readers = []
@@ -266,38 +331,97 @@ export class Channel<T = unknown> {
     // true means the message is sent to a reader
     // false means the channel closed and the data is discarded
     async send(data: T): Promise<boolean> {
+        if (this.closed) return false
         if (this.readers.length > 0) {
             const r = this.readers.shift()!
             r.resolve(Some(data))
             return true
         } else {
-            if (this.closed) {
-                return false
-            } else {
-                const w = new Deferred<boolean>()
-                this.writers.push([Some(data), w])
-                return w.promise
-            }
+            const w = new Deferred<boolean>()
+            this.writers.push([data, w])
+            return w.promise
         }
     }
     // Some(T) means we receive a message from a writer
     // None means the channel is closed
     async receive(): Promise<Option<T>> {
+        if (this.closed) return None
         if (this.writers.length > 0) {
             const [data, w] = this.writers.shift()!
             w.resolve(true)
-            return data
+            return Some(data)
         } else {
-            if (this.closed) {
-                return None
-            } else {
-                const r = new Deferred<Option<T>>()
-                this.readers.push(r)
-                return r.promise
-            }
+            const r = new Deferred<Option<T>>()
+            this.readers.push(r)
+            return r.promise
         }
     }
 }
+
+export class BufferedChannel<T = unknown> {
+    private readers: Deferred<Option<T>>[]
+    private writers: [T, Deferred<boolean>][]
+    private closed: boolean
+    private capacity: number
+    private buffer: T[]
+    constructor(capacity: number) {
+        if (!(Number.isSafeInteger(capacity) && capacity > 0)) {
+            throw new Error(
+                "the buffer capacity must be a safe integer and greater than 0",
+            )
+        }
+        this.capacity = capacity
+        this.buffer = []
+        this.readers = []
+        this.writers = []
+        this.closed = false
+    }
+    close() {
+        this.closed = true
+        this.buffer = []
+        this.readers.forEach((r) => r.resolve(None))
+        this.readers = []
+        this.writers.forEach(([_, w]) => w.resolve(false))
+        this.writers = []
+    }
+    isClosed(): boolean {
+        return this.closed
+    }
+    async send(data: T): Promise<boolean> {
+        if (this.closed) return false
+        if (this.readers.length > 0) {
+            // assert(this.buffer.length === 0)
+            const r = this.readers.shift()!
+            r.resolve(Some(data))
+            return true
+        } else if (this.buffer.length < this.capacity) {
+            this.buffer.push(data)
+            return true
+        } else {
+            const w = new Deferred<boolean>()
+            this.writers.push([data, w])
+            return w.promise
+        }
+    }
+    async receive(): Promise<Option<T>> {
+        if (this.closed) return None
+        if (this.buffer.length > 0) {
+            const data = this.buffer.shift()!
+            if (this.writers.length > 0) {
+                const [data, w] = this.writers.shift()!
+                w.resolve(true)
+                this.buffer.push(data)
+            }
+            return Some(data)
+        } else {
+            const r = new Deferred<Option<T>>()
+            this.readers.push(r)
+            return r.promise
+        }
+    }
+}
+
+///
 
 export const ChanUtil = {
     async sendAll<T>(ch: Channel<T>, xs: T[]) {
