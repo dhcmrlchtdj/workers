@@ -414,6 +414,7 @@ export class BufferedChannel<T = unknown> {
             }
             return Some(data)
         } else {
+            // assert(this.writers.length === 0)
             const r = new Deferred<Option<T>>()
             this.readers.push(r)
             return r.promise
