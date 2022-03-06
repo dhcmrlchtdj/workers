@@ -152,30 +152,30 @@ export class Semaphore {
 
 export class RWLock {
     // read-preferring read-write-lock
-    private globalLock: Mutex
+    private writeLock: Mutex
     private readerLock: Mutex
     private reader: number
     constructor() {
-        this.globalLock = new Mutex()
+        this.writeLock = new Mutex()
         this.readerLock = new Mutex()
         this.reader = 0
     }
 
-    lock(): Promise<void> {
-        return this.globalLock.lock()
+    lockWrite(): Promise<void> {
+        return this.writeLock.lock()
     }
-    unlock(): void {
-        return this.globalLock.unlock()
+    unlockWrite(): void {
+        return this.writeLock.unlock()
     }
-    withLock<T>(f: () => Promise<T>): Promise<T> {
-        return this.globalLock.withLock(f)
+    withWriteLock<T>(f: () => Promise<T>): Promise<T> {
+        return this.writeLock.withLock(f)
     }
 
     lockRead(): Promise<void> {
         return this.readerLock.withLock(async () => {
             this.reader += 1
             if (this.reader === 1) {
-                await this.globalLock.lock()
+                await this.writeLock.lock()
             }
         })
     }
@@ -183,7 +183,7 @@ export class RWLock {
         return this.readerLock.withLock(async () => {
             this.reader -= 1
             if (this.reader === 0) {
-                await this.globalLock.unlock()
+                await this.writeLock.unlock()
             }
         })
     }
