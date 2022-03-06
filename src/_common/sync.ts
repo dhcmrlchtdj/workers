@@ -160,7 +160,6 @@ export class RWLock {
         this.readerLock = new Mutex()
         this.reader = 0
     }
-
     lockWrite(): Promise<void> {
         return this.writeLock.lock()
     }
@@ -238,9 +237,8 @@ export class Condition {
     }
     broadcast(): void {
         if (this.queue.length > 0) {
-            const prev = this.queue
+            this.queue.forEach((d) => d.resolve())
             this.queue = []
-            prev.forEach((d) => d.resolve())
         }
     }
 }
@@ -267,10 +265,10 @@ export class Barrier {
     }
     async wait(): Promise<void> {
         if (this.next === this.target) {
-            this.next = 1 // reset
-            const prev = this.queue
-            this.queue = [] // reset
-            prev.forEach((d) => d.resolve())
+            this.queue.forEach((d) => d.resolve())
+            // reset
+            this.queue = []
+            this.next = 1
         } else {
             this.next++
             const d = new Deferred()
