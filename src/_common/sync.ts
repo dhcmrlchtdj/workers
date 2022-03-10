@@ -356,6 +356,9 @@ export class Channel<T = unknown> {
     }
 }
 
+// don't close a channel from the receiver side
+// don't close a channel if the channel has multiple concurrent senders
+// by Go101
 export class BufferedChannel<T = unknown> {
     private readers: Deferred<Option<T>>[]
     private writers: [T, Deferred<boolean>][]
@@ -376,7 +379,6 @@ export class BufferedChannel<T = unknown> {
     }
     close() {
         this.closed = true
-        this.buffer = []
         this.readers.forEach((r) => r.resolve(None))
         this.readers = []
         this.writers.forEach(([_, w]) => w.resolve(false))
@@ -384,6 +386,10 @@ export class BufferedChannel<T = unknown> {
     }
     isClosed(): boolean {
         return this.closed
+    }
+    isDrained(): boolean {
+        if (!this.closed) return false
+        return this.buffer.length === 0
     }
     async send(data: T): Promise<boolean> {
         if (this.closed) return false
@@ -402,7 +408,6 @@ export class BufferedChannel<T = unknown> {
         }
     }
     async receive(): Promise<Option<T>> {
-        if (this.closed) return None
         if (this.buffer.length > 0) {
             const data = this.buffer.shift()!
             if (this.writers.length > 0) {
@@ -413,9 +418,13 @@ export class BufferedChannel<T = unknown> {
             return Some(data)
         } else {
             // assert(this.writers.length === 0)
-            const r = new Deferred<Option<T>>()
-            this.readers.push(r)
-            return r.promise
+            if (this.closed) {
+                return None
+            } else {
+                const r = new Deferred<Option<T>>()
+                this.readers.push(r)
+                return r.promise
+            }
         }
     }
 }
