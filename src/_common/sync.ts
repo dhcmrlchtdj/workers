@@ -108,7 +108,9 @@ export class Semaphore {
     private used: number
     private queue: Deferred[]
     constructor(capacity: number) {
-        if (capacity <= 0) throw new Error("capacity must greater than 0")
+        if (capacity <= 0) {
+            throw new Error("the capacity must be greater than 0")
+        }
         this.capacity = capacity
         this.used = 0
         this.queue = []
@@ -317,9 +319,9 @@ export class Channel<T = unknown> {
     private capacity: number
     private buffer: T[]
     constructor(capacity: number = 0) {
-        if (!(Number.isSafeInteger(capacity) && capacity >= 0)) {
+        if (!Number.isSafeInteger(capacity) || capacity < 0) {
             throw new Error(
-                "the buffer capacity must be a safe integer and greater than 0",
+                "the capacity must be a safe integer and not lesser than 0",
             )
         }
         this.capacity = capacity
