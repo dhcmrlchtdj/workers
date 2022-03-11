@@ -299,74 +299,25 @@ export class Once {
     }
 }
 
+// don't close a channel from the receiver side
+// don't close a channel if the channel has multiple concurrent senders
+// by Go101
 export class Channel<T = unknown> {
     /*
     Usage:
     const chan = new Channel<number>();
     chan.send(10);
-    const box = await chan.receive();
-    const msg = box.getExn()
-    chan.close()
+    chan.close();
+    const msg = chan.tryReceive(); // => Some(10)
+    const empty = chan.tryReceive(); // => None
     */
-    private readers: Deferred<Option<T>>[]
-    private writers: [T, Deferred<boolean>][]
-    private closed: boolean
-    constructor() {
-        this.readers = []
-        this.writers = []
-        this.closed = false
-    }
-    close() {
-        this.closed = true
-        this.readers.forEach((r) => r.resolve(None))
-        this.readers = []
-        this.writers.forEach(([_, w]) => w.resolve(false))
-        this.writers = []
-    }
-    isClosed(): boolean {
-        return this.closed
-    }
-    // true means the message is sent to a reader
-    // false means the channel closed and the data is discarded
-    async send(data: T): Promise<boolean> {
-        if (this.closed) return false
-        if (this.readers.length > 0) {
-            const r = this.readers.shift()!
-            r.resolve(Some(data))
-            return true
-        } else {
-            const w = new Deferred<boolean>()
-            this.writers.push([data, w])
-            return w.promise
-        }
-    }
-    // Some(T) means we receive a message from a writer
-    // None means the channel is closed
-    async receive(): Promise<Option<T>> {
-        if (this.closed) return None
-        if (this.writers.length > 0) {
-            const [data, w] = this.writers.shift()!
-            w.resolve(true)
-            return Some(data)
-        } else {
-            const r = new Deferred<Option<T>>()
-            this.readers.push(r)
-            return r.promise
-        }
-    }
-}
-
-// don't close a channel from the receiver side
-// don't close a channel if the channel has multiple concurrent senders
-// by Go101
-export class BufferedChannel<T = unknown> {
     private readers: Deferred<Option<T>>[]
     private writers: [T, Deferred<boolean>][]
     private closed: boolean
     private capacity: number
     private buffer: T[]
-    constructor(capacity: number) {
-        if (!(Number.isSafeInteger(capacity) && capacity > 0)) {
+    constructor(capacity: number = 0) {
+        if (!(Number.isSafeInteger(capacity) && capacity >= 0)) {
             throw new Error(
                 "the buffer capacity must be a safe integer and greater than 0",
             )
@@ -381,24 +332,26 @@ export class BufferedChannel<T = unknown> {
         this.closed = true
         this.readers.forEach((r) => r.resolve(None))
         this.readers = []
-        this.writers.forEach(([_, w]) => w.resolve(false))
-        this.writers = []
     }
     isClosed(): boolean {
         return this.closed
     }
     isDrained(): boolean {
         if (!this.closed) return false
-        return this.buffer.length === 0
+        return this.buffer.length === 0 && this.writers.length === 0
     }
+    // true means the message is sent to buffer/reader
+    // false means the channel closed and the data is discarded
     async send(data: T): Promise<boolean> {
-        if (this.closed) return false
-        if (this.readers.length > 0) {
+        if (this.closed) {
+            return false
+        } else if (this.readers.length > 0) {
             // assert(this.buffer.length === 0)
             const r = this.readers.shift()!
             r.resolve(Some(data))
             return true
         } else if (this.buffer.length < this.capacity) {
+            // buffered channel
             this.buffer.push(data)
             return true
         } else {
@@ -407,8 +360,27 @@ export class BufferedChannel<T = unknown> {
             return w.promise
         }
     }
+    trySend(data: T): boolean {
+        if (this.closed) {
+            return false
+        } else if (this.readers.length > 0) {
+            // assert(this.buffer.length === 0)
+            const r = this.readers.shift()!
+            r.resolve(Some(data))
+            return true
+        } else if (this.buffer.length < this.capacity) {
+            // buffered channel
+            this.buffer.push(data)
+            return true
+        } else {
+            return false
+        }
+    }
+    // Some(T) means we receive a message from a writer
+    // None means the channel is closed
     async receive(): Promise<Option<T>> {
         if (this.buffer.length > 0) {
+            // buffered channel
             const data = this.buffer.shift()!
             if (this.writers.length > 0) {
                 const [data, w] = this.writers.shift()!
@@ -416,15 +388,36 @@ export class BufferedChannel<T = unknown> {
                 this.buffer.push(data)
             }
             return Some(data)
+        } else if (this.writers.length > 0) {
+            // rendezvous channel
+            const [data, w] = this.writers.shift()!
+            w.resolve(true)
+            return Some(data)
+        } else if (this.closed) {
+            return None
         } else {
-            // assert(this.writers.length === 0)
-            if (this.closed) {
-                return None
-            } else {
-                const r = new Deferred<Option<T>>()
-                this.readers.push(r)
-                return r.promise
+            const r = new Deferred<Option<T>>()
+            this.readers.push(r)
+            return r.promise
+        }
+    }
+    tryReceive(): Option<T> {
+        if (this.buffer.length > 0) {
+            // buffered channel
+            const data = this.buffer.shift()!
+            if (this.writers.length > 0) {
+                const [data, w] = this.writers.shift()!
+                w.resolve(true)
+                this.buffer.push(data)
             }
+            return Some(data)
+        } else if (this.writers.length > 0) {
+            // rendezvous channel
+            const [data, w] = this.writers.shift()!
+            w.resolve(true)
+            return Some(data)
+        } else {
+            return None
         }
     }
 }
