@@ -27,4 +27,11 @@ node_modules/tsconfig.tsbuildinfo: node_modules $(shell ls src/**/*.ts)
 upgrade:
 	pnpm update --latest # --interactive
 
+update_compatibility_date:
+	@for t in $(targets); do \
+		gsed -i \
+		"s/compatibility_date =.*/compatibility_date = \"$(shell date '+%Y-%m-%d')\"/" \
+		"$$t/wrangler.toml"; \
+		done
+
 .PHONY: build check force fmt $(targets)

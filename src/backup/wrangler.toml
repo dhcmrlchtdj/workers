@@ -3,4 +3,4 @@ type = "javascript"
 name = "backup"
 route = "worker.h11.io/backup*"
 
-compatibility_date = "2022-01-01"
+compatibility_date = "2022-03-22"
