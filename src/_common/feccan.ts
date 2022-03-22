@@ -7,7 +7,8 @@ async function feccan(
     const resp = await fetch(input, init)
     if (resp.status < 200 || resp.status >= 300) {
         const text = await resp.text()
-        throw new Error(resp.statusText + "\n" + text)
+        const url = typeof input === "string" ? input : input.url
+        throw new Error(resp.statusText + "\n" + text + "\n" + url)
     }
     return resp
 }
