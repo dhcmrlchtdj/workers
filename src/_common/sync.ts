@@ -285,7 +285,7 @@ export class Once {
     Usage:
     const once = new Once();
     once.do(() => console.log("init"));
-    console.log(init.isCompleted());
+    console.log(once.isCompleted());
     */
     private completed: boolean
     constructor() {
