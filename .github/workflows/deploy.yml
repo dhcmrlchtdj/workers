@@ -79,21 +79,6 @@ jobs:
                   wrangler publish
                   curl -s -f 'https://api.telegram.org/bot${{ secrets.BCC_BOT_TOKEN }}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${{ secrets.BCC_WEBHOOK_PATH }}'
 
-            - run: make src/timeslayer
-            - working-directory: src/timeslayer
-              env:
-                  CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-                  CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
-                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-              run: |
-                  echo '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
-                  echo '${{ secrets.DB_API }}' | wrangler secret put 'DB_API'
-                  echo '${{ secrets.DB_TOKEN }}' | wrangler secret put 'DB_TOKEN'
-                  echo '${{ secrets.TIMESLAYER_WEBHOOK_PATH }}' | wrangler secret put 'TIMESLAYER_WEBHOOK_PATH'
-                  echo '${{ secrets.TIMESLAYER_BOT_TOKEN }}' | wrangler secret put 'TIMESLAYER_BOT_TOKEN'
-                  wrangler publish
-                  curl -s -f 'https://api.telegram.org/bot${{ secrets.TIMESLAYER_BOT_TOKEN }}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Ftimeslayer%2F${{ secrets.TIMESLAYER_WEBHOOK_PATH }}'
-
             - run: make src/rollbar
             - working-directory: src/rollbar
               env:
