@@ -1,12 +1,9 @@
-import { Deferred, Option, Some, None, sleep } from "./sync"
+import { Deferred, Option, Some, None } from "./sync"
 
-class ID {
-    static count = 0
-    static gen() {
-        ID.count++
-        return ID.count
-    }
-}
+let currentId = 0
+const genId = () => currentId++
+const alwaysTrue = () => true
+function noop() {}
 
 ///
 
@@ -24,7 +21,7 @@ type Sender<T> = {
     defer: Deferred<boolean>
     data: T
     tryLock(): boolean
-    unlock(): void
+    abort(): void
     complete(): void
 }
 
@@ -32,7 +29,7 @@ type Receiver<T> = {
     id?: number
     defer: Deferred<Option<T>>
     tryLock(): boolean
-    unlock(): void
+    abort(): void
     complete(): void
 }
 
@@ -40,43 +37,38 @@ export class Channel<T = unknown> {
     private senders: Sender<T>[]
     private receivers: Receiver<T>[]
     private closed: boolean
-    private syncing: boolean
     constructor() {
         this.senders = []
         this.receivers = []
         this.closed = false
-        this.syncing = false
     }
-    async close() {
+    close() {
         // don't close a channel from the receiver side
         // don't close a channel if the channel has multiple concurrent senders
         // by Go101
         if (this.closed) return
         this.closed = true
-        while (this.receivers.length > 0) {
+        this.rendezvous()
+        if (this.receivers.length > 0) {
             if (this.senders.length === 0) {
                 this.receivers = this.receivers
                     .map((receiver) => {
                         if (receiver.tryLock()) {
                             receiver.defer.resolve(None)
+                            receiver.complete()
                             return null
                         } else {
                             return receiver
                         }
                     })
                     .filter(Boolean) as Receiver<T>[]
-                await sleep(1)
-            } else {
-                await this.sync()
             }
         }
     }
     isClosed(): boolean {
         return this.closed
     }
-    private async sync() {
-        if (this.syncing) return
-        this.syncing = true
+    private rendezvous() {
         while (this.receivers.length > 0 && this.senders.length > 0) {
             const receiver = this.receivers[0]!
             const sender = this.senders[0]!
@@ -86,29 +78,32 @@ export class Channel<T = unknown> {
                     this.senders.shift()
                     receiver.defer.resolve(Some(sender.data))
                     receiver.complete()
-                    receiver.unlock()
                     sender.defer.resolve(true)
                     sender.complete()
-                    sender.unlock()
                 } else {
-                    receiver.unlock()
-                    await sleep(1)
+                    receiver.abort()
+                    return
                 }
             } else {
-                await sleep(1)
+                return
             }
         }
-        this.syncing = false
     }
-    private pushToQueue(queue: "senders", waiter: Sender<T>): void
-    private pushToQueue(queue: "receivers", waiter: Receiver<T>): void
-    private pushToQueue(
-        queue: "senders" | "receivers",
-        waiter: Sender<T> | Receiver<T>,
-    ) {
-        // @ts-ignore
-        this[queue].push(waiter)
-        this.sync()
+    sendersAdd(sender: Sender<T>) {
+        this.senders.push(sender)
+        this.rendezvous()
+    }
+    sendersRemove(id: number) {
+        this.senders = this.senders.filter((x) => x.id !== id)
+        this.rendezvous()
+    }
+    receiversAdd(receiver: Receiver<T>) {
+        this.receivers.push(receiver)
+        this.rendezvous()
+    }
+    receiversRemove(id: number) {
+        this.receivers = this.receivers.filter((x) => x.id !== id)
+        this.rendezvous()
     }
     async send(data: T): Promise<boolean> {
         const r = this.trySend(data)
@@ -118,13 +113,11 @@ export class Channel<T = unknown> {
             const sender: Sender<T> = {
                 data,
                 defer: new Deferred<boolean>(),
-                tryLock() {
-                    return true
-                },
-                unlock() {},
-                complete() {},
+                tryLock: alwaysTrue,
+                abort: noop,
+                complete: noop,
             }
-            this.pushToQueue("senders", sender)
+            this.sendersAdd(sender)
             return sender.defer.promise
         }
     }
@@ -140,7 +133,6 @@ export class Channel<T = unknown> {
                     this.receivers.shift()
                     receiver.defer.resolve(Some(data))
                     receiver.complete()
-                    receiver.unlock()
                     return Some(true)
                 } else {
                     return None
@@ -157,13 +149,11 @@ export class Channel<T = unknown> {
         } else {
             const receiver: Receiver<T> = {
                 defer: new Deferred<Option<T>>(),
-                tryLock() {
-                    return true
-                },
-                unlock() {},
-                complete() {},
+                tryLock: alwaysTrue,
+                abort: noop,
+                complete: noop,
             }
-            this.pushToQueue("receivers", receiver)
+            this.receiversAdd(receiver)
             return receiver.defer.promise
         }
     }
@@ -175,7 +165,6 @@ export class Channel<T = unknown> {
             if (sender.tryLock()) {
                 this.senders.shift()
                 sender.defer.resolve(true)
-                sender.unlock()
                 sender.complete()
                 return Some(Some(sender.data))
             } else {
@@ -207,11 +196,12 @@ type Selection<T> =
       }
 
 export class Select {
+    private state: "idle" | "running" | "completed"
     private selections: Selection<any>[]
     private locked: boolean
     private tryLock: () => boolean
-    private unlock: () => void
     constructor() {
+        this.state = "idle"
         this.selections = []
         this.locked = false
         this.tryLock = () => {
@@ -222,84 +212,91 @@ export class Select {
                 return true
             }
         }
-        this.unlock = () => {
-            this.locked = false
-        }
     }
     send<T>(chan: Channel<T>, data: T, callback: (sent: boolean) => unknown) {
         if (this.selections.some((sel) => sel.chan === chan)) {
-            throw new Error("duplicated channel")
+            throw new Error("[Select] duplicated channel")
         }
-        this.selections.push({ id: ID.gen(), op: "send", chan, data, callback })
+        this.selections.push({ id: genId(), op: "send", chan, data, callback })
         return this
     }
     receive<T>(chan: Channel<T>, callback: (data: Option<T>) => unknown) {
         if (this.selections.some((sel) => sel.chan === chan)) {
-            throw new Error("duplicated channel")
+            throw new Error("[Select] duplicated channel")
         }
-        this.selections.push({ id: ID.gen(), op: "receive", chan, callback })
+        this.selections.push({ id: genId(), op: "receive", chan, callback })
         return this
     }
     async select() {
+        if (this.state !== "idle") {
+            throw new Error("[Select] not a idle selector")
+        }
+        this.state = "running"
         // randomize
         this.selections.sort(() => Math.random() - 0.5)
-        // try to send/receive
-        for (let selection of this.selections) {
-            if (selection.op === "send") {
-                const r = selection.chan.trySend(selection.data)
-                if (r.isSome) {
-                    selection.callback(r.getExn())
-                    return
-                }
-            } else {
-                const r = selection.chan.tryReceive()
-                if (r.isSome) {
-                    selection.callback(r.getExn())
-                    return
+        while (this.state !== "completed") {
+            this.locked = false
+
+            // try to send/receive
+            for (const selection of this.selections) {
+                if (selection.op === "send") {
+                    const r = selection.chan.trySend(selection.data)
+                    if (r.isSome) {
+                        selection.callback(r.getExn())
+                        this.state = "completed"
+                        return
+                    }
+                } else {
+                    const r = selection.chan.tryReceive()
+                    if (r.isSome) {
+                        selection.callback(r.getExn())
+                        this.state = "completed"
+                        return
+                    }
                 }
             }
-        }
-        // block all channels
-        const completed = new Deferred()
-        for (let selection of this.selections) {
-            if (selection.op === "send") {
-                const sender: Sender<unknown> = {
-                    id: selection.id,
-                    data: selection.data,
-                    defer: new Deferred(),
-                    tryLock: this.tryLock,
-                    unlock: this.unlock,
-                    complete: completed.resolve,
+
+            // block all channels
+            const done = new Deferred()
+            for (const selection of this.selections) {
+                if (selection.op === "send") {
+                    const sender: Sender<unknown> = {
+                        id: selection.id,
+                        data: selection.data,
+                        defer: new Deferred(),
+                        tryLock: this.tryLock,
+                        abort: done.reject,
+                        complete: done.resolve,
+                    }
+                    sender.defer.promise.then(selection.callback)
+                    selection.chan.sendersAdd(sender)
+                } else {
+                    const receiver: Receiver<unknown> = {
+                        id: selection.id,
+                        defer: new Deferred(),
+                        tryLock: this.tryLock,
+                        abort: done.reject,
+                        complete: done.resolve,
+                    }
+                    receiver.defer.promise.then(selection.callback)
+                    selection.chan.receiversAdd(receiver)
                 }
-                sender.defer.promise.then(selection.callback)
-                // @ts-ignore
-                selection.chan.pushToQueue("senders", sender)
-            } else {
-                const receiver: Receiver<unknown> = {
-                    id: selection.id,
-                    defer: new Deferred(),
-                    tryLock: this.tryLock,
-                    unlock: this.unlock,
-                    complete: completed.resolve,
-                }
-                receiver.defer.promise.then(selection.callback)
-                // @ts-ignore
-                selection.chan.pushToQueue("receivers", receiver)
+                if (done.isFulfilled) break
             }
-        }
-        await completed.promise
-        // cleanup
-        for (const selection of this.selections) {
-            if (selection.op === "send") {
-                // @ts-ignore
-                selection.chan.senders = selection.chan.senders.filter(
-                    (waiter) => waiter.id !== selection.id,
-                )
-            } else {
-                // @ts-ignore
-                selection.chan.receivers = selection.chan.receivers.filter(
-                    (waiter) => waiter.id !== selection.id,
-                )
+            try {
+                await done.promise
+                this.state = "completed"
+            } catch (_) {
+                // aborted
+            }
+
+            // cleanup
+            for (const selection of this.selections) {
+                if (selection.op === "send") {
+                    selection.chan.sendersRemove(selection.id)
+                } else {
+                    selection.chan.receiversRemove(selection.id)
+                }
             }
         }
     }

@@ -1,13 +1,21 @@
 export class Deferred<T = void> {
     promise: Promise<T>
+    isFulfilled: boolean
     // @ts-ignore
     resolve: (payload: T) => void
     // @ts-ignore
-    reject: (err: Error) => void
+    reject: (err?: Error) => void
     constructor() {
+        this.isFulfilled = false
         this.promise = new Promise((resolve, reject) => {
-            this.resolve = resolve
-            this.reject = reject
+            this.resolve = (payload: T) => {
+                this.isFulfilled = true
+                resolve(payload)
+            }
+            this.reject = (err?: Error) => {
+                this.isFulfilled = true
+                reject(err)
+            }
         })
     }
 }
