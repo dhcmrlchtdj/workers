@@ -301,159 +301,36 @@ export class Once {
     }
 }
 
-// don't close a channel from the receiver side
-// don't close a channel if the channel has multiple concurrent senders
-// by Go101
-export class Channel<T = unknown> {
-    /*
-    Usage:
-    const chan = new Channel<number>();
-    chan.send(10);
-    chan.close();
-    const msg = chan.tryReceive(); // => Some(10)
-    const empty = chan.tryReceive(); // => None
-    */
-    private readers: Deferred<Option<T>>[]
-    private writers: [T, Deferred<boolean>][]
-    private closed: boolean
-    private capacity: number
-    private buffer: T[]
-    constructor(capacity: number = 0) {
-        if (!Number.isSafeInteger(capacity) || capacity < 0) {
-            throw new Error(
-                "the capacity must be a safe integer and not lesser than 0",
-            )
-        }
-        this.capacity = capacity
-        this.buffer = []
-        this.readers = []
-        this.writers = []
-        this.closed = false
-    }
-    close() {
-        this.closed = true
-        this.readers.forEach((r) => r.resolve(None))
-        this.readers = []
-    }
-    isClosed(): boolean {
-        return this.closed
-    }
-    isDrained(): boolean {
-        if (!this.closed) return false
-        return this.buffer.length === 0 && this.writers.length === 0
-    }
-    // true means the message is sent to buffer/reader
-    // false means the channel closed and the data is discarded
-    async send(data: T): Promise<boolean> {
-        if (this.closed) {
-            return false
-        } else if (this.readers.length > 0) {
-            // assert(this.buffer.length === 0)
-            const r = this.readers.shift()!
-            r.resolve(Some(data))
-            return true
-        } else if (this.buffer.length < this.capacity) {
-            // buffered channel
-            this.buffer.push(data)
-            return true
-        } else {
-            const w = new Deferred<boolean>()
-            this.writers.push([data, w])
-            return w.promise
-        }
-    }
-    trySend(data: T): boolean {
-        if (this.closed) {
-            return false
-        } else if (this.readers.length > 0) {
-            // assert(this.buffer.length === 0)
-            const r = this.readers.shift()!
-            r.resolve(Some(data))
-            return true
-        } else if (this.buffer.length < this.capacity) {
-            // buffered channel
-            this.buffer.push(data)
-            return true
-        } else {
-            return false
-        }
-    }
-    // Some(T) means we receive a message from a writer
-    // None means the channel is closed
-    async receive(): Promise<Option<T>> {
-        if (this.buffer.length > 0) {
-            // buffered channel
-            const data = this.buffer.shift()!
-            if (this.writers.length > 0) {
-                const [data, w] = this.writers.shift()!
-                w.resolve(true)
-                this.buffer.push(data)
-            }
-            return Some(data)
-        } else if (this.writers.length > 0) {
-            // rendezvous channel
-            const [data, w] = this.writers.shift()!
-            w.resolve(true)
-            return Some(data)
-        } else if (this.closed) {
-            return None
-        } else {
-            const r = new Deferred<Option<T>>()
-            this.readers.push(r)
-            return r.promise
-        }
-    }
-    tryReceive(): Option<T> {
-        if (this.buffer.length > 0) {
-            // buffered channel
-            const data = this.buffer.shift()!
-            if (this.writers.length > 0) {
-                const [data, w] = this.writers.shift()!
-                w.resolve(true)
-                this.buffer.push(data)
-            }
-            return Some(data)
-        } else if (this.writers.length > 0) {
-            // rendezvous channel
-            const [data, w] = this.writers.shift()!
-            w.resolve(true)
-            return Some(data)
-        } else {
-            return None
-        }
-    }
-}
-
 ///
 
-export const ChanUtil = {
-    async sendAll<T>(ch: Channel<T>, xs: T[]) {
-        for (const x of xs) {
-            await ch.send(x)
-        }
-    },
-    async createWorker<T>(
-        chan: Channel<T>,
-        cb: (x: T) => Promise<void>,
-        n: number = 1,
-    ) {
-        const startWorker = async <T>(
-            chan: Channel<T>,
-            cb: (x: T) => Promise<void>,
-        ) => {
-            while (true) {
-                const x = await chan.receive()
-                if (x.isSome) {
-                    await cb(x.getExn())
-                } else {
-                    return
-                }
-            }
-        }
-        const workers: Promise<void>[] = []
-        for (let i = 0; i < n; i++) {
-            workers.push(startWorker(chan, cb))
-        }
-        await Promise.all(workers)
-    },
-}
+// export const ChanUtil = {
+//     async sendAll<T>(ch: Channel<T>, xs: T[]) {
+//         for (const x of xs) {
+//             await ch.send(x)
+//         }
+//     },
+//     async createWorker<T>(
+//         chan: Channel<T>,
+//         cb: (x: T) => Promise<void>,
+//         n: number = 1,
+//     ) {
+//         const startWorker = async <T>(
+//             chan: Channel<T>,
+//             cb: (x: T) => Promise<void>,
+//         ) => {
+//             while (true) {
+//                 const x = await chan.receive()
+//                 if (x.isSome) {
+//                     await cb(x.getExn())
+//                 } else {
+//                     return
+//                 }
+//             }
+//         }
+//         const workers: Promise<void>[] = []
+//         for (let i = 0; i < n; i++) {
+//             workers.push(startWorker(chan, cb))
+//         }
+//         await Promise.all(workers)
+//     },
+// }
