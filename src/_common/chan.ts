@@ -258,7 +258,10 @@ export class Select {
 
             // block all channels
             const done = new Deferred()
-            for (const selection of this.selections) {
+            let idx = 0
+            while (idx < this.selections.length) {
+                const selection = this.selections[idx]!
+                idx++
                 if (selection.op === "send") {
                     const sender: Sender<unknown> = {
                         id: selection.id,
@@ -291,7 +294,9 @@ export class Select {
             }
 
             // cleanup
-            for (const selection of this.selections) {
+            while (idx > 0) {
+                idx--
+                const selection = this.selections[idx]!
                 if (selection.op === "send") {
                     selection.chan.sendersRemove(selection.id)
                 } else {
