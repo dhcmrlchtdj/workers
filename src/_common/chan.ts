@@ -108,7 +108,7 @@ export class Channel<T = unknown> {
     async send(data: T): Promise<boolean> {
         const r = this.trySend(data)
         if (r.isSome) {
-            return r.getExn()
+            return r.unwrap()
         } else {
             const sender: Sender<T> = {
                 data,
@@ -145,7 +145,7 @@ export class Channel<T = unknown> {
     async receive(): Promise<Option<T>> {
         const r = this.tryReceive()
         if (r.isSome) {
-            return r.getExn()
+            return r.unwrap()
         } else {
             const receiver: Receiver<T> = {
                 defer: new Deferred<Option<T>>(),
@@ -242,14 +242,14 @@ export class Select {
                 if (selection.op === "send") {
                     const r = selection.chan.trySend(selection.data)
                     if (r.isSome) {
-                        selection.callback(r.getExn())
+                        selection.callback(r.unwrap())
                         this.state = "completed"
                         return
                     }
                 } else {
                     const r = selection.chan.tryReceive()
                     if (r.isSome) {
-                        selection.callback(r.getExn())
+                        selection.callback(r.unwrap())
                         this.state = "completed"
                         return
                     }

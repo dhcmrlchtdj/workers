@@ -25,7 +25,7 @@ export class Deferred<T = void> {
 export interface Option<T> {
     isNone: boolean
     isSome: boolean
-    getExn(): T
+    unwrap(): T
     map<K>(f: (x: T) => K): Option<K>
     bind<K>(f: (x: T) => Option<K>): Option<K>
 }
@@ -33,8 +33,8 @@ export interface Option<T> {
 export const None: Option<never> = {
     isNone: true,
     isSome: false,
-    getExn: () => {
-        throw new Error("Option.getExn")
+    unwrap: () => {
+        throw new Error("Option.unwrap")
     },
     map: (_) => None,
     bind: (_) => None,
@@ -43,7 +43,7 @@ export const None: Option<never> = {
 export const Some = <T>(x: T): Option<T> => ({
     isNone: false,
     isSome: true,
-    getExn: () => x,
+    unwrap: () => x,
     map: (f) => Some(f(x)),
     bind: (f) => f(x),
 })
