@@ -33,6 +33,13 @@ type Receiver<T> = {
     complete(): void
 }
 
+const sendersAdd = Symbol()
+const sendersRemove = Symbol()
+const receiversAdd = Symbol()
+const receiversRemove = Symbol()
+const fastSend = Symbol()
+const fastReceive = Symbol()
+
 export class Channel<T = unknown> {
     private senders: Sender<T>[]
     private receivers: Receiver<T>[]
@@ -49,21 +56,6 @@ export class Channel<T = unknown> {
         if (this.closed) return
         this.closed = true
         this.rendezvous()
-        if (this.receivers.length > 0) {
-            if (this.senders.length === 0) {
-                this.receivers = this.receivers
-                    .map((receiver) => {
-                        if (receiver.tryLock()) {
-                            receiver.defer.resolve(None)
-                            receiver.complete()
-                            return null
-                        } else {
-                            return receiver
-                        }
-                    })
-                    .filter(Boolean) as Receiver<T>[]
-            }
-        }
     }
     isClosed(): boolean {
         return this.closed
@@ -82,33 +74,48 @@ export class Channel<T = unknown> {
                     sender.complete()
                 } else {
                     receiver.abort()
-                    return
+                    break
                 }
             } else {
-                return
+                break
+            }
+        }
+        if (this.closed) {
+            if (this.receivers.length > 0 && this.senders.length === 0) {
+                this.receivers = this.receivers
+                    .map((receiver) => {
+                        if (receiver.tryLock()) {
+                            receiver.defer.resolve(None)
+                            receiver.complete()
+                            return null
+                        } else {
+                            return receiver
+                        }
+                    })
+                    .filter(Boolean) as Receiver<T>[]
             }
         }
     }
-    sendersAdd(sender: Sender<T>) {
+    [sendersAdd](sender: Sender<T>) {
         this.senders.push(sender)
         this.rendezvous()
     }
-    sendersRemove(id: number) {
+    [sendersRemove](id: number) {
         this.senders = this.senders.filter((x) => x.id !== id)
         this.rendezvous()
     }
-    receiversAdd(receiver: Receiver<T>) {
+    [receiversAdd](receiver: Receiver<T>) {
         this.receivers.push(receiver)
         this.rendezvous()
     }
-    receiversRemove(id: number) {
+    [receiversRemove](id: number) {
         this.receivers = this.receivers.filter((x) => x.id !== id)
         this.rendezvous()
     }
-    async send(data: T): Promise<boolean> {
-        const r = this.trySend(data)
+    send(data: T): Promise<boolean> {
+        const r = this[fastSend](data)
         if (r.isSome) {
-            return r.unwrap()
+            return Promise.resolve(r.unwrap())
         } else {
             const sender: Sender<T> = {
                 data,
@@ -117,11 +124,19 @@ export class Channel<T = unknown> {
                 abort: noop,
                 complete: noop,
             }
-            this.sendersAdd(sender)
+            this[sendersAdd](sender)
             return sender.defer.promise
         }
     }
-    trySend(data: T): Option<boolean> {
+    trySend(data: T): boolean {
+        const r = this[fastSend](data)
+        if (r.isSome) {
+            return r.unwrap()
+        } else {
+            return false
+        }
+    }
+    [fastSend](data: T): Option<boolean> {
         if (this.closed) {
             return Some(false)
         } else {
@@ -142,10 +157,10 @@ export class Channel<T = unknown> {
             }
         }
     }
-    async receive(): Promise<Option<T>> {
-        const r = this.tryReceive()
+    receive(): Promise<Option<T>> {
+        const r = this[fastReceive]()
         if (r.isSome) {
-            return r.unwrap()
+            return Promise.resolve(r.unwrap())
         } else {
             const receiver: Receiver<T> = {
                 defer: new Deferred<Option<T>>(),
@@ -153,11 +168,19 @@ export class Channel<T = unknown> {
                 abort: noop,
                 complete: noop,
             }
-            this.receiversAdd(receiver)
+            this[receiversAdd](receiver)
             return receiver.defer.promise
         }
     }
-    tryReceive(): Option<Option<T>> {
+    tryReceive(): Option<T> {
+        const r = this[fastReceive]()
+        if (r.isSome) {
+            return r.unwrap()
+        } else {
+            return None
+        }
+    }
+    [fastReceive](): Option<Option<T>> {
         if (this.receivers.length > 0) {
             return None
         } else if (this.senders.length > 0) {
@@ -197,7 +220,7 @@ type Selection<T> =
 
 export class Select {
     private state: "idle" | "running" | "completed"
-    private selections: Selection<any>[]
+    private selections: Selection<unknown>[]
     private locked: boolean
     private tryLock: () => boolean
     constructor() {
@@ -217,6 +240,7 @@ export class Select {
         if (this.selections.some((sel) => sel.chan === chan)) {
             throw new Error("[Select] duplicated channel")
         }
+        // @ts-ignore
         this.selections.push({ id: genId(), op: "send", chan, data, callback })
         return this
     }
@@ -224,6 +248,7 @@ export class Select {
         if (this.selections.some((sel) => sel.chan === chan)) {
             throw new Error("[Select] duplicated channel")
         }
+        // @ts-ignore
         this.selections.push({ id: genId(), op: "receive", chan, callback })
         return this
     }
@@ -240,14 +265,14 @@ export class Select {
             // try to send/receive
             for (const selection of this.selections) {
                 if (selection.op === "send") {
-                    const r = selection.chan.trySend(selection.data)
+                    const r = selection.chan[fastSend](selection.data)
                     if (r.isSome) {
                         selection.callback(r.unwrap())
                         this.state = "completed"
                         return
                     }
                 } else {
-                    const r = selection.chan.tryReceive()
+                    const r = selection.chan[fastReceive]()
                     if (r.isSome) {
                         selection.callback(r.unwrap())
                         this.state = "completed"
@@ -272,7 +297,7 @@ export class Select {
                         complete: done.resolve,
                     }
                     sender.defer.promise.then(selection.callback)
-                    selection.chan.sendersAdd(sender)
+                    selection.chan[sendersAdd](sender)
                 } else {
                     const receiver: Receiver<unknown> = {
                         id: selection.id,
@@ -282,7 +307,7 @@ export class Select {
                         complete: done.resolve,
                     }
                     receiver.defer.promise.then(selection.callback)
-                    selection.chan.receiversAdd(receiver)
+                    selection.chan[receiversAdd](receiver)
                 }
                 if (done.isFulfilled) break
             }
@@ -298,9 +323,9 @@ export class Select {
                 idx--
                 const selection = this.selections[idx]!
                 if (selection.op === "send") {
-                    selection.chan.sendersRemove(selection.id)
+                    selection.chan[sendersRemove](selection.id)
                 } else {
-                    selection.chan.receiversRemove(selection.id)
+                    selection.chan[receiversRemove](selection.id)
                 }
             }
         }
