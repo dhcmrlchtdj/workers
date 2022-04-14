@@ -219,7 +219,7 @@ type Selection<T> =
       }
 
 export class Select {
-    private state: "idle" | "running" | "completed"
+    private state: "idle" | "running"
     private selections: Selection<unknown>[]
     private locked: boolean
     private tryLock: () => boolean
@@ -256,10 +256,10 @@ export class Select {
         if (this.state !== "idle") {
             throw new Error("[Select] not a idle selector")
         }
-        this.state = "running"
         // randomize
         this.selections.sort(() => Math.random() - 0.5)
-        while (this.state !== "completed") {
+        this.state = "running"
+        while (this.state !== "running") {
             this.locked = false
 
             // try to send/receive
@@ -268,14 +268,14 @@ export class Select {
                     const r = selection.chan[fastSend](selection.data)
                     if (r.isSome) {
                         selection.callback(r.unwrap())
-                        this.state = "completed"
+                        this.state = "idle"
                         return
                     }
                 } else {
                     const r = selection.chan[fastReceive]()
                     if (r.isSome) {
                         selection.callback(r.unwrap())
-                        this.state = "completed"
+                        this.state = "idle"
                         return
                     }
                 }
@@ -313,7 +313,7 @@ export class Select {
             }
             try {
                 await done.promise
-                this.state = "completed"
+                this.state = "idle"
             } catch (_) {
                 // aborted
             }
