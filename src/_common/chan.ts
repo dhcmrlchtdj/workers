@@ -22,7 +22,7 @@ type Sender<T> = {
     data: T
     tryLock(): boolean
     abort(): void
-    complete(): void
+    complete(id?: number): void
 }
 
 type Receiver<T> = {
@@ -30,7 +30,7 @@ type Receiver<T> = {
     defer: Deferred<Option<T>>
     tryLock(): boolean
     abort(): void
-    complete(): void
+    complete(id?: number): void
 }
 
 const sendersAdd = Symbol()
@@ -69,9 +69,9 @@ export class Channel<T = unknown> {
                     this.receivers.shift()
                     this.senders.shift()
                     receiver.defer.resolve(Some(sender.data))
-                    receiver.complete()
+                    receiver.complete(receiver.id)
                     sender.defer.resolve(true)
-                    sender.complete()
+                    sender.complete(sender.id)
                 } else {
                     receiver.abort()
                     break
@@ -86,7 +86,7 @@ export class Channel<T = unknown> {
                     .map((receiver) => {
                         if (receiver.tryLock()) {
                             receiver.defer.resolve(None)
-                            receiver.complete()
+                            receiver.complete(receiver.id)
                             return null
                         } else {
                             return receiver
@@ -143,7 +143,7 @@ export class Channel<T = unknown> {
                 if (receiver.tryLock()) {
                     this.receivers.shift()
                     receiver.defer.resolve(Some(data))
-                    receiver.complete()
+                    receiver.complete(receiver.id)
                     return true
                 } else {
                     return null
@@ -180,7 +180,7 @@ export class Channel<T = unknown> {
             if (sender.tryLock()) {
                 this.senders.shift()
                 sender.defer.resolve(true)
-                sender.complete()
+                sender.complete(sender.id)
                 return Some(sender.data)
             } else {
                 return null
@@ -228,53 +228,63 @@ export class Select {
             }
         }
     }
-    send<T>(chan: Channel<T>, data: T, callback: (sent: boolean) => unknown) {
+    send<T>(
+        chan: Channel<T>,
+        data: T,
+        callback: (sent: boolean) => unknown,
+    ): number {
         if (this.selections.some((sel) => sel.chan === chan)) {
             throw new Error("[Select] duplicated channel")
         }
-        // @ts-ignore
-        this.selections.push({ id: genId(), op: "send", chan, data, callback })
-        return this
+        const id = genId()
+        this.selections.push({
+            id,
+            op: "send",
+            // @ts-ignore
+            chan,
+            data,
+            callback,
+        })
+        return id
     }
-    receive<T>(chan: Channel<T>, callback: (data: Option<T>) => unknown) {
+    receive<T>(
+        chan: Channel<T>,
+        callback: (data: Option<T>) => unknown,
+    ): number {
         if (this.selections.some((sel) => sel.chan === chan)) {
             throw new Error("[Select] duplicated channel")
         }
-        // @ts-ignore
-        this.selections.push({ id: genId(), op: "receive", chan, callback })
-        return this
+        const id = genId()
+        this.selections.push({
+            id,
+            op: "receive",
+            // @ts-ignore
+            chan,
+            // @ts-ignore
+            callback,
+        })
+        return id
     }
-    async select() {
+    async select(): Promise<number | null> {
         if (this.state !== "idle") {
             throw new Error("[Select] not a idle selector")
         }
         // randomize
         this.selections.sort(() => Math.random() - 0.5)
         this.state = "running"
+        let selected: number | null = null
         while (this.state !== "running") {
             this.locked = false
 
             // try to send/receive
-            for (const selection of this.selections) {
-                if (selection.op === "send") {
-                    const r = selection.chan[fastSend](selection.data)
-                    if (r !== null) {
-                        selection.callback(r)
-                        this.state = "idle"
-                        return
-                    }
-                } else {
-                    const r = selection.chan[fastReceive]()
-                    if (r !== null) {
-                        selection.callback(r)
-                        this.state = "idle"
-                        return
-                    }
-                }
+            selected = this.fastSelect()
+            if (selected !== null) {
+                this.state = "idle"
+                return selected
             }
 
             // block all channels
-            const done = new Deferred()
+            const done = new Deferred<number>()
             let idx = 0
             while (idx < this.selections.length) {
                 const selection = this.selections[idx]!
@@ -304,7 +314,7 @@ export class Select {
                 if (done.isFulfilled) break
             }
             try {
-                await done.promise
+                selected = await done.promise
                 this.state = "idle"
             } catch (_) {
                 // aborted
@@ -321,5 +331,34 @@ export class Select {
                 }
             }
         }
+        return selected
+    }
+    private fastSelect(): number | null {
+        for (const selection of this.selections) {
+            if (selection.op === "send") {
+                const r = selection.chan[fastSend](selection.data)
+                if (r !== null) {
+                    selection.callback(r)
+                    return selection.id
+                }
+            } else {
+                const r = selection.chan[fastReceive]()
+                if (r !== null) {
+                    selection.callback(r)
+                    return selection.id
+                }
+            }
+        }
+        return null
+    }
+    trySelect(): number | null {
+        if (this.state !== "idle") {
+            throw new Error("[Select] not a idle selector")
+        }
+        // randomize
+        this.selections.sort(() => Math.random() - 0.5)
+        // try select
+        const selected = this.fastSelect()
+        return selected
     }
 }
