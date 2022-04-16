@@ -3,6 +3,7 @@ import { Deferred, Option, Some, None } from "./sync"
 let currentId = 0
 const genId = () => currentId++
 const alwaysTrue = () => true
+const alwaysFalse = () => false
 function noop() {}
 
 ///
@@ -213,20 +214,9 @@ type Selection<T> =
 export class Select {
     private state: "idle" | "running"
     private selections: Selection<unknown>[]
-    private locked: boolean
-    private tryLock: () => boolean
     constructor() {
         this.state = "idle"
         this.selections = []
-        this.locked = false
-        this.tryLock = () => {
-            if (this.locked) {
-                return false
-            } else {
-                this.locked = true
-                return true
-            }
-        }
     }
     send<T>(
         chan: Channel<T>,
@@ -265,23 +255,32 @@ export class Select {
         })
         return id
     }
-    async select(): Promise<number | null> {
-        if (this.state !== "idle") {
-            throw new Error("[Select] not a idle selector")
-        }
-        // randomize
-        this.selections.sort(() => Math.random() - 0.5)
-        this.state = "running"
+    async select(init?: { signal?: AbortSignal }): Promise<number | null> {
+        this.beforeSelect()
+
+        const signal = this.getAbortSignal(init)
+        if (signal.aborted()) return null
+
         let selected: number | null = null
+
+        // setup lock
+        let locked = false
+        const tryLock = () => {
+            if (locked || signal.aborted()) {
+                return false
+            } else {
+                locked = true
+                return true
+            }
+        }
+
+        this.state = "running"
         while (this.state !== "running") {
-            this.locked = false
+            if (signal.aborted()) break
 
             // try to send/receive
             selected = this.fastSelect()
-            if (selected !== null) {
-                this.state = "idle"
-                return selected
-            }
+            if (selected !== null) break
 
             // block all channels
             const done = new Deferred<number>()
@@ -294,7 +293,7 @@ export class Select {
                         id: selection.id,
                         data: selection.data,
                         defer: new Deferred(),
-                        tryLock: this.tryLock,
+                        tryLock: tryLock,
                         abort: done.reject,
                         complete: done.resolve,
                     }
@@ -304,7 +303,7 @@ export class Select {
                     const receiver: Receiver<unknown> = {
                         id: selection.id,
                         defer: new Deferred(),
-                        tryLock: this.tryLock,
+                        tryLock: tryLock,
                         abort: done.reject,
                         complete: done.resolve,
                     }
@@ -314,24 +313,51 @@ export class Select {
                 if (done.isFulfilled) break
             }
             try {
-                selected = await done.promise
-                this.state = "idle"
+                selected = await Promise.race([
+                    done.promise,
+                    signal.defer.promise,
+                ])
+                this.state = "idle" // stop loop
             } catch (_) {
-                // aborted
-            }
-
-            // cleanup
-            while (idx > 0) {
-                idx--
-                const selection = this.selections[idx]!
-                if (selection.op === "send") {
-                    selection.chan[sendersRemove](selection.id)
+                if (signal.aborted()) {
+                    // aborted by signal
+                    this.state = "idle" // stop loop
                 } else {
-                    selection.chan[receiversRemove](selection.id)
+                    // aborted by channel
+                    locked = false
                 }
             }
+
+            this.cleanup(idx)
         }
+
+        this.state = "idle"
         return selected
+    }
+    trySelect(): number | null {
+        this.beforeSelect()
+        return this.fastSelect()
+    }
+    private getAbortSignal(init?: { signal?: AbortSignal }) {
+        const signal = {
+            aborted: alwaysFalse,
+            defer: new Deferred<never>(),
+        }
+        const realSignal = init?.signal
+        if (realSignal) {
+            signal.aborted = () => realSignal.aborted
+            realSignal.addEventListener("abort", () => {
+                signal.defer.reject()
+            })
+        }
+        return signal
+    }
+    private beforeSelect() {
+        if (this.state !== "idle") {
+            throw new Error("[Select] not a idle selector")
+        }
+        // randomize
+        this.selections.sort(() => Math.random() - 0.5)
     }
     private fastSelect(): number | null {
         for (const selection of this.selections) {
@@ -351,14 +377,14 @@ export class Select {
         }
         return null
     }
-    trySelect(): number | null {
-        if (this.state !== "idle") {
-            throw new Error("[Select] not a idle selector")
+    private cleanup(length: number) {
+        for (let i = 0; i < length; i++) {
+            const selection = this.selections[i]!
+            if (selection.op === "send") {
+                selection.chan[sendersRemove](selection.id)
+            } else {
+                selection.chan[receiversRemove](selection.id)
+            }
         }
-        // randomize
-        this.selections.sort(() => Math.random() - 0.5)
-        // try select
-        const selected = this.fastSelect()
-        return selected
     }
 }
