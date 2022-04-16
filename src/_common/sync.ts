@@ -50,10 +50,8 @@ export const Some = <T>(x: T): Option<T> => ({
 
 ///
 
-export const sleep = async (ms: number) =>
-    new Promise<void>((resolve) => {
-        setTimeout(() => resolve(), ms)
-    })
+export const sleep = (ms: number) =>
+    new Promise<void>((resolve) => setTimeout(() => resolve(), ms))
 
 ///
 

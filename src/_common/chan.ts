@@ -112,10 +112,10 @@ export class Channel<T = unknown> {
         this.receivers = this.receivers.filter((x) => x.id !== id)
         this.rendezvous()
     }
-    send(data: T): Promise<boolean> {
+    async send(data: T): Promise<boolean> {
         const r = this[fastSend](data)
         if (r !== null) {
-            return Promise.resolve(r)
+            return r
         } else {
             const sender: Sender<T> = {
                 data,
@@ -125,7 +125,7 @@ export class Channel<T = unknown> {
                 complete: noop,
             }
             this[sendersAdd](sender)
-            return sender.defer.promise
+            return await sender.defer.promise
         }
     }
     trySend(data: T): boolean {
@@ -153,10 +153,10 @@ export class Channel<T = unknown> {
             }
         }
     }
-    receive(): Promise<Option<T>> {
+    async receive(): Promise<Option<T>> {
         const r = this[fastReceive]()
         if (r !== null) {
-            return Promise.resolve(r)
+            return r
         } else {
             const receiver: Receiver<T> = {
                 defer: new Deferred<Option<T>>(),
@@ -165,7 +165,7 @@ export class Channel<T = unknown> {
                 complete: noop,
             }
             this[receiversAdd](receiver)
-            return receiver.defer.promise
+            return await receiver.defer.promise
         }
     }
     tryReceive(): Option<T> {
