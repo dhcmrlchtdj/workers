@@ -275,12 +275,18 @@ export class Select {
         }
 
         this.state = "running"
-        while (this.state !== "running") {
-            if (signal.aborted()) break
+        while (this.state === "running") {
+            if (signal.aborted()) {
+                this.state = "idle"
+                break
+            }
 
             // try to send/receive
             selected = this.fastSelect()
-            if (selected !== null) break
+            if (selected !== null) {
+                this.state = "idle"
+                break
+            }
 
             // block all channels
             const done = new Deferred<number>()
@@ -331,7 +337,6 @@ export class Select {
             this.cleanup(idx)
         }
 
-        this.state = "idle"
         return selected
     }
     trySelect(): number | null {
