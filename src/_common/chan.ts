@@ -114,8 +114,8 @@ export class Channel<T = unknown> {
     }
     send(data: T): Promise<boolean> {
         const r = this[fastSend](data)
-        if (r.isSome) {
-            return Promise.resolve(r.unwrap())
+        if (r !== null) {
+            return Promise.resolve(r)
         } else {
             const sender: Sender<T> = {
                 data,
@@ -130,37 +130,33 @@ export class Channel<T = unknown> {
     }
     trySend(data: T): boolean {
         const r = this[fastSend](data)
-        if (r.isSome) {
-            return r.unwrap()
-        } else {
-            return false
-        }
+        return r ?? false
     }
-    [fastSend](data: T): Option<boolean> {
+    [fastSend](data: T): boolean | null {
         if (this.closed) {
-            return Some(false)
+            return false
         } else {
             if (this.senders.length > 0) {
-                return None
+                return null
             } else if (this.receivers.length > 0) {
                 const receiver = this.receivers[0]!
                 if (receiver.tryLock()) {
                     this.receivers.shift()
                     receiver.defer.resolve(Some(data))
                     receiver.complete()
-                    return Some(true)
+                    return true
                 } else {
-                    return None
+                    return null
                 }
             } else {
-                return None
+                return null
             }
         }
     }
     receive(): Promise<Option<T>> {
         const r = this[fastReceive]()
-        if (r.isSome) {
-            return Promise.resolve(r.unwrap())
+        if (r !== null) {
+            return Promise.resolve(r)
         } else {
             const receiver: Receiver<T> = {
                 defer: new Deferred<Option<T>>(),
@@ -174,30 +170,26 @@ export class Channel<T = unknown> {
     }
     tryReceive(): Option<T> {
         const r = this[fastReceive]()
-        if (r.isSome) {
-            return r.unwrap()
-        } else {
-            return None
-        }
+        return r ?? None
     }
-    [fastReceive](): Option<Option<T>> {
+    [fastReceive](): Option<T> | null {
         if (this.receivers.length > 0) {
-            return None
+            return null
         } else if (this.senders.length > 0) {
             const sender = this.senders[0]!
             if (sender.tryLock()) {
                 this.senders.shift()
                 sender.defer.resolve(true)
                 sender.complete()
-                return Some(Some(sender.data))
+                return Some(sender.data)
             } else {
-                return None
+                return null
             }
         } else {
             if (this.closed) {
-                return Some(None)
-            } else {
                 return None
+            } else {
+                return null
             }
         }
     }
@@ -266,15 +258,15 @@ export class Select {
             for (const selection of this.selections) {
                 if (selection.op === "send") {
                     const r = selection.chan[fastSend](selection.data)
-                    if (r.isSome) {
-                        selection.callback(r.unwrap())
+                    if (r !== null) {
+                        selection.callback(r)
                         this.state = "idle"
                         return
                     }
                 } else {
                     const r = selection.chan[fastReceive]()
-                    if (r.isSome) {
-                        selection.callback(r.unwrap())
+                    if (r !== null) {
+                        selection.callback(r)
                         this.state = "idle"
                         return
                     }
