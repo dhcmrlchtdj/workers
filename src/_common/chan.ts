@@ -3,7 +3,6 @@ import { Deferred, Option, Some, None } from "./sync"
 let currentId = 0
 const genId = () => currentId++
 const alwaysTrue = () => true
-const alwaysFalse = () => false
 function noop() {}
 
 ///
@@ -259,14 +258,14 @@ export class Select {
         this.beforeSelect()
 
         const signal = this.getAbortSignal(init)
-        if (signal.aborted()) return null
+        if (signal.aborted) return null
 
         let selected: number | null = null
 
         // setup lock
         let locked = false
         const tryLock = () => {
-            if (locked || signal.aborted()) {
+            if (locked || signal.aborted) {
                 return false
             } else {
                 locked = true
@@ -276,7 +275,7 @@ export class Select {
 
         this.state = "running"
         while (this.state === "running") {
-            if (signal.aborted()) {
+            if (signal.aborted) {
                 this.state = "idle"
                 break
             }
@@ -321,15 +320,19 @@ export class Select {
             try {
                 selected = await Promise.race([
                     done.promise,
-                    signal.defer.promise,
+                    signal.defer.promise, // never resolve
                 ])
                 this.state = "idle" // stop loop
             } catch (_) {
-                if (signal.aborted()) {
+                if (done.isResolved) {
+                    // XXX: is it possible?
+                    // aborted by signal, but the select is done
+                    this.state = "idle" // stop loop
+                } else if (signal.aborted) {
                     // aborted by signal
                     this.state = "idle" // stop loop
                 } else {
-                    // aborted by channel
+                    // aborted by select
                     locked = false
                 }
             }
@@ -345,13 +348,14 @@ export class Select {
     }
     private getAbortSignal(init?: { signal?: AbortSignal }) {
         const signal = {
-            aborted: alwaysFalse,
+            aborted: false,
             defer: new Deferred<never>(),
         }
         const realSignal = init?.signal
         if (realSignal) {
-            signal.aborted = () => realSignal.aborted
+            signal.aborted = realSignal.aborted
             realSignal.addEventListener("abort", () => {
+                signal.aborted = true
                 signal.defer.reject()
             })
         }
