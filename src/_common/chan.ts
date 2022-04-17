@@ -257,15 +257,6 @@ export class Select {
         this.selections.push(selection)
         return id
     }
-    async selectTimeout(timeout: number): Promise<number | null> {
-        const controller = new AbortController()
-        const timer = setTimeout(() => controller.abort(), timeout)
-        try {
-            return await this.select({ signal: controller.signal })
-        } finally {
-            clearTimeout(timer)
-        }
-    }
     async select(init?: { signal?: AbortSignal }): Promise<number | null> {
         this.beforeSelect()
 
