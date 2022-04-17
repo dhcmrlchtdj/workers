@@ -272,8 +272,6 @@ export class Select {
         const signal = this.getAbortSignal(init)
         if (signal.aborted) return null
 
-        let selected: number | null = null
-
         // setup lock
         let locked = false
         const tryLock = () => {
@@ -285,6 +283,8 @@ export class Select {
             }
         }
 
+        let selected: number | null = null
+
         this.state = "running"
         while (this.state === "running") {
             if (signal.aborted) {
@@ -292,7 +292,7 @@ export class Select {
                 break
             }
 
-            // try to send/receive
+            // fast send/receive
             selected = this.fastSelect()
             if (selected !== null) {
                 this.state = "idle"
@@ -300,6 +300,7 @@ export class Select {
             }
 
             // block all channels
+            locked = false
             const done = new Deferred<number>()
             let idx = 0
             while (idx < this.selections.length) {
@@ -339,13 +340,14 @@ export class Select {
                 if (done.isResolved) {
                     // XXX: is it possible?
                     // aborted by signal, but the select is done
+                    selected = await done.promise
                     this.state = "idle" // stop loop
                 } else if (signal.aborted) {
                     // aborted by signal
                     this.state = "idle" // stop loop
                 } else {
                     // aborted by select
-                    locked = false
+                    // continue next loop
                 }
             }
 
