@@ -220,38 +220,39 @@ export class Select {
     send<T>(
         chan: Channel<T>,
         data: T,
-        callback: (sent: boolean) => unknown,
+        callback?: (sent: boolean) => unknown,
     ): number {
         if (this.selections.some((sel) => sel.chan === chan)) {
             throw new Error("[Select] duplicated channel")
         }
         const id = genId()
-        this.selections.push({
+        const selection: Selection<T> = {
             id,
             op: "send",
-            // @ts-ignore
             chan,
             data,
-            callback,
-        })
+            callback: callback ?? noop,
+        }
+        // @ts-ignore
+        this.selections.push(selection)
         return id
     }
     receive<T>(
         chan: Channel<T>,
-        callback: (data: Option<T>) => unknown,
+        callback?: (data: Option<T>) => unknown,
     ): number {
         if (this.selections.some((sel) => sel.chan === chan)) {
             throw new Error("[Select] duplicated channel")
         }
         const id = genId()
-        this.selections.push({
+        const selection: Selection<T> = {
             id,
             op: "receive",
-            // @ts-ignore
             chan,
-            // @ts-ignore
-            callback,
-        })
+            callback: callback ?? noop,
+        }
+        // @ts-ignore
+        this.selections.push(selection)
         return id
     }
     async selectTimeout(timeout: number): Promise<number | null> {
