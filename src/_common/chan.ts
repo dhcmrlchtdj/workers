@@ -17,20 +17,20 @@ const empty = chan.tryReceive(); // => None
 */
 
 type Sender<T> = {
-    id?: number
+    id: number
     defer: Deferred<boolean>
     data: T
     tryLock(): boolean
     abort(): void
-    complete(id?: number): void
+    complete(id: number): void
 }
 
 type Receiver<T> = {
-    id?: number
+    id: number
     defer: Deferred<Option<T>>
     tryLock(): boolean
     abort(): void
-    complete(id?: number): void
+    complete(id: number): void
 }
 
 const sendersAdd = Symbol()
@@ -118,6 +118,7 @@ export class Channel<T = unknown> {
             return r
         } else {
             const sender: Sender<T> = {
+                id: genId(),
                 data,
                 defer: new Deferred<boolean>(),
                 tryLock: alwaysTrue,
@@ -159,6 +160,7 @@ export class Channel<T = unknown> {
             return r
         } else {
             const receiver: Receiver<T> = {
+                id: genId(),
                 defer: new Deferred<Option<T>>(),
                 tryLock: alwaysTrue,
                 abort: noop,
