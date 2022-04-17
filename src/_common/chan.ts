@@ -258,9 +258,11 @@ export class Select {
     async selectTimeout(timeout: number): Promise<number | null> {
         const controller = new AbortController()
         const timer = setTimeout(() => controller.abort(), timeout)
-        const r = await this.select({ signal: controller.signal })
-        clearTimeout(timer)
-        return r
+        try {
+            return await this.select({ signal: controller.signal })
+        } finally {
+            clearTimeout(timer)
+        }
     }
     async select(init?: { signal?: AbortSignal }): Promise<number | null> {
         this.beforeSelect()
@@ -354,22 +356,25 @@ export class Select {
         this.beforeSelect()
         return this.fastSelect()
     }
-    private getAbortSignal(init?: { signal?: AbortSignal }) {
-        const signal = {
+    private getAbortSignal(init?: { signal?: AbortSignal }): {
+        aborted: boolean
+        defer: Deferred<never>
+    } {
+        const fakeSignal = {
             aborted: false,
             defer: new Deferred<never>(),
         }
-        const realSignal = init?.signal
-        if (realSignal) {
-            signal.aborted = realSignal.aborted
-            realSignal.addEventListener("abort", () => {
-                signal.aborted = true
-                signal.defer.reject()
+        const signal = init?.signal
+        if (signal) {
+            fakeSignal.aborted = signal.aborted
+            signal.addEventListener("abort", () => {
+                fakeSignal.aborted = true
+                fakeSignal.defer.reject()
             })
         }
-        return signal
+        return fakeSignal
     }
-    private beforeSelect() {
+    private beforeSelect(): void {
         if (this.state !== "idle") {
             throw new Error("[Select] not a idle selector")
         }
@@ -394,7 +399,7 @@ export class Select {
         }
         return null
     }
-    private cleanup(length: number) {
+    private cleanup(length: number): void {
         for (let i = 0; i < length; i++) {
             const selection = this.selections[i]!
             if (selection.op === "send") {
