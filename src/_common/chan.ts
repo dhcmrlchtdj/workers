@@ -278,10 +278,7 @@ export class Select {
 
         this.state = "running"
         while (this.state === "running") {
-            if (signal.aborted) {
-                this.state = "idle"
-                break
-            }
+            locked = false
 
             // fast send/receive
             selected = this.fastSelect()
@@ -291,7 +288,6 @@ export class Select {
             }
 
             // block all channels
-            locked = false
             const done = new Deferred<number>()
             let idx = 0
             while (idx < this.selections.length) {
