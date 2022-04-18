@@ -313,6 +313,71 @@ export class Once {
     }
 }
 
+export class Mailbox<T> {
+    private readers: Deferred<Option<T>>[]
+    private writers: [Deferred<boolean>, T][]
+    private closed: boolean
+    constructor() {
+        this.readers = []
+        this.writers = []
+        this.closed = false
+    }
+    close() {
+        this.closed = true
+        this.readers.forEach((r) => r.resolve(None))
+        this.readers = []
+        this.writers.forEach(([w, _]) => w.resolve(false))
+        this.writers = []
+    }
+    isClosed(): boolean {
+        return this.closed
+    }
+    // Some(T) means a message is received from a writer
+    // None means the mailbox is closed
+    async read(): Promise<Option<T>> {
+        if (this.writers.length > 0) {
+            const [w, data] = this.writers.shift()!
+            w.resolve(true)
+            return Some(data)
+        } else {
+            const r = new Deferred<Option<T>>()
+            this.readers.push(r)
+            return r.promise
+        }
+    }
+    tryRead(): Option<T> {
+        if (this.writers.length > 0) {
+            const [w, data] = this.writers.shift()!
+            w.resolve(true)
+            return Some(data)
+        } else {
+            return None
+        }
+    }
+    // true means the message is sent to a reader
+    // false means the mailbox is closed and the data is discarded
+    async write(data: T): Promise<boolean> {
+        if (this.readers.length > 0) {
+            const r = this.readers.shift()!
+            r.resolve(Some(data))
+            return true
+        } else {
+            const w = new Deferred<boolean>()
+            this.writers.push([w, data])
+            return w.promise
+        }
+    }
+    tryWrite(data: T): boolean {
+        if (this.readers.length > 0) {
+            const r = this.readers.shift()!
+            r.resolve(Some(data))
+            return true
+        } else {
+            return false
+        }
+    }
+}
+
 ///
 
 // export const ChanUtil = {
