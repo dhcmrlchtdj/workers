@@ -7,16 +7,17 @@ on:
 
 jobs:
     deploy:
+        # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#choosing-github-hosted-runners=
         runs-on: ubuntu-20.04
         steps:
             # https://github.com/marketplace/actions/checkout
-            - uses: actions/checkout@v2.4.0
+            - uses: actions/checkout@v3.0.1
             # https://github.com/marketplace/actions/setup-node-js-environment
-            - uses: actions/setup-node@v3.0.0
+            - uses: actions/setup-node@v3.1.1
               with:
                   node-version: "16"
             # https://github.com/marketplace/actions/cache
-            - uses: actions/cache@v2.1.7
+            - uses: actions/cache@v3.0.2
               with:
                   path: ~/.pnpm-store
                   key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
