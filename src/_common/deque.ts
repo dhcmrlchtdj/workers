@@ -4,9 +4,9 @@ import { Option, Some, None } from "./option"
 // https://doc.rust-lang.org/std/collections/struct.VecDeque.html
 // https://github.com/petkaantonov/deque
 export class Deque<T> {
-    // front | ...[tail]...[head]... | back
-    private head: number // next head index
-    private tail: number // current tail index
+    // front | ...[head]...[tail]... | back
+    private head: number // current head index
+    private tail: number // next tail index
     private buf: Array<T>
     private cap: number // cap must to be power of two
     private mask: number
@@ -15,11 +15,10 @@ export class Deque<T> {
         this.tail = 0
         this.cap = getCapacity(capacity)
         this.mask = this.cap - 1
-        this.buf = []
         this.buf = new Array(this.cap)
     }
     get length(): number {
-        return (this.head - this.tail + this.cap) & this.mask
+        return (this.tail - this.head + this.cap) & this.mask
     }
     isEmpty(): boolean {
         return this.head === this.tail
@@ -33,46 +32,46 @@ export class Deque<T> {
         this.mask = this.cap - 1
         this.buf.length = this.cap
 
-        if (this.tail <= this.head) {
-            //  T             H
+        if (this.head <= this.tail) {
+            //  H             T
             // [o o o o o o o . ]
-            //  T             H
+            //  H             T
             // [o o o o o o o . . . . . . . . . ]
-        } else if (this.head < oldCap - this.tail) {
-            //      H T
+        } else if (this.tail < oldCap - this.head) {
+            //      T H
             // [o o . o o o o o ]
-            //        T             H
+            //        H             T
             // [. . . o o o o o o o . . . . . . ]
-            const size = this.head - 0
+            const size = this.tail
             move(this.buf, size, 0, oldCap)
-            this.head = oldCap + size
+            this.tail = oldCap + size
         } else {
-            //            H T
+            //            T H
             // [o o o o o . o o ]
-            //            H                 T
+            //            T                 H
             // [o o o o o . . . . . . . . . o o ]
-            const size = oldCap - this.tail
-            const newTail = this.cap - size
-            move(this.buf, size, this.tail, newTail)
-            this.tail = newTail
+            const size = oldCap - this.head
+            const newHead = this.cap - size
+            move(this.buf, size, this.head, newHead)
+            this.head = newHead
         }
     }
     pushBack(value: T) {
         if (this.full()) {
             this.grow()
         }
-        const idx = this.head
-        this.head = (this.head + 1) & this.mask
+        const idx = this.tail
+        this.tail = (this.tail + 1) & this.mask
         this.buf[idx] = value
     }
     popBack(): Option<T> {
         if (this.isEmpty()) {
             return None
         } else {
-            const idx = (this.head - 1 + this.cap) & this.mask
+            const idx = (this.tail - 1 + this.cap) & this.mask
             const item = this.buf[idx]!
             this.buf[idx] = undefined!
-            this.head = idx
+            this.tail = idx
             return Some(item)
         }
     }
@@ -80,24 +79,24 @@ export class Deque<T> {
         if (this.full()) {
             this.grow()
         }
-        const idx = (this.tail - 1 + this.cap) & this.mask
-        this.tail = idx
+        const idx = (this.head - 1 + this.cap) & this.mask
+        this.head = idx
         this.buf[idx] = value
     }
     popFront(): Option<T> {
         if (this.isEmpty()) {
             return None
         } else {
-            const idx = this.tail
+            const idx = this.head
             const item = this.buf[idx]!
             this.buf[idx] = undefined!
-            this.tail = (this.tail + 1) & this.mask
+            this.head = (this.head + 1) & this.mask
             return Some(item)
         }
     }
     get(index: number): Option<T> {
         if (index < this.length) {
-            const idx = (this.tail + index) & this.mask
+            const idx = (this.head + index) & this.mask
             return Some(this.buf[idx]!)
         } else {
             return None
@@ -106,14 +105,14 @@ export class Deque<T> {
     map<R>(fn: (item: T, index?: number) => R): R[] {
         const ret = new Array<R>(this.length)
         for (let i = 0; i < this.length; i++) {
-            const item = this.buf[(this.tail + i) & this.mask]!
+            const item = this.buf[(this.head + i) & this.mask]!
             ret[i] = fn(item, i)
         }
         return ret
     }
     forEach(fn: (item: T, index?: number) => unknown) {
         for (let i = 0; i < this.length; i++) {
-            const item = this.buf[(this.tail + i) & this.mask]!
+            const item = this.buf[(this.head + i) & this.mask]!
             fn(item, i)
         }
     }
