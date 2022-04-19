@@ -1,4 +1,5 @@
-import { Deferred, Option, Some, None } from "./sync"
+import { Deferred } from "./deferred"
+import { Option, Some, None } from "./option"
 
 let currentId = 0
 const genId = () => currentId++
