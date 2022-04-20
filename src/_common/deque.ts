@@ -95,7 +95,7 @@ export class Deque<T> {
         }
     }
     get(index: number): Option<T> {
-        if (index < this.length) {
+        if (index >= 0 && index < this.length) {
             const idx = (this.head + index) & this.mask
             return Some(this.buf[idx]!)
         } else {
