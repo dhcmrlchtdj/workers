@@ -137,21 +137,27 @@ export class Deque<T> {
     }
     toArray(): T[] {
         const ret = new Array<T>(this.length)
-        for (let i = 0; i < this.length; i++) {
+        for (let i = 0, len = this.length; i < len; i++) {
             const item = this.buf[(this.head + i) & this.mask]!
             ret[i] = item
         }
         return ret
     }
+    *[Symbol.iterator]() {
+        for (let i = 0, len = this.length; i < len; i++) {
+            const item = this.buf[(this.head + i) & this.mask]!
+            yield item
+        }
+    }
     forEach(fn: (value: T, index?: number) => unknown) {
-        for (let i = 0; i < this.length; i++) {
+        for (let i = 0, len = this.length; i < len; i++) {
             const item = this.buf[(this.head + i) & this.mask]!
             fn(item, i)
         }
     }
     map<R>(fn: (value: T, index?: number) => R): R[] {
         const ret = new Array<R>(this.length)
-        for (let i = 0; i < this.length; i++) {
+        for (let i = 0, len = this.length; i < len; i++) {
             const item = this.buf[(this.head + i) & this.mask]!
             ret[i] = fn(item, i)
         }
@@ -159,21 +165,21 @@ export class Deque<T> {
     }
     filter(fn: (value: T, index?: number) => boolean): T[] {
         const ret: T[] = []
-        for (let i = 0; i < this.length; i++) {
+        for (let i = 0, len = this.length; i < len; i++) {
             const item = this.buf[(this.head + i) & this.mask]!
             if (fn(item, i)) ret.push(item)
         }
         return ret
     }
     some(fn: (value: T, index?: number) => boolean): boolean {
-        for (let i = 0; i < this.length; i++) {
+        for (let i = 0, len = this.length; i < len; i++) {
             const item = this.buf[(this.head + i) & this.mask]!
             if (fn(item, i)) return true
         }
         return false
     }
     every(fn: (value: T, index?: number) => boolean): boolean {
-        for (let i = 0; i < this.length; i++) {
+        for (let i = 0, len = this.length; i < len; i++) {
             const item = this.buf[(this.head + i) & this.mask]!
             if (!fn(item, i)) return false
         }

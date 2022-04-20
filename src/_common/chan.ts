@@ -103,9 +103,7 @@ export class Channel<T = unknown> {
         this.rendezvous()
     }
     [sendersRemove](id: number) {
-        this.senders = Deque.fromArray(
-            this.senders.filter((x) => x.id !== id),
-        )
+        this.senders = Deque.fromArray(this.senders.filter((x) => x.id !== id))
         this.rendezvous()
     }
     [receiversAdd](receiver: Receiver<T>) {
