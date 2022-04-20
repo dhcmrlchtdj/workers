@@ -10,10 +10,10 @@ export class Deque<T> {
     private buf: Array<T>
     private cap: number // cap must to be power of two
     private mask: number
-    constructor(capacity?: number) {
+    constructor() {
         this.head = 0
         this.tail = 0
-        this.cap = getCapacity(capacity)
+        this.cap = 4
         this.mask = this.cap - 1
         this.buf = new Array(this.cap)
     }
@@ -28,7 +28,7 @@ export class Deque<T> {
     }
     private grow() {
         const oldCap = this.cap
-        this.cap *= 2
+        this.cap <<= 1
         this.mask = this.cap - 1
         this.buf.length = this.cap
 
@@ -116,25 +116,6 @@ export class Deque<T> {
             fn(item, i)
         }
     }
-}
-
-function getCapacity(capacity: number | undefined): number {
-    if (typeof capacity !== "number") return 8
-    if (capacity! < 0) throw new Error("capacity must greater than 0")
-    if (capacity! > 1073741824)
-        throw new Error("capacity must lesser than 2**31")
-    return pow2AtLeast(Math.max(8, capacity!))
-}
-
-function pow2AtLeast(n: number): number {
-    n = n >>> 0
-    n = n - 1
-    n = n | (n >> 1)
-    n = n | (n >> 2)
-    n = n | (n >> 4)
-    n = n | (n >> 8)
-    n = n | (n >> 16)
-    return n + 1
 }
 
 function move(
