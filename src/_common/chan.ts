@@ -1,4 +1,5 @@
 import { Deferred } from "./deferred"
+import { Deque } from "./deque"
 import { Option, Some, None } from "./option"
 
 let currentId = 0
@@ -42,12 +43,12 @@ const fastSend = Symbol()
 const fastReceive = Symbol()
 
 export class Channel<T = unknown> {
-    private senders: Sender<T>[]
-    private receivers: Receiver<T>[]
+    private senders: Deque<Sender<T>>
+    private receivers: Deque<Receiver<T>>
     private closed: boolean
     constructor() {
-        this.senders = []
-        this.receivers = []
+        this.senders = new Deque()
+        this.receivers = new Deque()
         this.closed = false
     }
     close() {
@@ -62,13 +63,13 @@ export class Channel<T = unknown> {
         return this.closed
     }
     private rendezvous() {
-        while (this.receivers.length > 0 && this.senders.length > 0) {
-            const receiver = this.receivers[0]!
-            const sender = this.senders[0]!
+        while (!this.receivers.isEmpty() && !this.senders.isEmpty()) {
+            const receiver = this.receivers.getFront()
+            const sender = this.senders.getFront()
             if (receiver.tryLock()) {
                 if (sender.tryLock()) {
-                    this.receivers.shift()
-                    this.senders.shift()
+                    this.receivers.popFront()
+                    this.senders.popFront()
                     receiver.defer.resolve(Some(sender.data))
                     receiver.complete(receiver.id)
                     sender.defer.resolve(true)
@@ -82,35 +83,39 @@ export class Channel<T = unknown> {
             }
         }
         if (this.closed) {
-            if (this.receivers.length > 0 && this.senders.length === 0) {
-                this.receivers = this.receivers
-                    .map((receiver) => {
+            if (!this.receivers.isEmpty() && this.senders.isEmpty()) {
+                this.receivers = Deque.fromArray(
+                    this.receivers.filter((receiver) => {
                         if (receiver.tryLock()) {
                             receiver.defer.resolve(None)
                             receiver.complete(receiver.id)
-                            return null
+                            return false
                         } else {
-                            return receiver
+                            return true
                         }
-                    })
-                    .filter(Boolean) as Receiver<T>[]
+                    }),
+                )
             }
         }
     }
     [sendersAdd](sender: Sender<T>) {
-        this.senders.push(sender)
+        this.senders.pushBack(sender)
         this.rendezvous()
     }
     [sendersRemove](id: number) {
-        this.senders = this.senders.filter((x) => x.id !== id)
+        this.senders = Deque.fromArray(
+            this.senders.filter((x) => x.id !== id),
+        )
         this.rendezvous()
     }
     [receiversAdd](receiver: Receiver<T>) {
-        this.receivers.push(receiver)
+        this.receivers.pushBack(receiver)
         this.rendezvous()
     }
     [receiversRemove](id: number) {
-        this.receivers = this.receivers.filter((x) => x.id !== id)
+        this.receivers = Deque.fromArray(
+            this.receivers.filter((x) => x.id !== id),
+        )
         this.rendezvous()
     }
     async send(data: T): Promise<boolean> {
@@ -138,12 +143,12 @@ export class Channel<T = unknown> {
         if (this.closed) {
             return false
         } else {
-            if (this.senders.length > 0) {
+            if (!this.senders.isEmpty()) {
                 return null
-            } else if (this.receivers.length > 0) {
-                const receiver = this.receivers[0]!
+            } else if (!this.receivers.isEmpty()) {
+                const receiver = this.receivers.getFront()
                 if (receiver.tryLock()) {
-                    this.receivers.shift()
+                    this.receivers.popFront()
                     receiver.defer.resolve(Some(data))
                     receiver.complete(receiver.id)
                     return true
@@ -176,12 +181,12 @@ export class Channel<T = unknown> {
         return r ?? None
     }
     [fastReceive](): Option<T> | null {
-        if (this.receivers.length > 0) {
+        if (!this.receivers.isEmpty()) {
             return null
-        } else if (this.senders.length > 0) {
-            const sender = this.senders[0]!
+        } else if (!this.senders.isEmpty()) {
+            const sender = this.senders.getFront()
             if (sender.tryLock()) {
-                this.senders.shift()
+                this.senders.popFront()
                 sender.defer.resolve(true)
                 sender.complete(sender.id)
                 return Some(sender.data)
@@ -215,10 +220,10 @@ type Selection<T> =
 
 export class Select {
     private state: "idle" | "running"
-    private selections: Selection<unknown>[]
+    private selections: Deque<Selection<unknown>>
     constructor() {
         this.state = "idle"
-        this.selections = []
+        this.selections = new Deque()
     }
     send<T>(
         chan: Channel<T>,
@@ -237,7 +242,7 @@ export class Select {
             callback: callback ?? noop,
         }
         // @ts-ignore
-        this.selections.push(selection)
+        this.selections.pushBack(selection)
         return id
     }
     receive<T>(
@@ -255,7 +260,7 @@ export class Select {
             callback: callback ?? noop,
         }
         // @ts-ignore
-        this.selections.push(selection)
+        this.selections.pushBack(selection)
         return id
     }
     async select(init?: { signal?: AbortSignal }): Promise<number | null> {
@@ -291,8 +296,9 @@ export class Select {
             // block all channels
             const done = new Deferred<number>()
             let idx = 0
-            while (idx < this.selections.length) {
-                const selection = this.selections[idx]!
+            const len = this.selections.length
+            while (idx < len) {
+                const selection = this.selections.get(idx)
                 idx++
                 if (selection.op === "send") {
                     const sender: Sender<unknown> = {
@@ -371,10 +377,13 @@ export class Select {
             throw new Error("[Select] not a idle selector")
         }
         // randomize
-        this.selections.sort(() => Math.random() - 0.5)
+        this.selections = Deque.fromArray(
+            this.selections.toArray().sort(() => Math.random() - 0.5),
+        )
     }
     private fastSelect(): number | null {
-        for (const selection of this.selections) {
+        for (let i = 0, len = this.selections.length; i < len; i++) {
+            const selection = this.selections.get(i)
             if (selection.op === "send") {
                 const r = selection.chan[fastSend](selection.data)
                 if (r !== null) {
@@ -393,7 +402,7 @@ export class Select {
     }
     private cleanup(length: number): void {
         for (let i = 0; i < length; i++) {
-            const selection = this.selections[i]!
+            const selection = this.selections.get(i)
             if (selection.op === "send") {
                 selection.chan[sendersRemove](selection.id)
             } else {

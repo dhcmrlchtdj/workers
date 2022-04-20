@@ -75,6 +75,12 @@ export class Deque<T> {
             return Some(item)
         }
     }
+    peekBack(): Option<T> {
+        return this._peek(this.tail - 1)
+    }
+    getBack(): T {
+        return this._get(this.tail - 1)
+    }
     pushFront(value: T) {
         if (this.full()) {
             this.grow()
@@ -94,15 +100,56 @@ export class Deque<T> {
             return Some(item)
         }
     }
-    get(index: number): Option<T> {
+    peekFront(): Option<T> {
+        return this._peek(this.head)
+    }
+    getFront(): T {
+        return this._get(this.head)
+    }
+    peek(index: number): Option<T> {
         if (index >= 0 && index < this.length) {
-            const idx = (this.head + index) & this.mask
-            return Some(this.buf[idx]!)
+            return this._peek(this.head + index)
         } else {
             return None
         }
     }
-    map<R>(fn: (item: T, index?: number) => R): R[] {
+    get(index: number): T {
+        if (index >= 0 && index < this.length) {
+            return this._get(this.head + index)
+        } else {
+            throw new Error("invalid index")
+        }
+    }
+    private _peek(index: number): Option<T> {
+        if (this.isEmpty()) return None
+        const idx = index & this.mask
+        return Some(this.buf[idx]!)
+    }
+    private _get(index: number): T {
+        if (this.isEmpty()) throw new Error("Deque.get")
+        const idx = index & this.mask
+        return this.buf[idx]!
+    }
+    static fromArray<R>(arr: R[]): Deque<R> {
+        const deque = new Deque<R>()
+        arr.forEach((val) => deque.pushBack(val))
+        return deque
+    }
+    toArray(): T[] {
+        const ret = new Array<T>(this.length)
+        for (let i = 0; i < this.length; i++) {
+            const item = this.buf[(this.head + i) & this.mask]!
+            ret[i] = item
+        }
+        return ret
+    }
+    forEach(fn: (value: T, index?: number) => unknown) {
+        for (let i = 0; i < this.length; i++) {
+            const item = this.buf[(this.head + i) & this.mask]!
+            fn(item, i)
+        }
+    }
+    map<R>(fn: (value: T, index?: number) => R): R[] {
         const ret = new Array<R>(this.length)
         for (let i = 0; i < this.length; i++) {
             const item = this.buf[(this.head + i) & this.mask]!
@@ -110,11 +157,27 @@ export class Deque<T> {
         }
         return ret
     }
-    forEach(fn: (item: T, index?: number) => unknown) {
+    filter(fn: (value: T, index?: number) => boolean): T[] {
+        const ret: T[] = []
         for (let i = 0; i < this.length; i++) {
             const item = this.buf[(this.head + i) & this.mask]!
-            fn(item, i)
+            if (fn(item, i)) ret.push(item)
         }
+        return ret
+    }
+    some(fn: (value: T, index?: number) => boolean): boolean {
+        for (let i = 0; i < this.length; i++) {
+            const item = this.buf[(this.head + i) & this.mask]!
+            if (fn(item, i)) return true
+        }
+        return false
+    }
+    every(fn: (value: T, index?: number) => boolean): boolean {
+        for (let i = 0; i < this.length; i++) {
+            const item = this.buf[(this.head + i) & this.mask]!
+            if (!fn(item, i)) return false
+        }
+        return true
     }
 }
 
