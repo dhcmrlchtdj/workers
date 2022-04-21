@@ -324,37 +324,3 @@ export class Mailbox<T> {
         }
     }
 }
-
-///
-
-// export const ChanUtil = {
-//     async sendAll<T>(ch: Channel<T>, xs: T[]) {
-//         for (const x of xs) {
-//             await ch.send(x)
-//         }
-//     },
-//     async createWorker<T>(
-//         chan: Channel<T>,
-//         cb: (x: T) => Promise<void>,
-//         n: number = 1,
-//     ) {
-//         const startWorker = async <T>(
-//             chan: Channel<T>,
-//             cb: (x: T) => Promise<void>,
-//         ) => {
-//             while (true) {
-//                 const x = await chan.receive()
-//                 if (x.isSome) {
-//                     await cb(x.getExn())
-//                 } else {
-//                     return
-//                 }
-//             }
-//         }
-//         const workers: Promise<void>[] = []
-//         for (let i = 0; i < n; i++) {
-//             workers.push(startWorker(chan, cb))
-//         }
-//         await Promise.all(workers)
-//     },
-// }

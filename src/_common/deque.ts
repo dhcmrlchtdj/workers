@@ -143,12 +143,6 @@ export class Deque<T> {
         }
         return ret
     }
-    *[Symbol.iterator]() {
-        for (let i = 0, len = this.length; i < len; i++) {
-            const item = this.buf[(this.head + i) & this.mask]!
-            yield item
-        }
-    }
     forEach(fn: (value: T, index?: number) => unknown) {
         for (let i = 0, len = this.length; i < len; i++) {
             const item = this.buf[(this.head + i) & this.mask]!
