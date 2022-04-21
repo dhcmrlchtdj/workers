@@ -187,7 +187,7 @@ function move(
     fromPos: number,
     toPos: number,
 ) {
-    for (let i = 0; i <= size; i++) {
+    for (let i = 0; i < size; i++) {
         target[toPos + i] = target[fromPos + i]
         target[fromPos + i] = undefined
     }
