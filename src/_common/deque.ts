@@ -20,12 +20,12 @@ export class Deque<T> {
     get length(): number {
         return this.len
     }
-    private grow() {
+    private growTo(capacity: number) {
         const oldCap = this.cap
         const head = this.head
         const tail = (head + this.len) & this.mask
 
-        this.cap <<= 1
+        this.cap = getCapacity(capacity)
         this.mask = this.cap - 1
         this.buf.length = this.cap
 
@@ -54,11 +54,21 @@ export class Deque<T> {
     }
     pushBack(value: T) {
         if (this.len + 1 === this.cap) {
-            this.grow()
+            this.growTo(this.len + 2)
         }
         const idx = (this.head + this.len) & this.mask
         this.buf[idx] = value
         this.len++
+    }
+    pushBackArray(arr: T[]) {
+        if (this.len + arr.length >= this.cap) {
+            this.growTo(this.len + arr.length + 1)
+        }
+        const idx = this.head + this.len
+        for (let i = 0, len = arr.length; i < len; i++) {
+            this.buf[(idx + i) % this.mask] = arr[i]!
+        }
+        this.len += arr.length
     }
     popBack(): Option<T> {
         if (this.len === 0) {
@@ -79,12 +89,23 @@ export class Deque<T> {
     }
     pushFront(value: T) {
         if (this.len + 1 === this.cap) {
-            this.grow()
+            this.growTo(this.cap + 2)
         }
         const idx = (this.head - 1 + this.cap) & this.mask
         this.head = idx
         this.buf[idx] = value
         this.len++
+    }
+    pushFrontArray(arr: T[]) {
+        if (this.len + arr.length >= this.cap) {
+            this.growTo(this.len + arr.length + 1)
+        }
+        let idx = this.head - 1
+        for (let i = 0, len = arr.length; i < len; i++) {
+            this.buf[(idx - i + this.cap) & this.mask] = arr[i]!
+        }
+        this.head = (this.head - arr.length + this.cap) & this.mask
+        this.len += arr.length
     }
     popFront(): Option<T> {
         if (this.len === 0) {
@@ -130,7 +151,7 @@ export class Deque<T> {
     }
     static fromArray<R>(arr: R[]): Deque<R> {
         const deque = new Deque<R>(arr.length)
-        arr.forEach((val) => deque.pushBack(val))
+        deque.pushBackArray(arr)
         return deque
     }
     toArray(): T[] {
@@ -195,7 +216,7 @@ function getCapacity(capacity: number | undefined): number {
     if (typeof capacity !== "number") return 4
     if (capacity < 0) throw new Error("capacity must greater than 0")
     if (capacity > 1073741824)
-        throw new Error("capacity must lesser than 2**31")
+        throw new Error("capacity must lesser than 2**30")
     return pow2AtLeast(Math.max(4, capacity))
 }
 
