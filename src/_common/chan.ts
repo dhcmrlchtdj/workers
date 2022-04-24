@@ -63,7 +63,7 @@ export class Channel<T = unknown> {
         return this.closed
     }
     private rendezvous() {
-        while (!this.receivers.isEmpty() && !this.senders.isEmpty()) {
+        while (this.receivers.length > 0 && this.senders.length > 0) {
             const receiver = this.receivers.getFront()
             const sender = this.senders.getFront()
             if (receiver.tryLock()) {
@@ -83,7 +83,7 @@ export class Channel<T = unknown> {
             }
         }
         if (this.closed) {
-            if (!this.receivers.isEmpty() && this.senders.isEmpty()) {
+            if (this.receivers.length > 0 && this.senders.length === 0) {
                 this.receivers = Deque.fromArray(
                     this.receivers.filter((receiver) => {
                         if (receiver.tryLock()) {
@@ -141,9 +141,9 @@ export class Channel<T = unknown> {
         if (this.closed) {
             return false
         } else {
-            if (!this.senders.isEmpty()) {
+            if (this.senders.length > 0) {
                 return null
-            } else if (!this.receivers.isEmpty()) {
+            } else if (this.receivers.length > 0) {
                 const receiver = this.receivers.getFront()
                 if (receiver.tryLock()) {
                     this.receivers.popFront()
@@ -179,9 +179,9 @@ export class Channel<T = unknown> {
         return r ?? None
     }
     [fastReceive](): Option<T> | null {
-        if (!this.receivers.isEmpty()) {
+        if (this.receivers.length > 0) {
             return null
-        } else if (!this.senders.isEmpty()) {
+        } else if (this.senders.length > 0) {
             const sender = this.senders.getFront()
             if (sender.tryLock()) {
                 this.senders.popFront()
