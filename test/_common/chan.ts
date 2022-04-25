@@ -101,7 +101,7 @@ describe("Select", () => {
         const id = select.receive(ch1, (data, i) => {
             expect(data.unwrap()).toBe(10)
             expect(i).toBe(id)
-        });
+        })
 
         const r = await select.select()
         expect(r).toBe(id)
