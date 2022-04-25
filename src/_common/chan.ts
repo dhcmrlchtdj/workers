@@ -9,15 +9,6 @@ function noop() {}
 
 ///
 
-/*
-Usage:
-const chan = new Channel<number>();
-chan.send(10);
-chan.close();
-const msg = chan.tryReceive(); // => Some(10)
-const empty = chan.tryReceive(); // => None
-*/
-
 type Sender<T> = {
     id: number
     defer: Deferred<boolean>
@@ -201,6 +192,8 @@ export class Channel<T = unknown> {
     }
 }
 
+///
+
 type Selection<T> =
     | {
           id: number
@@ -222,6 +215,12 @@ export class Select {
     constructor() {
         this.state = "idle"
         this.selections = new Deque()
+    }
+    clone(): Select {
+        const selections = this.selections.map((s) => ({ ...s, id: genId() }))
+        const newSelection = new Select()
+        newSelection.selections.pushBackArray(selections)
+        return newSelection
     }
     send<T>(
         chan: Channel<T>,
