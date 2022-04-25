@@ -3,7 +3,8 @@ SHELL := bash
 PATH := ./node_modules/.bin:$(PATH)
 
 targets := $(filter-out src/_%, $(wildcard src/*))
-test_targets := $(wildcard test/**/*.ts)
+test_src := $(wildcard test/**/*.ts)
+test_dest := $(addsuffix .test.js,$(test_src))
 
 build: $(targets)
 
@@ -22,7 +23,7 @@ $(targets): node_modules/tsconfig.tsbuildinfo
 node_modules:
 	pnpm install
 
-node_modules/tsconfig.tsbuildinfo: node_modules $(shell ls src/**/*.ts)
+node_modules/tsconfig.tsbuildinfo: node_modules $(shell ls {src,test}/**/*.ts)
 	@$(MAKE) --no-print-directory check
 
 upgrade:
@@ -35,10 +36,10 @@ update_compatibility_date:
 		"$$t/wrangler.toml"; \
 		done
 
-test: $(test_targets)
-	jest
+test: $(test_dest)
 
-$(test_targets):
-	esbuild --bundle --format=esm --target=es2020 --platform=node --outfile=$@.test.js $@
+$(test_dest): node_modules/tsconfig.tsbuildinfo
+	esbuild --bundle --format=esm --target=es2020 --platform=node --outfile=$@ ${@:.test.js=}
+	jest $@
 
-.PHONY: build check force fmt $(targets) test $(test_targets)
+.PHONY: build check force fmt $(targets) test $(test_dest)
