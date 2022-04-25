@@ -207,13 +207,13 @@ type Selection<T> =
           op: "send"
           chan: Channel<T>
           data: T
-          callback: (sent: boolean) => unknown
+          callback: (sent: boolean, id?: number) => unknown
       }
     | {
           id: number
           op: "receive"
           chan: Channel<T>
-          callback: (data: Option<T>) => unknown
+          callback: (data: Option<T>, id?: number) => unknown
       }
 
 export class Select {
@@ -226,7 +226,7 @@ export class Select {
     send<T>(
         chan: Channel<T>,
         data: T,
-        callback?: (sent: boolean) => unknown,
+        callback: (sent: boolean, id?: number) => unknown,
     ): number {
         if (this.selections.some((sel) => sel.chan === chan)) {
             throw new Error("[Select] duplicated channel")
@@ -237,7 +237,7 @@ export class Select {
             op: "send",
             chan,
             data,
-            callback: callback ?? noop,
+            callback,
         }
         // @ts-ignore
         this.selections.pushBack(selection)
@@ -245,7 +245,7 @@ export class Select {
     }
     receive<T>(
         chan: Channel<T>,
-        callback?: (data: Option<T>) => unknown,
+        callback: (data: Option<T>, id?: number) => unknown,
     ): number {
         if (this.selections.some((sel) => sel.chan === chan)) {
             throw new Error("[Select] duplicated channel")
@@ -255,13 +255,15 @@ export class Select {
             id,
             op: "receive",
             chan,
-            callback: callback ?? noop,
+            callback,
         }
         // @ts-ignore
         this.selections.pushBack(selection)
         return id
     }
     async select(init?: { signal?: AbortSignal }): Promise<number | null> {
+        if (this.selections.length === 0) return null
+
         this.beforeSelect()
 
         const signal = this.getAbortSignal(init)
@@ -307,7 +309,9 @@ export class Select {
                         abort: done.reject,
                         complete: done.resolve,
                     }
-                    sender.defer.promise.then(selection.callback)
+                    sender.defer.promise.then((r) =>
+                        selection.callback(r, selection.id),
+                    )
                     selection.chan[sendersAdd](sender)
                 } else {
                     const receiver: Receiver<unknown> = {
@@ -317,7 +321,9 @@ export class Select {
                         abort: done.reject,
                         complete: done.resolve,
                     }
-                    receiver.defer.promise.then(selection.callback)
+                    receiver.defer.promise.then((r) =>
+                        selection.callback(r, selection.id),
+                    )
                     selection.chan[receiversAdd](receiver)
                 }
                 if (done.isFulfilled) break
@@ -349,6 +355,7 @@ export class Select {
         return selected
     }
     trySelect(): number | null {
+        if (this.selections.length === 0) return null
         this.beforeSelect()
         return this.fastSelect()
     }
@@ -385,13 +392,13 @@ export class Select {
             if (selection.op === "send") {
                 const r = selection.chan[fastSend](selection.data)
                 if (r !== null) {
-                    selection.callback(r)
+                    selection.callback(r, selection.id)
                     return selection.id
                 }
             } else {
                 const r = selection.chan[fastReceive]()
                 if (r !== null) {
-                    selection.callback(r)
+                    selection.callback(r, selection.id)
                     return selection.id
                 }
             }

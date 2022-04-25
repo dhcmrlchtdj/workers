@@ -7,12 +7,6 @@ test_targets := $(wildcard test/**/*.ts)
 
 build: $(targets)
 
-test: $(test_targets)
-	jest
-
-$(test_targets):
-	esbuild --bundle --format=esm --target=es2020 --platform=node --outfile=$@.test.js $@
-
 check:
 	tsc --noEmit
 	@touch -cm node_modules/tsconfig.tsbuildinfo # force update mtime
@@ -40,5 +34,11 @@ update_compatibility_date:
 		"s/compatibility_date =.*/compatibility_date = \"$(shell date '+%Y-%m-%d')\"/" \
 		"$$t/wrangler.toml"; \
 		done
+
+test: $(test_targets)
+	jest
+
+$(test_targets):
+	esbuild --bundle --format=esm --target=es2020 --platform=node --outfile=$@.test.js $@
 
 .PHONY: build check force fmt $(targets) test $(test_targets)
