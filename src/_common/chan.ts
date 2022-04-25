@@ -5,7 +5,7 @@ import { Option, Some, None } from "./option"
 let currentId = 0
 const genId = () => currentId++
 const alwaysTrue = () => true
-function noop() {}
+const noop = () => {}
 
 ///
 
