@@ -38,6 +38,15 @@ describe("Select", () => {
         expect(() => select.send(ch, 2, noop)).toThrow()
     })
 
+    test("select running", async () => {
+        const select = new Select()
+        const ch = new Channel<number>()
+
+        select.receive(ch, noop)
+        select.select()
+        expect(select.select()).rejects.toThrow()
+    })
+
     test("select empty", async () => {
         const select = new Select()
 
