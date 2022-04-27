@@ -1,6 +1,6 @@
 import type { Update, Message } from "telegram-typings"
+import type { Context } from "../_common/listen"
 import { execute, telegram } from "./bot_command"
-import type { Context } from "../_common/router"
 
 const handleMsg = async (msg: Message | undefined) => {
     if (!msg || !msg.text || !msg.entities) return

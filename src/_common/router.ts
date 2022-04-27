@@ -1,5 +1,3 @@
-import type { Monitor } from "./monitor"
-
 type Route<T> = {
     handler: T | null
     static: Map<string, Route<T>>
@@ -20,54 +18,64 @@ class BaseRouter<T> {
             wildcard: null,
         }
     }
-    private _add(segments: string[], handler: T, route: Route<T>): this {
-        if (segments.length === 0) {
+    private _add(segments: string[], idx: number, handler: T, route: Route<T>) {
+        if (idx === segments.length) {
             route.handler = handler
         } else {
-            const seg = segments[0]!
+            const seg = segments[idx]!
             if (seg === "*") {
-                if (segments.length > 1) {
+                if (segments.length - idx > 1) {
                     throw new Error('"*" must be the last segment')
                 }
                 route.wildcard = handler
             } else if (seg[0] === ":") {
                 const param = seg.slice(1)
                 const r = route.parameter.get(param) ?? this._newRoute()
-                this._add(segments.slice(1), handler, r)
+                this._add(segments, idx + 1, handler, r)
                 route.parameter.set(param, r)
             } else {
                 const r = route.static.get(seg) ?? this._newRoute()
-                this._add(segments.slice(1), handler, r)
+                this._add(segments, idx + 1, handler, r)
                 route.static.set(seg, r)
             }
         }
-        return this
     }
     add(segments: string[], handler: T): this {
-        return this._add(segments, handler, this._route)
+        this._add(segments, 0, handler, this._route)
+        return this
     }
     private _lookup(
         segments: string[],
+        idx: number,
         params: Map<string, string>,
         route: Route<T>,
     ): { handler: T | null; params: Map<string, string> } {
-        if (segments.length === 0) {
+        if (idx === segments.length) {
             if (route.handler !== null) {
                 return { handler: route.handler, params }
             }
         } else {
-            const seg = segments[0]!
-            const subSeg = segments.slice(1)
+            const seg = segments[idx]!
 
             const staticRoute = route.static.get(seg)
             if (staticRoute !== undefined) {
-                const matched = this._lookup(subSeg, params, staticRoute)
+                const matched = this._lookup(
+                    segments,
+                    idx + 1,
+                    params,
+                    staticRoute,
+                )
                 if (matched.handler !== null) return matched
             }
 
             if (seg !== "") {
                 for (const [param, paramRoute] of route.parameter) {
-                    const matched = this._lookup(subSeg, params, paramRoute)
+                    const matched = this._lookup(
+                        segments,
+                        idx + 1,
+                        params,
+                        paramRoute,
+                    )
                     if (matched.handler !== null) {
                         matched.params.set(param, seg)
                         return matched
@@ -76,28 +84,24 @@ class BaseRouter<T> {
             }
 
             if (route.wildcard !== null) {
-                params.set("*", segments.join("/"))
+                params.set("*", segments.slice(idx).join("/"))
                 return { handler: route.wildcard, params }
             }
         }
         return { handler: null, params }
     }
     lookup(segments: string[]) {
-        return this._lookup(segments, new Map(), this._route)
+        return this._lookup(segments, 0, new Map(), this._route)
     }
 }
 
 export type Params = Map<string, string>
-export type Handler = (ctx: Context) => Promise<Response>
-export type Context = {
-    event: FetchEvent
-    params: Params
-    monitor: Monitor
-}
-export class WorkerRouter {
-    private _router: BaseRouter<Handler>
+type Handler<Context> = (ctx: Context) => Promise<Response>
+
+export class WorkerRouter<Context> {
+    private _router: BaseRouter<Handler<Context>>
     constructor() {
-        this._router = new BaseRouter<Handler>()
+        this._router = new BaseRouter<Handler<Context>>()
     }
 
     private async defaultHandler(_ctx: unknown) {
@@ -106,33 +110,37 @@ export class WorkerRouter {
             statusText: "Not Found",
         })
     }
-    fallback(handler: Handler): this {
+    fallback(handler: Handler<Context>): this {
         this.defaultHandler = handler
         return this
     }
 
-    private add(method: string, pathname: string, handler: Handler): this {
+    private add(
+        method: string,
+        pathname: string,
+        handler: Handler<Context>,
+    ): this {
         const segments = [method.toUpperCase(), ...pathname.split("/")]
         this._router.add(segments, handler)
         return this
     }
-    head(pathname: string, handler: Handler): this {
+    head(pathname: string, handler: Handler<Context>): this {
         return this.add("HEAD", pathname, handler)
     }
-    get(pathname: string, handler: Handler): this {
+    get(pathname: string, handler: Handler<Context>): this {
         return this.add("GET", pathname, handler)
     }
-    post(pathname: string, handler: Handler): this {
+    post(pathname: string, handler: Handler<Context>): this {
         return this.add("POST", pathname, handler)
     }
-    put(pathname: string, handler: Handler): this {
+    put(pathname: string, handler: Handler<Context>): this {
         return this.add("PUT", pathname, handler)
     }
-    delete(pathname: string, handler: Handler): this {
+    delete(pathname: string, handler: Handler<Context>): this {
         return this.add("DELETE", pathname, handler)
     }
 
-    route(event: FetchEvent): { handler: Handler; params: Params } {
+    route(event: FetchEvent): { handler: Handler<Context>; params: Params } {
         const request = event.request
         const url = new URL(request.url)
         const segments = [

@@ -1,5 +1,6 @@
-import { WorkerRouter } from "../_common/router"
+import type { Context } from "../_common/listen"
 import { routeFetch } from "../_common/listen"
+import { WorkerRouter } from "../_common/router"
 import { webhook } from "./webhook"
 
 // from worker environment
@@ -11,12 +12,12 @@ declare const DB_TOKEN: string
 
 ///
 
-const router = new WorkerRouter()
+const router = new WorkerRouter<Context>()
 router.post(`/telegram/bcc/${BCC_WEBHOOK_PATH}`, webhook)
 
 ///
 
-routeFetch("bcc", ROLLBAR_KEY, (e) => router.route(e))
+routeFetch("bcc", ROLLBAR_KEY, router)
 
 ///
 

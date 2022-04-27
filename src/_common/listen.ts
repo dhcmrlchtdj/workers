@@ -1,6 +1,12 @@
-import type { Context, Params } from "./router"
+import type { WorkerRouter, Params } from "./router"
 import type { Monitor } from "./monitor"
 import { Rollbar } from "./service/rollbar"
+
+export type Context = {
+    event: FetchEvent
+    params: Params
+    monitor: Monitor
+}
 
 export function listenSchedule(
     workerName: string,
@@ -56,17 +62,14 @@ export function listenFetchSimple(
 export function routeFetch(
     workerName: string,
     rollbarKey: string,
-    route: (e: FetchEvent) => {
-        handler: (ctx: Context) => Promise<Response>
-        params: Params
-    },
+    router: WorkerRouter<Context>,
 ) {
     const monitor: Monitor = new Rollbar(rollbarKey, workerName)
     const h = async (event: FetchEvent) => {
         try {
-            const router = route(event)
-            const ctx = { event, monitor, params: router.params }
-            const resp = await router.handler(ctx)
+            const r = router.route(event)
+            const ctx: Context = { event, monitor, params: r.params }
+            const resp = await r.handler(ctx)
             return resp
         } catch (err) {
             event.waitUntil(monitor.error(err as Error, event.request))
