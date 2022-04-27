@@ -6,7 +6,7 @@ import { Option, Some, None } from "./option"
 export class Deque<T> {
     // front | ...[head]...[tail]... | back
     private head: number // current head index
-    private len: number
+    private len: number // current length, max(len) = cap - 1
     private buf: Array<T>
     private cap: number // cap must to be power of two
     private mask: number
@@ -52,23 +52,25 @@ export class Deque<T> {
             this.head = newHead
         }
     }
-    pushBack(value: T) {
-        if (this.len + 1 === this.cap) {
-            this.growTo(this.len + 2)
+    private checkCapacity(size: number) {
+        if (this.len + size >= this.cap) {
+            this.growTo(this.len + size + 1)
         }
+    }
+    pushBack(value: T) {
+        this.checkCapacity(1)
         const idx = (this.head + this.len) & this.mask
         this.buf[idx] = value
         this.len++
     }
     pushBackArray(arr: T[]) {
-        if (this.len + arr.length >= this.cap) {
-            this.growTo(this.len + arr.length + 1)
-        }
+        const len = arr.length
+        this.checkCapacity(len)
         const idx = this.head + this.len
-        for (let i = 0, len = arr.length; i < len; i++) {
+        for (let i = 0; i < len; i++) {
             this.buf[(idx + i) % this.mask] = arr[i]!
         }
-        this.len += arr.length
+        this.len += len
     }
     popBack(): Option<T> {
         if (this.len === 0) {
@@ -88,24 +90,21 @@ export class Deque<T> {
         return this._get(this.head + this.len)
     }
     pushFront(value: T) {
-        if (this.len + 1 === this.cap) {
-            this.growTo(this.cap + 2)
-        }
+        this.checkCapacity(1)
         const idx = (this.head - 1 + this.cap) & this.mask
         this.head = idx
         this.buf[idx] = value
         this.len++
     }
     pushFrontArray(arr: T[]) {
-        if (this.len + arr.length >= this.cap) {
-            this.growTo(this.len + arr.length + 1)
-        }
+        let len = arr.length
+        this.checkCapacity(len)
         let idx = this.head - 1
-        for (let i = 0, len = arr.length; i < len; i++) {
+        for (let i = 0; i < len; i++) {
             this.buf[(idx - i + this.cap) & this.mask] = arr[i]!
         }
-        this.head = (this.head - arr.length + this.cap) & this.mask
-        this.len += arr.length
+        this.head = (this.head - len + this.cap) & this.mask
+        this.len += len
     }
     popFront(): Option<T> {
         if (this.len === 0) {
