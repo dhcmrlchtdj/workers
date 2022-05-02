@@ -15,7 +15,7 @@ jobs:
             # https://github.com/marketplace/actions/setup-node-js-environment
             - uses: actions/setup-node@v3.1.1
               with:
-                  node-version: "18"
+                  node-version: 18
             # https://github.com/marketplace/actions/cache
             - uses: actions/cache@v3.0.2
               with:
@@ -23,8 +23,8 @@ jobs:
                   key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
                   restore-keys: ${{ runner.os }}-pnpm-
             - run: |
-                  npm install -g pnpm@6
-                  pnpm add -g @cloudflare/wrangler@1.19.7
+                  npm install -g pnpm@7
+                  pnpm add -g @cloudflare/wrangler@1.19.12
                   pnpm install
                   pnpm store prune
 
