@@ -6,7 +6,7 @@
     "author": "h11 <nirisix@gmail.com>",
     "license": "MIT",
     "devDependencies": {
-        "@cloudflare/workers-types": "3.8.0",
+        "@cloudflare/workers-types": "3.10.0",
         "@types/jest": "27.5.0",
         "esbuild": "0.14.38",
         "jest": "28.1.0",
