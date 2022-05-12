@@ -1,4 +1,3 @@
-import { BackBlaze } from "../_common/service/backblaze"
 import { format } from "../_common/format-date"
 import { listenFetch } from "../_common/listen"
 import { getBA } from "../_common/basic_auth"
@@ -6,18 +5,13 @@ import { getBA } from "../_common/basic_auth"
 // from worker environment
 declare const ROLLBAR_KEY: string
 declare const BACKUP_PASS_BEANCOUNT: string
-declare const BACKUP_B2_KEY_ID: string
-declare const BACKUP_B2_KEY: string
-declare const BACKUP_B2_REGION: string
-declare const BACKUP_B2_BUCKET: string
+declare const R2Backup: R2Bucket
 
 ///
 
 listenFetch("backup", ROLLBAR_KEY, backup)
 
 ///
-
-const b2 = new BackBlaze(BACKUP_B2_KEY_ID, BACKUP_B2_KEY, BACKUP_B2_REGION)
 
 async function backup(event: FetchEvent): Promise<Response> {
     const req = event.request
@@ -34,14 +28,10 @@ async function backup(event: FetchEvent): Promise<Response> {
         if (!(file instanceof File)) {
             throw new Error("`file` is not a file")
         }
-        const buf = await file.arrayBuffer()
         const date = format(new Date(), "YYYYMMDD_hhmmss")
-        await b2.putObject(
-            BACKUP_B2_BUCKET,
-            `beancount/${date}.tar.zst.age`,
-            buf,
-            "application/octet-stream",
-        )
+        await R2Backup.put(`beancount/${date}.tar.zst.age`, file.stream(), {
+            httpMetadata: { contentType: "application/octet-stream" },
+        })
     }
     return new Response("ok")
 }

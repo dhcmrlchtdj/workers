@@ -87,10 +87,6 @@ jobs:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
                   echo '${{ secrets.ROLLBAR_KEY }}' | pnpm exec wrangler secret put 'ROLLBAR_KEY'
-                  echo '${{ secrets.BACKUP_B2_KEY_ID }}' | pnpm exec wrangler secret put 'BACKUP_B2_KEY_ID'
-                  echo '${{ secrets.BACKUP_B2_KEY }}' | pnpm exec wrangler secret put 'BACKUP_B2_KEY'
-                  echo '${{ secrets.BACKUP_B2_REGION }}' | pnpm exec wrangler secret put 'BACKUP_B2_REGION'
-                  echo '${{ secrets.BACKUP_B2_BUCKET }}' | pnpm exec wrangler secret put 'BACKUP_B2_BUCKET'
                   echo '${{ secrets.BACKUP_PASS_BEANCOUNT }}' | pnpm exec wrangler secret put 'BACKUP_PASS_BEANCOUNT'
                   pnpm exec wrangler publish
 
@@ -102,10 +98,6 @@ jobs:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
                   echo '${{ secrets.ROLLBAR_KEY }}' | pnpm exec wrangler secret put 'ROLLBAR_KEY'
-                  echo '${{ secrets.BACKUP_B2_KEY_ID }}' | pnpm exec wrangler secret put 'BACKUP_B2_KEY_ID'
-                  echo '${{ secrets.BACKUP_B2_KEY }}' | pnpm exec wrangler secret put 'BACKUP_B2_KEY'
-                  echo '${{ secrets.BACKUP_B2_REGION }}' | pnpm exec wrangler secret put 'BACKUP_B2_REGION'
-                  echo '${{ secrets.BACKUP_B2_BUCKET }}' | pnpm exec wrangler secret put 'BACKUP_B2_BUCKET'
                   echo '${{ secrets.BACKUP_HEROKU_PG_APP }}' | pnpm exec wrangler secret put 'BACKUP_HEROKU_PG_APP'
                   echo '${{ secrets.BACKUP_HEROKU_PG_TOKEN }}' | pnpm exec wrangler secret put 'BACKUP_HEROKU_PG_TOKEN'
                   pnpm exec wrangler publish

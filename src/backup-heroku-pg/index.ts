@@ -1,16 +1,12 @@
-import { BackBlaze } from "../_common/service/backblaze"
 import { GET, POST } from "../_common/feccan"
 import { encode } from "../_common/base64"
 import { listenSchedule } from "../_common/listen"
 
 // from worker environment
 declare const ROLLBAR_KEY: string
-declare const BACKUP_B2_KEY_ID: string
-declare const BACKUP_B2_KEY: string
-declare const BACKUP_B2_REGION: string
-declare const BACKUP_B2_BUCKET: string
 declare const BACKUP_HEROKU_PG_APP: string
 declare const BACKUP_HEROKU_PG_TOKEN: string
+declare const R2Backup: R2Bucket
 
 ///
 
@@ -18,21 +14,17 @@ listenSchedule("backup-heroku-pg", ROLLBAR_KEY, backup)
 
 ///
 
-const b2 = new BackBlaze(BACKUP_B2_KEY_ID, BACKUP_B2_KEY, BACKUP_B2_REGION)
-
 async function backup(): Promise<void> {
     const file = await fetchBackup()
     if (file === null) return
-    await b2.putObject(
-        BACKUP_B2_BUCKET,
-        file.name,
-        file.content,
-        "application/octet-stream",
-    )
+    if (file.content === null) return
+    await R2Backup.put(file.name, file.content, {
+        httpMetadata: { contentType: "application/octet-stream" },
+    })
 }
 
 async function fetchBackup(): Promise<{
-    content: ArrayBuffer
+    content: ReadableStream | null
     name: string
 } | null> {
     // https://github.com/heroku/cli/blob/v7.47.0/packages/pg-v5/commands/backups/url.js
@@ -61,11 +53,11 @@ async function fetchBackup(): Promise<{
         .replace(" ", "_")
         .replace(/:/g, "")
 
-    const content = await GET(download.url).then((r) => r.arrayBuffer())
+    const content = await GET(download.url).then((r) => r.body)
 
     return {
         content,
-        name: `heroku-pg-backup/${created_at}_rev${last.num}.dump`,
+        name: `database-heroku-feedbox/${created_at}_rev${last.num}.dump`,
     }
 }
 
