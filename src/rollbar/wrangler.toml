@@ -1,5 +1,4 @@
-type = "javascript"
-
+main = "index.js"
 name = "rollbar"
 route = "worker.h11.io/rollbar*"
 

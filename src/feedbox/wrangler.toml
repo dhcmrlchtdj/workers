@@ -1,5 +1,4 @@
-type = "javascript"
-
+main = "index.js"
 name = "feedbox"
 route = "feedbox.h11.io/*"
 

@@ -1,5 +1,4 @@
-type = "javascript"
-
+main = "index.js"
 name = "bcc"
 route = "worker.h11.io/telegram/bcc/*"
 

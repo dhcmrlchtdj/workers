@@ -33,18 +33,16 @@ jobs:
             - run: make src/feedbox
             - working-directory: src/feedbox
               env:
-                  CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-                  CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
-                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+                  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
                   pnpx wrangler publish
 
             - run: make src/current-ip
             - working-directory: src/current-ip
               env:
-                  CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-                  CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
-                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+                  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
                   echo '${{ secrets.ROLLBAR_KEY }}' | pnpx wrangler secret put 'ROLLBAR_KEY'
                   echo '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | pnpx wrangler secret put 'ROLLBAR_TG_BOT_TOKEN'
@@ -55,9 +53,8 @@ jobs:
             - run: make src/bcc
             - working-directory: src/bcc
               env:
-                  CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-                  CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
-                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+                  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
                   echo '${{ secrets.ROLLBAR_KEY }}' | pnpx wrangler secret put 'ROLLBAR_KEY'
                   echo '${{ secrets.DB_API }}' | pnpx wrangler secret put 'DB_API'
@@ -70,9 +67,8 @@ jobs:
             - run: make src/rollbar
             - working-directory: src/rollbar
               env:
-                  CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-                  CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
-                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+                  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
                   echo '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | pnpx wrangler secret put 'ROLLBAR_TG_BOT_TOKEN'
                   echo '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | pnpx wrangler secret put 'ROLLBAR_TG_CHAT_ID'
@@ -81,9 +77,8 @@ jobs:
             - run: make src/backup
             - working-directory: src/backup
               env:
-                  CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-                  CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
-                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+                  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
                   echo '${{ secrets.ROLLBAR_KEY }}' | pnpx wrangler secret put 'ROLLBAR_KEY'
                   echo '${{ secrets.BACKUP_PASS_BEANCOUNT }}' | pnpx wrangler secret put 'BACKUP_PASS_BEANCOUNT'
@@ -92,9 +87,8 @@ jobs:
             - run: make src/backup-heroku-pg
             - working-directory: src/backup-heroku-pg
               env:
-                  CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-                  CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
-                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+                  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
                   echo '${{ secrets.ROLLBAR_KEY }}' | pnpx wrangler secret put 'ROLLBAR_KEY'
                   echo '${{ secrets.BACKUP_HEROKU_PG_APP }}' | pnpx wrangler secret put 'BACKUP_HEROKU_PG_APP'
