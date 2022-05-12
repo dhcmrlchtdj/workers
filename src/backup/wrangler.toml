@@ -1,10 +1,8 @@
 main = "index.js"
 name = "backup"
-route = "worker.h11.io/backup*"
+route = { pattern = "worker.h11.io/backup*", zone_id = "6cffee8a847ad1565b9cb2572cce3a04" }
 
 compatibility_date = "2022-05-12"
 compatibility_flags = ["r2_public_beta_bindings"]
 
-r2_buckets = [
-    { binding = "R2Backup", bucket_name = "backup" }
-]
+r2_buckets = [{ binding = "R2Backup", bucket_name = "backup" }]
