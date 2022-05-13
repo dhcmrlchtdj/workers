@@ -1,6 +1,5 @@
 import { format } from "../_common/format-date"
 import { getBA } from "../_common/basic_auth"
-import { Rollbar } from "../_common/service/rollbar"
 import { createWorker } from "../_common/listen"
 
 type ENV = {
