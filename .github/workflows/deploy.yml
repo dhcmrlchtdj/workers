@@ -25,8 +25,7 @@ jobs:
 
             - run: |
                   echo "$PATH"
-                  corepack enable pnpm
-                  corepack prepare pnpm@7 --activate
+                  corepack prepare pnpm@7.* --activate
                   pnpm install
                   PNPM_HOME="~/.local/bin" pnpm add -g wrangler@2.0.3
                   pnpm store prune
