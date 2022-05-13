@@ -20,21 +20,20 @@ export class Rollbar {
         level: Level,
         body: Record<string, unknown>,
     ): Promise<Response> {
-        return POST(
-            "https://api.rollbar.com/api/1/item/",
-            JSON.stringify({
-                access_token: this.token,
-                data: {
-                    environment: "production",
-                    timestamp: (Date.now() / 1000) | 0,
-                    platform: "cloudflare-worker",
-                    language: "javascript",
-                    uuid: UUIDv4(),
-                    level,
-                    ...body,
-                },
-            }),
-        )
+        const msg = JSON.stringify({
+            access_token: this.token,
+            data: {
+                environment: "production",
+                timestamp: (Date.now() / 1000) | 0,
+                platform: "cloudflare-worker",
+                language: "javascript",
+                uuid: UUIDv4(),
+                level,
+                ...body,
+            },
+        })
+        console.error(msg)
+        return POST("https://api.rollbar.com/api/1/item/", msg)
     }
 
     private log(level: Level, err: Error, req: Request | undefined) {
