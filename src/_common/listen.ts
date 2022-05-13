@@ -20,6 +20,23 @@ export function createWorker<Env extends { ROLLBAR_KEY: string }>(
     }
 }
 
+export function createSimpleWorker<Env>(
+    handler: ExportedHandlerFetchHandler<Env>,
+): ExportedHandler<Env> {
+    return {
+        async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+            try {
+                const resp = await handler(request, env, ctx)
+                return resp
+            } catch (err) {
+                console.log(err)
+            } finally {
+                return new Response("ok")
+            }
+        },
+    }
+}
+
 export type Context = {
     event: FetchEvent
     params: Params
