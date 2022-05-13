@@ -48,10 +48,10 @@ jobs:
                   ROLLBAR_TG_CHAT_ID: ${{ secrets.ROLLBAR_TG_CHAT_ID }}
                   IP_PASS_NUC: ${{ secrets.IP_PASS_NUC }}
               run: |
-                  wrangler secret put 'ROLLBAR_KEY' --env
-                  wrangler secret put 'ROLLBAR_TG_BOT_TOKEN' --env
-                  wrangler secret put 'ROLLBAR_TG_CHAT_ID' --env
-                  wrangler secret put 'IP_PASS_NUC' --env
+                  wrangler secret put --env 'ROLLBAR_KEY'
+                  wrangler secret put --env 'ROLLBAR_TG_BOT_TOKEN'
+                  wrangler secret put --env 'ROLLBAR_TG_CHAT_ID'
+                  wrangler secret put --env 'IP_PASS_NUC'
                   wrangler publish
 
             - run: make src/bcc
@@ -64,10 +64,10 @@ jobs:
                   DB_TOKEN: ${{ secrets.DB_TOKEN }}
                   BCC_BOT_TOKEN: ${{ secrets.BCC_BOT_TOKEN }}
               run: |
-                  wrangler secret put 'ROLLBAR_KEY' --env
-                  wrangler secret put 'DB_API' --env
-                  wrangler secret put 'DB_TOKEN' --env
-                  wrangler secret put 'BCC_BOT_TOKEN' --env
+                  wrangler secret put --env 'ROLLBAR_KEY'
+                  wrangler secret put --env 'DB_API'
+                  wrangler secret put --env 'DB_TOKEN'
+                  wrangler secret put --env 'BCC_BOT_TOKEN'
                   wrangler publish
                   curl -s -f 'https://api.telegram.org/bot${{ secrets.BCC_BOT_TOKEN }}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${{ secrets.BCC_WEBHOOK_PATH }}'
 
@@ -79,8 +79,8 @@ jobs:
                   ROLLBAR_TG_BOT_TOKEN: ${{ secrets.ROLLBAR_TG_BOT_TOKEN }}
                   ROLLBAR_TG_CHAT_ID: ${{ secrets.ROLLBAR_TG_CHAT_ID }}
               run: |
-                  wrangler secret put 'ROLLBAR_TG_BOT_TOKEN' --env
-                  wrangler secret put 'ROLLBAR_TG_CHAT_ID' --env
+                  wrangler secret put --env 'ROLLBAR_TG_BOT_TOKEN'
+                  wrangler secret put --env 'ROLLBAR_TG_CHAT_ID'
                   wrangler publish
 
             - run: make src/backup
@@ -91,8 +91,8 @@ jobs:
                   ROLLBAR_KEY: ${{ secrets.ROLLBAR_KEY }}
                   BACKUP_PASS_BEANCOUNT: ${{ secrets.BACKUP_PASS_BEANCOUNT }}
               run: |
-                  wrangler secret put 'ROLLBAR_KEY' --env
-                  wrangler secret put 'BACKUP_PASS_BEANCOUNT' --env
+                  wrangler secret put --env 'ROLLBAR_KEY'
+                  wrangler secret put --env 'BACKUP_PASS_BEANCOUNT'
                   wrangler publish
 
             - run: make src/backup-heroku-pg
@@ -104,7 +104,7 @@ jobs:
                   BACKUP_HEROKU_PG_APP: ${{ secrets.BACKUP_HEROKU_PG_APP }}
                   BACKUP_HEROKU_PG_TOKEN: ${{ secrets.BACKUP_HEROKU_PG_TOKEN }}
               run: |
-                  wrangler secret put 'ROLLBAR_KEY' --env
-                  wrangler secret put 'BACKUP_HEROKU_PG_APP' --env
-                  wrangler secret put 'BACKUP_HEROKU_PG_TOKEN' --env
+                  wrangler secret put --env 'ROLLBAR_KEY'
+                  wrangler secret put --env 'BACKUP_HEROKU_PG_APP'
+                  wrangler secret put --env 'BACKUP_HEROKU_PG_TOKEN'
                   wrangler publish
