@@ -29,7 +29,7 @@ async function backup(event: FetchEvent): Promise<Response> {
             throw new Error("`file` is not a file")
         }
         const date = format(new Date(), "YYYYMMDD_hhmmss")
-        await R2Backup.put(`beancount/${date}.tar.zst.age`, file.stream(), {
+        await R2Backup.put(`beancount-${date}.tar.zst.age`, file.stream(), {
             httpMetadata: { contentType: "application/octet-stream" },
         })
     }

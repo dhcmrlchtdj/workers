@@ -57,7 +57,7 @@ async function fetchBackup(): Promise<{
 
     return {
         content,
-        name: `database-heroku-feedbox/${created_at}_rev${last.num}.dump`,
+        name: `database-heroku-feedbox-${created_at}_rev${last.num}.dump`,
     }
 }
 
