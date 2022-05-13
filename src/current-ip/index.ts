@@ -3,41 +3,40 @@ import {
     encodeHtmlEntities as enc,
 } from "../_common/service/telegram"
 import { getBA } from "../_common/basic_auth"
-import { listenFetch } from "../_common/listen"
+import { createWorker } from "../_common/listen"
 
-// from worker environment
-declare const IP: KVNamespace
-declare const ROLLBAR_KEY: string
-declare const ROLLBAR_TG_BOT_TOKEN: string
-declare const ROLLBAR_TG_CHAT_ID: string
-declare const IP_PASS_NUC: string
+type ENV = {
+    IP: KVNamespace
+    ROLLBAR_KEY: string
+    ROLLBAR_TG_BOT_TOKEN: string
+    ROLLBAR_TG_CHAT_ID: string
+    IP_PASS_NUC: string
+}
 
-listenFetch("current-ip", ROLLBAR_KEY, handle)
-
-async function handle(event: FetchEvent): Promise<Response> {
-    const req = event.request
-
+const worker = createWorker("current-ip", async (req: Request, env: ENV) => {
     const currIp = req.headers.get("CF-Connecting-IP")
     if (currIp === null) {
         throw new Error("CF-Connecting-IP is empty")
     }
 
     const [user, pass] = getBA(req.headers.get("authorization"))
-    if (user === "nuc" && pass === IP_PASS_NUC) {
-        await saveCurrentIp("nuc", currIp)
+    if (user === "nuc" && pass === env.IP_PASS_NUC) {
+        await saveCurrentIp(env, "nuc", currIp)
     }
 
     return new Response("ok")
-}
+})
 
-async function saveCurrentIp(machine: string, currIp: string) {
-    const prevIp = await IP.get(machine)
+export default worker
+
+async function saveCurrentIp(env: ENV, machine: string, currIp: string) {
+    const prevIp = await env.IP.get(machine)
     if (prevIp !== currIp) {
-        await IP.put(machine, currIp)
-        const telegram = new Telegram(ROLLBAR_TG_BOT_TOKEN)
+        await env.IP.put(machine, currIp)
+        const telegram = new Telegram(env.ROLLBAR_TG_BOT_TOKEN)
         await telegram.send("sendMessage", {
             parse_mode: "HTML",
-            chat_id: Number(ROLLBAR_TG_CHAT_ID),
+            chat_id: Number(env.ROLLBAR_TG_CHAT_ID),
             text: `IP changed\n<pre>${enc(machine)} => ${enc(currIp)}</pre>`,
             disable_web_page_preview: true,
         })

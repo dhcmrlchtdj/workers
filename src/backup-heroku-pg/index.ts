@@ -1,40 +1,43 @@
 import { GET, POST } from "../_common/feccan"
 import { encode } from "../_common/base64"
-import { listenSchedule } from "../_common/listen"
+import { createScheduler } from "../_common/listen"
 
-// from worker environment
-declare const ROLLBAR_KEY: string
-declare const BACKUP_HEROKU_PG_APP: string
-declare const BACKUP_HEROKU_PG_TOKEN: string
-declare const R2Backup: R2Bucket
-
-///
-
-listenSchedule("backup-heroku-pg", ROLLBAR_KEY, backup)
-
-///
-
-async function backup(): Promise<void> {
-    const file = await fetchBackup()
-    if (file === null) return
-    await R2Backup.put(file.name, file.content, {
-        httpMetadata: { contentType: "application/octet-stream" },
-    })
+type ENV = {
+    ROLLBAR_KEY: string
+    BACKUP_HEROKU_PG_APP: string
+    BACKUP_HEROKU_PG_TOKEN: string
+    R2Backup: R2Bucket
 }
 
-async function fetchBackup(): Promise<{
-    content: ArrayBuffer
+const worker = createScheduler(
+    "backup-heroku-pg",
+    async (_controller, env: ENV) => {
+        const file = await fetchBackup(env)
+        if (file !== null && file.content !== null) {
+            await env.R2Backup.put(file.name, file.content, {
+                httpMetadata: { contentType: "application/octet-stream" },
+            })
+        } else {
+            throw new Error("failed to fetch backup")
+        }
+    },
+)
+
+export default worker
+
+async function fetchBackup(env: ENV): Promise<{
+    content: ReadableStream | null
     name: string
 } | null> {
     // https://github.com/heroku/cli/blob/v7.47.0/packages/pg-v5/commands/backups/url.js
     const headers = {
         accept: "application/json",
-        authorization: "Basic " + encode(":" + BACKUP_HEROKU_PG_TOKEN),
+        authorization: "Basic " + encode(":" + env.BACKUP_HEROKU_PG_TOKEN),
     }
 
     const host = "postgres-starter-api.heroku.com"
     const backups: HerokuBackup[] = await GET(
-        `https://${host}/client/v11/apps/${BACKUP_HEROKU_PG_APP}/transfers`,
+        `https://${host}/client/v11/apps/${env.BACKUP_HEROKU_PG_APP}/transfers`,
         headers,
     ).then((r) => r.json())
     const last = backups
@@ -43,7 +46,7 @@ async function fetchBackup(): Promise<{
     if (!last) return null
 
     const download: HerokuDownload = await POST(
-        `https://${host}/client/v11/apps/${BACKUP_HEROKU_PG_APP}/transfers/${last.num}/actions/public-url`,
+        `https://${host}/client/v11/apps/${env.BACKUP_HEROKU_PG_APP}/transfers/${last.num}/actions/public-url`,
         null,
         headers,
     ).then((r) => r.json())
@@ -52,7 +55,7 @@ async function fetchBackup(): Promise<{
         .replace(" ", "_")
         .replace(/:/g, "")
 
-    const content = await GET(download.url).then((r) => r.arrayBuffer())
+    const content = await GET(download.url).then((r) => r.body)
 
     return {
         content,

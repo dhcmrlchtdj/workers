@@ -37,7 +37,13 @@ export class Rollbar {
         })
     }
 
-    private log(level: Level, err: Error, req: Request | undefined) {
+    private log(level: Level, error: unknown, req: Request | undefined) {
+        let err: Error
+        if (error instanceof Error) {
+            err = error
+        } else {
+            err = new Error(error as string)
+        }
         const body = {
             title: `${err.name}: ${err.message}`,
             body: {
@@ -55,11 +61,11 @@ export class Rollbar {
         return this.send(level, body)
     }
 
-    error(err: Error, req?: Request): Promise<Response> {
+    error(err: unknown, req?: Request): Promise<Response> {
         return this.log("error", err, req)
     }
 
-    warn(err: Error, req?: Request): Promise<Response> {
+    warn(err: unknown, req?: Request): Promise<Response> {
         return this.log("warning", err, req)
     }
 }

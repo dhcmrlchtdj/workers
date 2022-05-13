@@ -1,4 +1,4 @@
 export type Monitor = {
-    error(err: Error, req?: Request): Promise<Response>
-    warn(err: Error, req?: Request): Promise<Response>
+    error(err: unknown, req?: Request): Promise<Response>
+    warn(err: unknown, req?: Request): Promise<Response>
 }

@@ -23,9 +23,8 @@ const worker = createWorker("backup", async (req: Request, env: ENV) => {
             if (!(file instanceof File)) {
                 throw new Error("`file` is not a file")
             }
-            const buf = await file.arrayBuffer()
             const date = format(new Date(), "YYYYMMDD_hhmmss")
-            await env.R2Backup.put(`beancount/${date}.tar.zst.age`, buf, {
+            await env.R2Backup.put(`beancount/${date}.tar.zst.age`, file.stream(), {
                 httpMetadata: { contentType: "application/octet-stream" },
             })
             return new Response("ok")
