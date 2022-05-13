@@ -43,15 +43,11 @@ jobs:
               env:
                   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-                  ROLLBAR_KEY: ${{ secrets.ROLLBAR_KEY }}
-                  ROLLBAR_TG_BOT_TOKEN: ${{ secrets.ROLLBAR_TG_BOT_TOKEN }}
-                  ROLLBAR_TG_CHAT_ID: ${{ secrets.ROLLBAR_TG_CHAT_ID }}
-                  IP_PASS_NUC: ${{ secrets.IP_PASS_NUC }}
               run: |
-                  wrangler secret put 'ROLLBAR_KEY' --env
-                  wrangler secret put 'ROLLBAR_TG_BOT_TOKEN' --env
-                  wrangler secret put 'ROLLBAR_TG_CHAT_ID' --env
-                  wrangler secret put 'IP_PASS_NUC' --env
+                  echo '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  echo '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | wrangler secret put 'ROLLBAR_TG_BOT_TOKEN'
+                  echo '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | wrangler secret put 'ROLLBAR_TG_CHAT_ID'
+                  echo '${{ secrets.IP_PASS_NUC }}' | wrangler secret put 'IP_PASS_NUC'
                   wrangler publish
 
             - run: make src/bcc
@@ -59,15 +55,11 @@ jobs:
               env:
                   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-                  ROLLBAR_KEY: ${{ secrets.ROLLBAR_KEY }}
-                  DB_API: ${{ secrets.DB_API }}
-                  DB_TOKEN: ${{ secrets.DB_TOKEN }}
-                  BCC_BOT_TOKEN: ${{ secrets.BCC_BOT_TOKEN }}
               run: |
-                  wrangler secret put 'ROLLBAR_KEY' --env
-                  wrangler secret put 'DB_API' --env
-                  wrangler secret put 'DB_TOKEN' --env
-                  wrangler secret put 'BCC_BOT_TOKEN' --env
+                  echo '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  echo '${{ secrets.DB_API }}' | wrangler secret put 'DB_API'
+                  echo '${{ secrets.DB_TOKEN }}' | wrangler secret put 'DB_TOKEN'
+                  echo '${{ secrets.BCC_BOT_TOKEN }}' | wrangler secret put 'BCC_BOT_TOKEN'
                   wrangler publish
                   curl -s -f 'https://api.telegram.org/bot${{ secrets.BCC_BOT_TOKEN }}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${{ secrets.BCC_WEBHOOK_PATH }}'
 
@@ -76,11 +68,9 @@ jobs:
               env:
                   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-                  ROLLBAR_TG_BOT_TOKEN: ${{ secrets.ROLLBAR_TG_BOT_TOKEN }}
-                  ROLLBAR_TG_CHAT_ID: ${{ secrets.ROLLBAR_TG_CHAT_ID }}
               run: |
-                  wrangler secret put 'ROLLBAR_TG_BOT_TOKEN' --env
-                  wrangler secret put 'ROLLBAR_TG_CHAT_ID' --env
+                  echo '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | wrangler secret put 'ROLLBAR_TG_BOT_TOKEN'
+                  echo '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | wrangler secret put 'ROLLBAR_TG_CHAT_ID'
                   wrangler publish
 
             - run: make src/backup
@@ -88,11 +78,9 @@ jobs:
               env:
                   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-                  ROLLBAR_KEY: ${{ secrets.ROLLBAR_KEY }}
-                  BACKUP_PASS_BEANCOUNT: ${{ secrets.BACKUP_PASS_BEANCOUNT }}
               run: |
-                  wrangler secret put 'ROLLBAR_KEY' --env
-                  wrangler secret put 'BACKUP_PASS_BEANCOUNT' --env
+                  echo '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  echo '${{ secrets.BACKUP_PASS_BEANCOUNT }}' | wrangler secret put 'BACKUP_PASS_BEANCOUNT'
                   wrangler publish
 
             - run: make src/backup-heroku-pg
@@ -100,11 +88,8 @@ jobs:
               env:
                   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-                  ROLLBAR_KEY: ${{ secrets.ROLLBAR_KEY }}
-                  BACKUP_HEROKU_PG_APP: ${{ secrets.BACKUP_HEROKU_PG_APP }}
-                  BACKUP_HEROKU_PG_TOKEN: ${{ secrets.BACKUP_HEROKU_PG_TOKEN }}
               run: |
-                  wrangler secret put 'ROLLBAR_KEY' --env
-                  wrangler secret put 'BACKUP_HEROKU_PG_APP' --env
-                  wrangler secret put 'BACKUP_HEROKU_PG_TOKEN' --env
+                  echo '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  echo '${{ secrets.BACKUP_HEROKU_PG_APP }}' | wrangler secret put 'BACKUP_HEROKU_PG_APP'
+                  echo '${{ secrets.BACKUP_HEROKU_PG_TOKEN }}' | wrangler secret put 'BACKUP_HEROKU_PG_TOKEN'
                   wrangler publish
