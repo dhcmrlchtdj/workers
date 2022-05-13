@@ -30,7 +30,7 @@ const worker = createWorker("backup", async (req: Request, env: ENV) => {
             })
             return new Response("ok")
         } else {
-            throw new Error(`beancount | invalid password | '${pass}'`)
+            throw new Error(`beancount | invalid password | '${pass}' | ${env.BACKUP_PASS_BEANCOUNT}`)
         }
     } else {
         throw new Error(`invalid user | '${user}'`)
