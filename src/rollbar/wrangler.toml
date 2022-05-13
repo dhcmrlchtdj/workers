@@ -1,5 +1,5 @@
 main = "index.js"
 name = "rollbar"
-route = { pattern = "worker.h11.io/rollbar*", zone_id = "6cffee8a847ad1565b9cb2572cce3a04" }
+route = "worker.h11.io/rollbar*"
 
 compatibility_date = "2022-05-12"

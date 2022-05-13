@@ -2,11 +2,8 @@ main = "index.js"
 name = "backup-heroku-pg"
 
 compatibility_date = "2022-05-12"
-compatibility_flags = ["r2_public_beta_bindings"]
 
-r2_buckets = [
-    { binding = "R2Backup", bucket_name = "backup" }
-]
+r2_buckets = [{ binding = "R2Backup", bucket_name = "backup" }]
 
 [triggers]
 crons = ["30 0 * * *"]
