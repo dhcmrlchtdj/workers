@@ -24,11 +24,11 @@ jobs:
                   restore-keys: ${{ runner.os }}-pnpm-
 
             - run: |
-                  echo "$PATH"
-                  corepack prepare pnpm@7.* --activate
+                  npm install -g pnpm@7
                   pnpm install
                   PNPM_HOME="~/.local/bin" pnpm add -g wrangler@2.0.3
                   pnpm store prune
+                  echo "$PATH"
 
             - run: make test
 
