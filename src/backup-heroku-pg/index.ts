@@ -17,14 +17,13 @@ listenSchedule("backup-heroku-pg", ROLLBAR_KEY, backup)
 async function backup(): Promise<void> {
     const file = await fetchBackup()
     if (file === null) return
-    if (file.content === null) return
     await R2Backup.put(file.name, file.content, {
         httpMetadata: { contentType: "application/octet-stream" },
     })
 }
 
 async function fetchBackup(): Promise<{
-    content: ReadableStream | null
+    content: ArrayBuffer
     name: string
 } | null> {
     // https://github.com/heroku/cli/blob/v7.47.0/packages/pg-v5/commands/backups/url.js
@@ -53,11 +52,11 @@ async function fetchBackup(): Promise<{
         .replace(" ", "_")
         .replace(/:/g, "")
 
-    const content = await GET(download.url).then((r) => r.body)
+    const content = await GET(download.url).then((r) => r.arrayBuffer())
 
     return {
         content,
-        name: `database-heroku-feedbox-${created_at}_rev${last.num}.dump`,
+        name: `database/heroku/feedbox/${created_at}_rev${last.num}.dump`,
     }
 }
 

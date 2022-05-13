@@ -1,20 +1,27 @@
 import { format } from "../_common/format-date"
-import { listenFetch } from "../_common/listen"
 import { getBA } from "../_common/basic_auth"
+import { Rollbar } from "../_common/service/rollbar"
 
-// from worker environment
-declare const ROLLBAR_KEY: string
-declare const BACKUP_PASS_BEANCOUNT: string
-declare const R2Backup: R2Bucket
+type ENV = {
+    ROLLBAR_KEY: string
+    BACKUP_PASS_BEANCOUNT: string
+    R2Backup: R2Bucket
+}
+const worker: ExportedHandler<ENV> = {
+    async fetch(request: Request, env: ENV, ctx: ExecutionContext) {
+        const monitor = new Rollbar(env.ROLLBAR_KEY, "backup")
+        try {
+            const resp = await backup(request, env)
+            return resp
+        } catch (err) {
+            ctx.waitUntil(monitor.error(err as Error, request))
+            return new Response("ok")
+        }
+    },
+}
+export default worker
 
-///
-
-listenFetch("backup", ROLLBAR_KEY, backup)
-
-///
-
-async function backup(event: FetchEvent): Promise<Response> {
-    const req = event.request
+async function backup(req: Request, env: ENV): Promise<Response> {
     if (req.method.toUpperCase() !== "POST")
         throw new Error("405 Method Not Allowed")
     const ct = req.headers.get("content-type")
@@ -22,16 +29,23 @@ async function backup(event: FetchEvent): Promise<Response> {
         throw new Error("415 Unsupported Media Type")
     const [user, pass] = getBA(req.headers.get("authorization"))
 
-    if (user === "beancount" && pass === BACKUP_PASS_BEANCOUNT) {
-        const body = await req.formData()
-        const file = body.get("file")
-        if (!(file instanceof File)) {
-            throw new Error("`file` is not a file")
+    if (user === "beancount") {
+        if (pass === env.BACKUP_PASS_BEANCOUNT) {
+            const body = await req.formData()
+            const file = body.get("file")
+            if (!(file instanceof File)) {
+                throw new Error("`file` is not a file")
+            }
+            const buf = await file.arrayBuffer()
+            const date = format(new Date(), "YYYYMMDD_hhmmss")
+            await env.R2Backup.put(`beancount/${date}.tar.zst.age`, buf, {
+                httpMetadata: { contentType: "application/octet-stream" },
+            })
+            return new Response("ok")
+        } else {
+            return new Response("invalid password")
         }
-        const date = format(new Date(), "YYYYMMDD_hhmmss")
-        await R2Backup.put(`beancount-${date}.tar.zst.age`, file.stream(), {
-            httpMetadata: { contentType: "application/octet-stream" },
-        })
+    } else {
+        return new Response("invalid user")
     }
-    return new Response("ok")
 }
