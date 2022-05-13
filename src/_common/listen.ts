@@ -2,6 +2,24 @@ import type { WorkerRouter, Params } from "./router"
 import type { Monitor } from "./monitor"
 import { Rollbar } from "./service/rollbar"
 
+export function createWorker<Env extends { ROLLBAR_KEY: string }>(
+    name: string,
+    handler: ExportedHandlerFetchHandler<Env>,
+): ExportedHandler<Env> {
+    return {
+        async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+            const monitor = new Rollbar(env.ROLLBAR_KEY, name)
+            try {
+                const resp = await handler(request, env, ctx)
+                return resp
+            } catch (err) {
+                ctx.waitUntil(monitor.error(err as Error, request))
+                return new Response("ok")
+            }
+        },
+    }
+}
+
 export type Context = {
     event: FetchEvent
     params: Params

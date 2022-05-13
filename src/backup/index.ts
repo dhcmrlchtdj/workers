@@ -1,27 +1,15 @@
 import { format } from "../_common/format-date"
 import { getBA } from "../_common/basic_auth"
 import { Rollbar } from "../_common/service/rollbar"
+import { createWorker } from "../_common/listen"
 
 type ENV = {
     ROLLBAR_KEY: string
     BACKUP_PASS_BEANCOUNT: string
     R2Backup: R2Bucket
 }
-const worker: ExportedHandler<ENV> = {
-    async fetch(request: Request, env: ENV, ctx: ExecutionContext) {
-        const monitor = new Rollbar(env.ROLLBAR_KEY, "backup")
-        try {
-            const resp = await backup(request, env)
-            return resp
-        } catch (err) {
-            ctx.waitUntil(monitor.error(err as Error, request))
-            return new Response("ok")
-        }
-    },
-}
-export default worker
 
-async function backup(req: Request, env: ENV): Promise<Response> {
+const worker = createWorker("backup", async (req: Request, env: ENV) => {
     if (req.method.toUpperCase() !== "POST")
         throw new Error("405 Method Not Allowed")
     const ct = req.headers.get("content-type")
@@ -48,4 +36,6 @@ async function backup(req: Request, env: ENV): Promise<Response> {
     } else {
         return new Response("invalid user")
     }
-}
+})
+
+export default worker
