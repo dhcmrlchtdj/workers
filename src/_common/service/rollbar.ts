@@ -32,7 +32,7 @@ export class Rollbar {
                 ...body,
             },
         })
-        console.error(msg)
+        console.log(msg)
         return POST("https://api.rollbar.com/api/1/item/", msg)
     }
 
