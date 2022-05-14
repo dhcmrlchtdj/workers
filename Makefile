@@ -39,6 +39,6 @@ test: $(test_targets)
 
 $(test_targets): node_modules/tsconfig.tsbuildinfo
 	esbuild --bundle --format=esm --target=es2020 --platform=node --outfile=$@ ${@:.test.js=}
-	jest $@
+	jest --rootDir=./test --debug $@
 
 .PHONY: build check force fmt $(targets) test $(test_targets)
