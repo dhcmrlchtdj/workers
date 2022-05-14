@@ -26,7 +26,7 @@ jobs:
             - run: |
                   corepack enable pnpm
                   pnpm install
-                  PNPM_HOME="~/.local/bin/" pnpm add -g wrangler@2.0.3
+                  PNPM_HOME="/home/runner/.local/bin" pnpm add -g wrangler@2.0.3
                   pnpm store prune
 
             - run: make test
