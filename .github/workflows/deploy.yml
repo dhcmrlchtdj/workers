@@ -63,6 +63,7 @@ jobs:
                   printf '${{ secrets.DB_API }}' | wrangler secret put 'DB_API'
                   printf '${{ secrets.DB_TOKEN }}' | wrangler secret put 'DB_TOKEN'
                   printf '${{ secrets.BCC_BOT_TOKEN }}' | wrangler secret put 'BCC_BOT_TOKEN'
+                  printf '${{ secrets.BCC_WEBHOOK_PATH }}' | wrangler secret put 'BCC_WEBHOOK_PATH'
                   wrangler publish
                   curl -s -f 'https://api.telegram.org/bot${{ secrets.BCC_BOT_TOKEN }}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${{ secrets.BCC_WEBHOOK_PATH }}'
 
