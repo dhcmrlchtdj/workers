@@ -24,9 +24,9 @@ jobs:
                   restore-keys: ${{ runner.os }}-pnpm-
             - run: echo "$PATH"
             - run: |
-                  npm i -g pnpm@7
-                  npm i -g wrangler@2.0.3
+                  corepack enable pnpm
                   pnpm install
+                  PNPM_HOME="~/.local/bin/" pnpm add -g wrangler@2.0.3
                   pnpm store prune
 
             - run: make test
