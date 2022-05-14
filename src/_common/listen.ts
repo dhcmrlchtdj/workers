@@ -30,7 +30,6 @@ export function createSimpleWorker<Env>(
                 return resp
             } catch (err) {
                 console.log(err)
-            } finally {
                 return new Response("ok")
             }
         },
@@ -55,25 +54,6 @@ export function createScheduler<Env extends { ROLLBAR_KEY: string }>(
             }
         },
     }
-}
-
-export function listenSchedule(
-    workerName: string,
-    rollbarKey: string,
-    handler: (ctx: {
-        event: ScheduledEvent
-        monitor: Monitor
-    }) => Promise<unknown>,
-) {
-    const monitor: Monitor = new Rollbar(rollbarKey, workerName)
-    const h = async (event: ScheduledEvent) => {
-        try {
-            await handler({ event, monitor })
-        } catch (err) {
-            event.waitUntil(monitor.error(err))
-        }
-    }
-    addEventListener("scheduled", (event) => event.waitUntil(h(event)))
 }
 
 export type Context = {

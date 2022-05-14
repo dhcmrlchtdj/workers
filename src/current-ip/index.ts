@@ -22,6 +22,8 @@ const worker = createWorker("current-ip", async (req: Request, env: ENV) => {
     const [user, pass] = getBA(req.headers.get("authorization"))
     if (user === "nuc" && pass === env.IP_PASS_NUC) {
         await saveCurrentIp(env, "nuc", currIp)
+    } else {
+        console.log(`invalid user/pass: "${user}" "${pass}"`)
     }
 
     return new Response("ok")

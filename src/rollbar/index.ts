@@ -25,6 +25,8 @@ const worker = createSimpleWorker(async (req: Request, env: Env) => {
             chat_id: Number(env.ROLLBAR_TG_CHAT_ID),
             text,
         })
+    } else {
+        console.log(`unknown event: '${evt}'`)
     }
 
     return new Response("ok")
@@ -35,13 +37,11 @@ export default worker
 ///
 
 type RollbarPayload = {
-    event_name: "occurrence"
-    data: Occurrence
-}
-
-type Occurrence = {
-    url: string
-    occurrence: {
-        title: string
+    event_name: string
+    data: {
+        url: string
+        occurrence: {
+            title: string
+        }
     }
 }
