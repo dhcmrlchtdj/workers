@@ -1,0 +1,72 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Router error 1`] = `"\\"*\\" must be the last segment"`;
+
+exports[`Router match all 1`] = `
+Object {
+  "handler": [Function],
+  "params": Map {
+    "*" => "",
+  },
+}
+`;
+
+exports[`Router match all 2`] = `
+Object {
+  "handler": [Function],
+  "params": Map {
+    "*" => "a",
+  },
+}
+`;
+
+exports[`Router match all 3`] = `
+Object {
+  "handler": [Function],
+  "params": Map {
+    "*" => "a/b",
+  },
+}
+`;
+
+exports[`Router match all 4`] = `
+Object {
+  "handler": [Function],
+  "params": Map {
+    "*" => "c",
+  },
+}
+`;
+
+exports[`Router params 1`] = `
+Object {
+  "handler": null,
+  "params": Map {},
+}
+`;
+
+exports[`Router params 2`] = `
+Object {
+  "handler": [Function],
+  "params": Map {
+    "p" => "a",
+  },
+}
+`;
+
+exports[`Router params 3`] = `
+Object {
+  "handler": [Function],
+  "params": Map {
+    "p2" => "b",
+    "p1" => "a",
+  },
+}
+`;
+
+exports[`Router params 4`] = `
+Object {
+  "handler": null,
+  "params": Map {},
+}
+`;
