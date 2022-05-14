@@ -1,5 +1,10 @@
-import { encodeHtmlEntities, Telegram } from "../_common/service/telegram"
+import {
+    HttpBadRequest,
+    HttpMethodNotAllowed,
+    HttpOk,
+} from "../_common/http-response"
 import { createSimpleWorker } from "../_common/listen"
+import { encodeHtmlEntities, Telegram } from "../_common/service/telegram"
 
 // https://docs.rollbar.com/docs/webhooks
 
@@ -8,29 +13,37 @@ type Env = {
     ROLLBAR_TG_CHAT_ID: string
 }
 
-const worker = createSimpleWorker(async (req: Request, env: Env) => {
-    if (req.method.toUpperCase() !== "POST") {
-        throw new Error("405 Method Not Allowed")
-    }
+const worker = createSimpleWorker(
+    async (req: Request, env: Env, ctx: ExecutionContext) => {
+        if (req.method.toUpperCase() !== "POST") {
+            return HttpMethodNotAllowed(["POST"])
+        }
 
-    const payload: RollbarPayload = await req.json()
-    const evt = payload.event_name
-    if (evt === "occurrence") {
+        const payload: RollbarPayload = await req.json()
+        if (payload?.event_name !== "occurrence") {
+            const msg = `unknown event: "${payload?.event_name}"`
+            console.log(msg)
+            return HttpBadRequest(msg)
+        }
+
         const url = encodeHtmlEntities(payload.data.url)
         const error = encodeHtmlEntities(payload.data.occurrence.title)
         const text = `${url}\n<pre>${error}</pre>`
         const telegram = new Telegram(env.ROLLBAR_TG_BOT_TOKEN)
-        await telegram.send("sendMessage", {
-            parse_mode: "HTML",
-            chat_id: Number(env.ROLLBAR_TG_CHAT_ID),
-            text,
-        })
-    } else {
-        console.log(`unknown event: '${evt}'`)
-    }
-
-    return new Response("ok")
-})
+        ctx.waitUntil(
+            telegram
+                .send("sendMessage", {
+                    parse_mode: "HTML",
+                    chat_id: Number(env.ROLLBAR_TG_CHAT_ID),
+                    text,
+                })
+                .catch((err) => {
+                    console.log(`sendMessage failed | "${err}"`)
+                }),
+        )
+        return HttpOk()
+    },
+)
 
 export default worker
 

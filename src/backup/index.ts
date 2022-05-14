@@ -1,6 +1,12 @@
 import { format } from "../_common/format-date"
 import { getBA } from "../_common/basic_auth"
 import { createWorker } from "../_common/listen"
+import {
+    HttpCreated,
+    HttpMethodNotAllowed,
+    HttpUnauthorized,
+    HttpUnsupportedMediaType,
+} from "../_common/http-response"
 
 type ENV = {
     ROLLBAR_KEY: string
@@ -9,13 +15,16 @@ type ENV = {
 }
 
 const worker = createWorker("backup", async (req: Request, env: ENV) => {
-    if (req.method.toUpperCase() !== "POST")
-        throw new Error("405 Method Not Allowed")
-    const ct = req.headers.get("content-type")
-    if (!ct || !ct.startsWith("multipart/form-data; boundary"))
-        throw new Error("415 Unsupported Media Type")
-    const [user, pass] = getBA(req.headers.get("authorization"))
+    if (req.method.toUpperCase() !== "POST") {
+        return HttpMethodNotAllowed(["POST"])
+    }
 
+    const ct = req.headers.get("content-type")
+    if (!ct || !ct.startsWith("multipart/form-data; boundary")) {
+        return HttpUnsupportedMediaType()
+    }
+
+    const [user, pass] = getBA(req.headers.get("authorization"))
     if (user === "beancount") {
         if (pass === env.BACKUP_PASS_BEANCOUNT) {
             const body = await req.formData()
@@ -24,20 +33,19 @@ const worker = createWorker("backup", async (req: Request, env: ENV) => {
                 throw new Error("`file` is not a file")
             }
             const date = format(new Date(), "YYYYMMDD_hhmmss")
-            await env.R2Backup.put(
+            const obj = await env.R2Backup.put(
                 `beancount/${date}.tar.zst.age`,
                 file.stream(),
                 {
                     httpMetadata: { contentType: "application/octet-stream" },
                 },
             )
-            return new Response("ok")
-        } else {
-            throw new Error(`beancount | invalid password | '${pass}'`)
+            return HttpCreated(obj.httpEtag)
         }
-    } else {
-        throw new Error(`invalid user | '${user}'`)
     }
+
+    console.log(`invalid user/pass: "${user}" "${pass}"`)
+    return HttpUnauthorized(["Basic"])
 })
 
 export default worker

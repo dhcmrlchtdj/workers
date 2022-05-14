@@ -4,6 +4,11 @@ import {
 } from "../_common/service/telegram"
 import { getBA } from "../_common/basic_auth"
 import { createWorker } from "../_common/listen"
+import {
+    HttpBadRequest,
+    HttpOk,
+    HttpUnauthorized,
+} from "../_common/http-response"
 
 type ENV = {
     IP: KVNamespace
@@ -16,17 +21,17 @@ type ENV = {
 const worker = createWorker("current-ip", async (req: Request, env: ENV) => {
     const currIp = req.headers.get("CF-Connecting-IP")
     if (currIp === null) {
-        throw new Error("CF-Connecting-IP is empty")
+        return HttpBadRequest("CF-Connecting-IP is missed")
     }
 
     const [user, pass] = getBA(req.headers.get("authorization"))
     if (user === "nuc" && pass === env.IP_PASS_NUC) {
         await saveCurrentIp(env, "nuc", currIp)
+        return HttpOk()
     } else {
         console.log(`invalid user/pass: "${user}" "${pass}"`)
+        return HttpUnauthorized(["Basic"])
     }
-
-    return new Response("ok")
 })
 
 export default worker

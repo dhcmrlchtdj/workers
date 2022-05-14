@@ -1,12 +1,25 @@
 import { decode } from "./base64"
+import { HttpBadRequest, HttpUnauthorized } from "./http-response"
+
+// https://developers.cloudflare.com/workers/examples/basic-auth/
 
 export function getBA(auth: string | null): [string, string] {
-    if (!auth) throw new Error("missing authorization")
-    const match = /\s*basic\s*(\S+)\s*/i.exec(auth)
-    if (!match) throw new Error("expect BasicAuth")
-    const user_pass = /([^:]+):(\S+)/.exec(decode(match[1]!))
-    if (!user_pass) throw new Error("expect user:pass")
-    return [user_pass[1]!, user_pass[2]!]
+    if (!auth) {
+        throw HttpUnauthorized(["Basic"])
+    }
+
+    const [scheme, encoded] = auth.split(" ")
+    if (scheme !== "Basic" || !encoded) {
+        throw HttpBadRequest("malformed authorization header")
+    }
+
+    const decoded = decode(encoded)
+    const index = decoded.indexOf(":")
+    if (index === -1 || /[\0-\x1F\x7F]/.test(decoded)) {
+        throw HttpBadRequest("invalid authorization value")
+    }
+
+    return [decoded.substring(0, index), decoded.substring(index + 1)]
 }
 
 export function validate(req: Request, user: string, pass: string) {
