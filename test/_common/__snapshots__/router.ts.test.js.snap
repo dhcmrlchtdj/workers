@@ -59,7 +59,6 @@ Object {
   "handler": [Function],
   "params": Map {
     "p2" => "b",
-    "p1" => "a",
   },
 }
 `;
@@ -68,5 +67,33 @@ exports[`Router params 4`] = `
 Object {
   "handler": null,
   "params": Map {},
+}
+`;
+
+exports[`Router params 5`] = `
+Object {
+  "handler": [Function],
+  "params": Map {
+    "p1" => "x",
+  },
+}
+`;
+
+exports[`Router params 6`] = `
+Object {
+  "handler": [Function],
+  "params": Map {
+    "p2" => "y",
+  },
+}
+`;
+
+exports[`Router params 7`] = `
+Object {
+  "handler": [Function],
+  "params": Map {
+    "p2" => "y",
+    "p1" => "x",
+  },
 }
 `;

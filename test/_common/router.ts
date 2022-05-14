@@ -47,6 +47,8 @@ describe("Router", () => {
         const fn = async () => new Response("ok")
         router.get("/:p", fn)
         router.get("/:p1/:p2", fn)
+        router.get("/a/:p2", fn)
+        router.get("/:p1/b", fn)
         expect(
             router.route(new Request("https://localhost/")),
         ).toMatchSnapshot()
@@ -59,10 +61,20 @@ describe("Router", () => {
         expect(
             router.route(new Request("https://localhost/a/b/c")),
         ).toMatchSnapshot()
+
+        expect(
+            router.route(new Request("https://localhost/x/b")),
+        ).toMatchSnapshot()
+        expect(
+            router.route(new Request("https://localhost/a/y")),
+        ).toMatchSnapshot()
+        expect(
+            router.route(new Request("https://localhost/x/y")),
+        ).toMatchSnapshot()
     })
     test("error", () => {
         const router = new WorkerRouter()
         const fn = async () => new Response("ok")
         expect(() => router.get("/*/b", fn)).toThrowErrorMatchingSnapshot()
-    });
+    })
 })
