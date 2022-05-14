@@ -1,16 +1,12 @@
 import type { Message } from "telegram-typings"
-import { RouterContext } from "../_common/listen"
 import { Database } from "../_common/service/database"
 import { Telegram } from "../_common/service/telegram"
 import type { Env } from "./types"
 
-const createActions = (ctx: RouterContext<Env>) => {
-    const database = new Database(ctx.env.DB_API, ctx.env.DB_TOKEN)
+const createActions = (env: Env) => {
+    const database = new Database(env.DB_API, env.DB_TOKEN)
 
-    const telegram = new Telegram(
-        ctx.env.BCC_BOT_TOKEN,
-        "blind_carbon_copy_bot",
-    )
+    const telegram = new Telegram(env.BCC_BOT_TOKEN, "blind_carbon_copy_bot")
     const actions = new Map<
         string,
         (arg: string, msg: Message) => Promise<void>
@@ -131,18 +127,15 @@ const createActions = (ctx: RouterContext<Env>) => {
 }
 
 export const execute = async (
-    ctx: RouterContext<Env>,
+    env: Env,
     cmd: string,
     arg: string,
     msg: Message,
 ) => {
-    const telegram = new Telegram(
-        ctx.env.BCC_BOT_TOKEN,
-        "blind_carbon_copy_bot",
-    )
+    const telegram = new Telegram(env.BCC_BOT_TOKEN, "blind_carbon_copy_bot")
     const isAdmin = await telegram.fromAdmin(msg)
     if (!isAdmin) return
-    const actions = createActions(ctx)
+    const actions = createActions(env)
     const act = actions.get(cmd)
     if (act !== undefined) {
         await act(arg, msg)

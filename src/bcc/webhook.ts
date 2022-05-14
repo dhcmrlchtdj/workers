@@ -4,16 +4,13 @@ import { Telegram } from "../_common/service/telegram"
 import type { Env } from "./types"
 import { execute } from "./bot_command"
 
-const handleMsg = async (ctx: RouterContext<Env>, msg: Message) => {
+const handleMsg = async (env: Env, msg: Message) => {
     if (!msg.text || !msg.entities) return
 
-    const telegram = new Telegram(
-        ctx.env.BCC_BOT_TOKEN,
-        "blind_carbon_copy_bot",
-    )
+    const telegram = new Telegram(env.BCC_BOT_TOKEN, "blind_carbon_copy_bot")
     const command = telegram.extractCommand(msg)
     if (command !== undefined && command.cmd !== "/add") {
-        await execute(ctx, command.cmd, command.arg, msg)
+        await execute(env, command.cmd, command.arg, msg)
         return
     }
 
@@ -22,13 +19,13 @@ const handleMsg = async (ctx: RouterContext<Env>, msg: Message) => {
         .map((entity) => msg.text!.substr(entity.offset, entity.length))
     if (hashtags.length > 0) {
         const tags = Array.from(new Set(hashtags))
-        await execute(ctx, "/add", tags.join(" "), msg)
+        await execute(env, "/add", tags.join(" "), msg)
     }
 }
 
 const handle = (ctx: RouterContext<Env>, m: Message | undefined) => {
     if (m === undefined) return
-    const task = handleMsg(ctx, m).catch((e) =>
+    const task = handleMsg(ctx.env, m).catch((e) =>
         ctx.monitor.error(e, ctx.request),
     )
     ctx.ctx.waitUntil(task)
