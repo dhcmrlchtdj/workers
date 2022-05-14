@@ -1,4 +1,5 @@
-import type { WorkerRouter, Params } from "./router"
+import type { Params } from "./router"
+import { WorkerRouter } from "./router"
 import type { Monitor } from "./monitor"
 import { Rollbar } from "./service/rollbar"
 
@@ -8,8 +9,7 @@ export function createSimpleWorker<Env>(
     return {
         async fetch(request: Request, env: Env, ctx: ExecutionContext) {
             try {
-                const resp = await handler(request, env, ctx)
-                return resp
+                return await handler(request, env, ctx)
             } catch (err) {
                 console.log(err)
                 return new Response("ok")
@@ -26,8 +26,7 @@ export function createWorker<Env extends { ROLLBAR_KEY: string }>(
         async fetch(request: Request, env: Env, ctx: ExecutionContext) {
             const monitor = new Rollbar(env.ROLLBAR_KEY, name)
             try {
-                const resp = await handler(request, env, ctx)
-                return resp
+                return await handler(request, env, ctx)
             } catch (err) {
                 ctx.waitUntil(monitor.error(err, request))
                 return new Response("ok")
@@ -45,22 +44,34 @@ export type RouterContext<Env> = {
 }
 export function createWorkerByRouter<Env extends { ROLLBAR_KEY: string }>(
     name: string,
-    genRouter: (env: Env) => Promise<WorkerRouter<RouterContext<Env>>>,
+    addRoute: (
+        router: WorkerRouter<RouterContext<Env>>,
+        request: Request,
+        env: Env,
+        ctx: ExecutionContext,
+    ) => Promise<void>,
 ): ExportedHandler<Env> {
     return {
         async fetch(request: Request, env: Env, ctx: ExecutionContext) {
             const monitor = new Rollbar(env.ROLLBAR_KEY, name)
             try {
-                const router = await genRouter(env)
+                const router = new WorkerRouter<RouterContext<Env>>()
+                await addRoute(router, request, env, ctx)
                 const { handler, params } = router.route(request)
-                const resp = await handler({
-                    monitor,
-                    params,
-                    request,
-                    env,
-                    ctx,
-                })
-                return resp
+                if (handler) {
+                    return await handler({
+                        monitor,
+                        params,
+                        request,
+                        env,
+                        ctx,
+                    })
+                } else {
+                    ctx.waitUntil(
+                        monitor.warn(new Error("handler not found"), request),
+                    )
+                    return new Response("ok")
+                }
             } catch (err) {
                 ctx.waitUntil(monitor.error(err, request))
                 return new Response("ok")

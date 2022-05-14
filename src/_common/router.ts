@@ -104,17 +104,6 @@ export class WorkerRouter<Context> {
         this._router = new BaseRouter<Handler<Context>>()
     }
 
-    private async defaultHandler(_ctx: unknown) {
-        return new Response("Handler Not Found", {
-            status: 404,
-            statusText: "Not Found",
-        })
-    }
-    fallback(handler: Handler<Context>): this {
-        this.defaultHandler = handler
-        return this
-    }
-
     private add(
         method: string,
         pathname: string,
@@ -140,14 +129,17 @@ export class WorkerRouter<Context> {
         return this.add("DELETE", pathname, handler)
     }
 
-    route(request: Request): { handler: Handler<Context>; params: Params } {
+    route(request: Request): {
+        handler: Handler<Context> | null
+        params: Params
+    } {
         const url = new URL(request.url)
         const segments = [
             request.method.toUpperCase(),
             ...url.pathname.split("/"),
         ]
         const matched = this._router.lookup(segments)
-        const handler = matched.handler ?? this.defaultHandler
+        const handler = matched.handler
         return { handler, params: matched.params }
     }
 }

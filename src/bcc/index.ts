@@ -1,13 +1,9 @@
-import type { RouterContext } from "../_common/listen"
-import { WorkerRouter } from "../_common/router"
 import { createWorkerByRouter } from "../_common/listen"
 import type { Env } from "./types"
 import { webhook } from "./webhook"
 
-const worker = createWorkerByRouter<Env>("bcc", async (env: Env) => {
-    const router = new WorkerRouter<RouterContext<Env>>()
+const worker = createWorkerByRouter<Env>("bcc", async (router, _req, env) => {
     router.post(`/telegram/bcc/${env.BCC_WEBHOOK_PATH}`, webhook)
-    return router
 })
 
 export default worker
