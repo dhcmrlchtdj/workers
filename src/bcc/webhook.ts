@@ -1,13 +1,19 @@
 import type { Update, Message } from "telegram-typings"
-import type { Context } from "../_common/listen"
-import { execute, telegram } from "./bot_command"
+import type { RouterContext } from "../_common/listen"
+import { Telegram } from "../_common/service/telegram"
+import type { Env } from "./types"
+import { execute } from "./bot_command"
 
-const handleMsg = async (msg: Message | undefined) => {
-    if (!msg || !msg.text || !msg.entities) return
+const handleMsg = async (ctx: RouterContext<Env>, msg: Message) => {
+    if (!msg.text || !msg.entities) return
 
+    const telegram = new Telegram(
+        ctx.env.BCC_BOT_TOKEN,
+        "blind_carbon_copy_bot",
+    )
     const command = telegram.extractCommand(msg)
     if (command !== undefined && command.cmd !== "/add") {
-        await execute(command.cmd, command.arg, msg)
+        await execute(ctx, command.cmd, command.arg, msg)
         return
     }
 
@@ -16,23 +22,23 @@ const handleMsg = async (msg: Message | undefined) => {
         .map((entity) => msg.text!.substr(entity.offset, entity.length))
     if (hashtags.length > 0) {
         const tags = Array.from(new Set(hashtags))
-        await execute("/add", tags.join(" "), msg)
+        await execute(ctx, "/add", tags.join(" "), msg)
     }
 }
 
-export const webhook = async ({
-    event,
-    monitor,
-}: Context): Promise<Response> => {
-    const req = event.request
-    const handle = (m: Message | undefined) =>
-        event.waitUntil(handleMsg(m).catch((e) => monitor.error(e, req)))
+const handle = (ctx: RouterContext<Env>, m: Message | undefined) => {
+    if (m === undefined) return
+    const task = handleMsg(ctx, m).catch((e) =>
+        ctx.monitor.error(e, ctx.request),
+    )
+    ctx.ctx.waitUntil(task)
+}
 
-    const payload: Update = await req.json()
-    handle(payload.message)
-    handle(payload.edited_message)
-    handle(payload.channel_post)
-    handle(payload.edited_channel_post)
-
+export const webhook = async (ctx: RouterContext<Env>) => {
+    const payload: Update = await ctx.request.json()
+    handle(ctx, payload.message)
+    handle(ctx, payload.edited_message)
+    handle(ctx, payload.channel_post)
+    handle(ctx, payload.edited_channel_post)
     return new Response("ok")
 }

@@ -140,8 +140,7 @@ export class WorkerRouter<Context> {
         return this.add("DELETE", pathname, handler)
     }
 
-    route(event: FetchEvent): { handler: Handler<Context>; params: Params } {
-        const request = event.request
+    route(request: Request): { handler: Handler<Context>; params: Params } {
         const url = new URL(request.url)
         const segments = [
             request.method.toUpperCase(),
