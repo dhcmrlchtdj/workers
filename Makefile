@@ -3,7 +3,7 @@ SHELL := bash
 PATH := ./node_modules/.bin:$(PATH)
 
 targets := $(filter-out src/_%, $(wildcard src/*))
-test_targets := $(addsuffix .test.js,$(wildcard test/**/*.ts))
+test_compiled := $(addsuffix .test.js, $(wildcard test/**/*.ts))
 
 build: $(targets)
 
@@ -35,10 +35,10 @@ update_compatibility_date:
 		"$$t/wrangler.toml"; \
 		done
 
-test: $(test_targets)
+test: $(test_compiled)
+	jest --rootDir=./test $^
 
-$(test_targets): node_modules/tsconfig.tsbuildinfo
+$(test_compiled): node_modules/tsconfig.tsbuildinfo
 	esbuild --bundle --format=esm --target=es2020 --platform=node --outfile=$@ ${@:.test.js=}
-	jest --rootDir=./test --debug $@
 
-.PHONY: build check force fmt $(targets) test $(test_targets)
+.PHONY: build check force fmt $(targets) test $(test_compiled)
