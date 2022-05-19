@@ -264,7 +264,14 @@ export class Mailbox<T> {
     private readers: Deferred<Option<T>>[]
     private writers: [Deferred<boolean>, T][]
     private closed: boolean
-    constructor() {
+    private capacity: number
+    private buffer: T[]
+    constructor(capacity: number = 0) {
+        if (!(Number.isSafeInteger(capacity) && capacity >= 0)) {
+            throw new Error("the capacity must be a number not lesser than 0")
+        }
+        this.capacity = capacity
+        this.buffer = []
         this.readers = []
         this.writers = []
         this.closed = false
@@ -273,54 +280,63 @@ export class Mailbox<T> {
         this.closed = true
         this.readers.forEach((r) => r.resolve(None))
         this.readers = []
-        this.writers.forEach(([w, _]) => w.resolve(false))
-        this.writers = []
     }
     isClosed(): boolean {
         return this.closed
     }
+    isDrained(): boolean {
+        if (!this.closed) return false
+        return this.buffer.length === 0 && this.writers.length === 0
+    }
     // Some(T) means a message is received from a writer
     // None means the mailbox is closed
     async read(): Promise<Option<T>> {
-        if (this.writers.length > 0) {
-            const [w, data] = this.writers.shift()!
-            w.resolve(true)
-            return Some(data)
-        } else {
-            const r = new Deferred<Option<T>>()
-            this.readers.push(r)
-            return r.promise
-        }
+        const r = this.tryRead()
+        if (r.isSome) return r
+        if (this.closed) return None
+        const defer = new Deferred<Option<T>>()
+        this.readers.push(defer)
+        return defer.promise
     }
     tryRead(): Option<T> {
+        if (this.buffer.length > 0) {
+            const data = this.buffer.shift()!
+            if (this.writers.length > 0) {
+                const [w, data] = this.writers.shift()!
+                w.resolve(true)
+                this.buffer.push(data)
+            }
+            return Some(data)
+        }
         if (this.writers.length > 0) {
             const [w, data] = this.writers.shift()!
             w.resolve(true)
             return Some(data)
-        } else {
-            return None
         }
+        // if (this.closed) return None
+        return None
     }
-    // true means the message is sent to a reader
+    // true means the message is sent to a reader or buffer
     // false means the mailbox is closed and the data is discarded
     async write(data: T): Promise<boolean> {
-        if (this.readers.length > 0) {
-            const r = this.readers.shift()!
-            r.resolve(Some(data))
-            return true
-        } else {
-            const w = new Deferred<boolean>()
-            this.writers.push([w, data])
-            return w.promise
-        }
+        const r = this.tryWrite(data)
+        if (r) return r
+        if (this.closed) return false
+        const w = new Deferred<boolean>()
+        this.writers.push([w, data])
+        return w.promise
     }
     tryWrite(data: T): boolean {
+        if (this.closed) return false
         if (this.readers.length > 0) {
             const r = this.readers.shift()!
             r.resolve(Some(data))
             return true
-        } else {
-            return false
         }
+        if (this.buffer.length < this.capacity) {
+            this.buffer.push(data)
+            return true
+        }
+        return false
     }
 }
