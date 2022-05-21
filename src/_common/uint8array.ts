@@ -6,9 +6,13 @@ export const fromStr = (s: string) => new TextEncoder().encode(s)
 
 export const toStr = (u: Uint8Array) => new TextDecoder().decode(u)
 
-export const fromHex = (hex: string) =>
-    // @ts-expect-error
-    new Uint8Array(hex.match(/[0-9a-zA-Z]{2}/g).map((x) => parseInt(x, 16)))
+export const fromHex = (hex: string) => {
+    if (hex.length % 2 !== 0 || /[^0-9a-fA-F]/.test(hex)) {
+        throw new Error("not a valid hex string")
+    }
+    const arr = hex.match(/[0-9a-fA-F]{2}/g)!.map((x) => parseInt(x, 16))
+    return new Uint8Array(arr)
+}
 
 export const toHex = (u: Uint8Array) =>
     Array.from(u)
