@@ -59,8 +59,8 @@ export function createWorkerByRouter<Env extends { ROLLBAR_KEY: string }>(
         env: Env
         ctx: ExecutionContext
         monitor: Monitor
-    }) => Promise<void>,
-    forceReturnOk: boolean = false,
+    }) => void | Promise<void>,
+    forceReturnOk = false,
 ): ExportedHandler<Env> {
     return {
         async fetch(req: Request, env: Env, ctx: ExecutionContext) {
@@ -70,6 +70,7 @@ export function createWorkerByRouter<Env extends { ROLLBAR_KEY: string }>(
                 await addRoute({ router, req, env, ctx, monitor })
 
                 const { handler, params } = router.route(req)
+                // eslint-disable-next-line @typescript-eslint/no-throw-literal
                 if (!handler) throw HttpNotFound()
 
                 return await handler({

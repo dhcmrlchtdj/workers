@@ -7,7 +7,7 @@ export class Deque<T> {
     // front | ...[head]...[tail]... | back
     private head: number // current head index
     private len: number // current length, max(len) = cap - 1
-    private buf: Array<T>
+    private buf: T[]
     private cap: number // cap must to be power of two
     private mask: number
     constructor(capacity?: number) {
@@ -15,7 +15,7 @@ export class Deque<T> {
         this.len = 0
         this.cap = getCapacity(capacity)
         this.mask = this.cap - 1
-        this.buf = new Array(this.cap)
+        this.buf = new Array<T>(this.cap)
     }
     get length(): number {
         return this.len
@@ -78,7 +78,8 @@ export class Deque<T> {
         } else {
             const idx = (this.head + this.len) & this.mask
             const item = this.buf[idx]!
-            this.buf[idx] = undefined!
+            // @ts-expect-error
+            this.buf[idx] = undefined // cleanup
             this.len--
             return Some(item)
         }
@@ -97,9 +98,9 @@ export class Deque<T> {
         this.len++
     }
     pushFrontArray(arr: T[]) {
-        let len = arr.length
+        const len = arr.length
         this.checkCapacity(len)
-        let idx = this.head - 1
+        const idx = this.head - 1
         for (let i = 0; i < len; i++) {
             this.buf[(idx - i + this.cap) & this.mask] = arr[i]!
         }
@@ -113,7 +114,8 @@ export class Deque<T> {
             const idx = this.head
             const item = this.buf[idx]!
             this.head = (this.head + 1) & this.mask
-            this.buf[idx] = undefined!
+            // @ts-expect-error
+            this.buf[idx] = undefined // cleanup
             this.len--
             return Some(item)
         }
@@ -199,12 +201,7 @@ export class Deque<T> {
     }
 }
 
-function move(
-    target: Array<unknown>,
-    size: number,
-    fromPos: number,
-    toPos: number,
-) {
+function move(target: unknown[], size: number, fromPos: number, toPos: number) {
     for (let i = 0; i < size; i++) {
         target[toPos + i] = target[fromPos + i]
         target[fromPos + i] = undefined

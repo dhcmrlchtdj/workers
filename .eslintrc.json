@@ -1,0 +1,32 @@
+{
+    "root": true,
+    "env": {
+        "es2022": true,
+        "worker": true
+    },
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "project": ["./tsconfig.json"]
+    },
+    "plugins": ["@typescript-eslint"],
+    "ignorePatterns": ["**/*.js", "src/_archived/*"],
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:@typescript-eslint/recommended-requiring-type-checking",
+        "plugin:@typescript-eslint/strict",
+        "prettier"
+    ],
+    "rules": {
+        "@typescript-eslint/no-inferrable-types": "off",
+        "@typescript-eslint/prefer-string-starts-ends-with": "off",
+        "@typescript-eslint/prefer-optional-chain": "off",
+        "@typescript-eslint/restrict-template-expressions": "off",
+        "@typescript-eslint/consistent-type-definitions": ["error", "type"],
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/ban-ts-comment": [
+            "error",
+            { "ts-expect-error": false }
+        ]
+    }
+}

@@ -14,7 +14,7 @@ export const parse = (line: string): Record<string, string> => {
         line = line.slice(0, line.length - 1)
     }
 
-    for (var i = 0; i <= line.length; i++) {
+    for (let i = 0; i <= line.length; i++) {
         if ((line[i] == " " && !in_quote) || i == line.length) {
             object[key] = value
             value = ""

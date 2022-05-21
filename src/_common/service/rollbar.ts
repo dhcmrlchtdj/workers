@@ -78,7 +78,7 @@ function parseRequest(req: Request | undefined) {
         method: req.method,
         headers: (() => {
             const h: Record<string, string> = {}
-            for (let [key, val] of req.headers.entries()) {
+            for (const [key, val] of req.headers.entries()) {
                 h[key] = val
             }
             return h
@@ -101,11 +101,11 @@ function parseError(error: Error) {
             const tokens = line.split(/\s+/).slice(1)
             const method = tokens.join(" ") || undefined
             const locationParts = ((urlLike: string) => {
-                if (urlLike.indexOf(":") === -1) {
+                if (urlLike.includes(":")) {
                     return [urlLike]
                 }
-                var regExp = /(.+?)(?::(\d+))?(?::(\d+))?$/
-                var parts = regExp.exec(urlLike.replace(/[()]/g, ""))!
+                const regExp = /(.+?)(?::(\d+))?(?::(\d+))?$/
+                const parts = regExp.exec(urlLike.replace(/[()]/g, ""))!
                 return [parts[1], parts[2], parts[3]]
             })(loc ? loc[1]! : tokens.pop()!)
             return {

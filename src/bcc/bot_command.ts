@@ -66,9 +66,9 @@ const createActions = (env: Env) => {
     })
 
     const getTagList = async (
-        chatId: Number,
+        chatId: number,
     ): Promise<string | "not found"> => {
-        const arr = await database.queryOne<Array<string[]>>(
+        const arr = await database.queryOne<string[][]>(
             "SELECT to_jsonb(tags) FROM bcc WHERE chat_id=$1",
             chatId,
         )
@@ -76,7 +76,7 @@ const createActions = (env: Env) => {
         if (tags.length === 0) {
             return "not found"
         }
-        const text = tags!.reduce(
+        const text = tags.reduce(
             (prev: { tag: string; text: string }, curr: string) => {
                 if (prev.tag[1] === curr[1]) {
                     prev.text += " " + curr

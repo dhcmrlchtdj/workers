@@ -18,7 +18,7 @@ export class HMAC {
         )
     }
 
-    update(data: string | Uint8Array | ArrayBuffer): HMAC {
+    update(data: string | Uint8Array | ArrayBuffer): this {
         if (typeof data === "string") {
             this.data.push(uint8.fromStr(data))
         } else if (data instanceof ArrayBuffer) {

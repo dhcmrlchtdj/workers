@@ -11,7 +11,7 @@ export class Hash {
         this.algorithm = algorithm
     }
 
-    update(data: string | Uint8Array | ArrayBuffer): Hash {
+    update(data: string | Uint8Array | ArrayBuffer): this {
         if (typeof data === "string") {
             this.data.push(uint8.fromStr(data))
         } else if (data instanceof ArrayBuffer) {

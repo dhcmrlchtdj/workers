@@ -140,7 +140,7 @@ export class BackBlaze {
 // https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/util.js#L51
 // https://github.com/mhart/aws4fetch/blob/v1.0.13/src/main.js#L367
 const uriEncode = (input: string): string => {
-    let output = encodeURIComponent(input)
+    const output = encodeURIComponent(input)
         .replace(/%2f/gi, "/")
         .replace(
             /[!'()*]/g,

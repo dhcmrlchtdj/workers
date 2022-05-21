@@ -1,4 +1,4 @@
-export interface Option<T> {
+export type Option<T> = {
     isNone: boolean
     isSome: boolean
     unwrap(): T
@@ -12,8 +12,8 @@ export const None: Option<never> = {
     unwrap: () => {
         throw new Error("Option.unwrap")
     },
-    map: (_) => None,
-    bind: (_) => None,
+    map: () => None,
+    bind: () => None,
 }
 
 export const Some = <T>(x: T): Option<T> => ({

@@ -5,7 +5,7 @@ import { Option, Some, None } from "./option"
 let currentId = 0
 const genId = () => currentId++
 const alwaysTrue = () => true
-const noop = () => {}
+const noop = () => void 1
 
 ///
 
@@ -238,7 +238,7 @@ export class Select {
             data,
             callback,
         }
-        // @ts-ignore
+        // @ts-expect-error
         this.selections.pushBack(selection)
         return id
     }
@@ -256,7 +256,7 @@ export class Select {
             chan,
             callback,
         }
-        // @ts-ignore
+        // @ts-expect-error
         this.selections.pushBack(selection)
         return id
     }
@@ -308,6 +308,7 @@ export class Select {
                         abort: done.reject,
                         complete: done.resolve,
                     }
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     sender.defer.promise.then((r) =>
                         selection.callback(r, selection.id),
                     )
@@ -320,6 +321,7 @@ export class Select {
                         abort: done.reject,
                         complete: done.resolve,
                     }
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     receiver.defer.promise.then((r) =>
                         selection.callback(r, selection.id),
                     )
@@ -339,7 +341,9 @@ export class Select {
                     // aborted by signal, but the select is done
                     selected = await done.promise
                     this.state = "idle" // stop loop
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 } else if (signal.aborted) {
+                    /* XXX: typescript doesn't know that signal will be updated */
                     // aborted by signal
                     this.state = "idle" // stop loop
                 } else {

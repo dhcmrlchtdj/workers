@@ -14,11 +14,11 @@ export class Line {
         this._tag = {}
         this._field = {}
     }
-    measurement(m: string): Line {
+    measurement(m: string): this {
         this._measurement = m
         return this
     }
-    timestamp(t: Date | string | number): Line {
+    timestamp(t: Date | string | number): this {
         if (typeof t === "string") {
             this._ts = t
         } else if (typeof t === "number") {
@@ -28,32 +28,32 @@ export class Line {
         }
         return this
     }
-    tag(key: string, value: string | null | undefined): Line {
+    tag(key: string, value: string | null | undefined): this {
         if (typeof value !== "string") return this
         this._tag[key] = value
         return this
     }
-    bool(key: string, value: boolean | null | undefined): Line {
+    bool(key: string, value: boolean | null | undefined): this {
         if (typeof value !== "boolean") return this
         this._field[key] = value ? "true" : "false"
         return this
     }
-    str(key: string, value: string | null | undefined): Line {
+    str(key: string, value: string | null | undefined): this {
         if (typeof value !== "string") return this
         this._field[key] = JSON.stringify(this.escape(value, /["\\\n]/g))
         return this
     }
-    float(key: string, value: number | null | undefined): Line {
+    float(key: string, value: number | null | undefined): this {
         if (typeof value !== "number") return this
         this._field[key] = value.toString()
         return this
     }
-    int(key: string, value: number | null | undefined): Line {
+    int(key: string, value: number | null | undefined): this {
         if (typeof value !== "number") return this
         this._field[key] = value.toString() + "i"
         return this
     }
-    uint(key: string, value: number | null | undefined): Line {
+    uint(key: string, value: number | null | undefined): this {
         if (typeof value !== "number") return this
         this._field[key] = value.toString() + "u"
         return this
@@ -61,7 +61,7 @@ export class Line {
 
     serialize(): string {
         const measurement = this.escape(this._measurement, /[, \n]/g)
-        let tag = Object.keys(this._tag)
+        const tag = Object.keys(this._tag)
             .map((k) => this.escape(k, /[,= \n]/g))
             .sort()
             .map((key) => `,${key}=${this.escape(this._tag[key]!, /[,= \n]/g)}`)
@@ -75,7 +75,7 @@ export class Line {
     }
 
     private escape(value: string, pattern: RegExp): string {
-        const pairs = {
+        const pairs: Record<string, string> = {
             ",": "\\,",
             "=": "\\=",
             " ": "\\ ",
@@ -83,8 +83,7 @@ export class Line {
             "\\": "\\\\",
             "\n": "\\ ",
         }
-        // @ts-ignore
-        return value.replace(pattern, (matched) => pairs[matched])
+        return value.replace(pattern, (matched) => pairs[matched]!)
     }
 }
 

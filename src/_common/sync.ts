@@ -47,7 +47,7 @@ export class Mutex {
             }
         }
     }
-    async withLock<T>(f: () => Promise<T>): Promise<T> {
+    async withLock<T>(f: () => T | Promise<T>): Promise<T> {
         await this.lock()
         try {
             return await f()
@@ -140,10 +140,10 @@ export class RWLock {
         })
     }
     unlockRead(): Promise<void> {
-        return this.readerLock.withLock(async () => {
+        return this.readerLock.withLock(() => {
             this.reader -= 1
             if (this.reader === 0) {
-                await this.writeLock.unlock()
+                this.writeLock.unlock()
             }
         })
     }
@@ -186,7 +186,7 @@ export class Condition {
     async wait(mutex: Mutex): Promise<void> {
         const d = new Deferred()
         this.queue.push(d)
-        await mutex.unlock()
+        mutex.unlock()
         await d.promise // waiting for `signal/broadcast`
         await mutex.lock()
     }
@@ -250,7 +250,7 @@ export class Once {
     constructor() {
         this.completed = false
     }
-    do(fn: Function) {
+    do(fn: () => unknown) {
         if (this.completed) return
         this.completed = true
         fn()

@@ -3,10 +3,10 @@ import { WorkerRouter } from "../../src/_common/router"
 describe("Router", () => {
     test("static", () => {
         const router = new WorkerRouter()
-        const fn0 = async () => new Response("ok")
-        const fn1 = async () => new Response("ok")
-        const fn2 = async () => new Response("ok")
-        const fn3 = async () => new Response("ok")
+        const fn0 = () => new Response("ok")
+        const fn1 = () => new Response("ok")
+        const fn2 = () => new Response("ok")
+        const fn3 = () => new Response("ok")
         router.get("/", fn0)
         router.get("/a", fn1)
         router.get("/a/b", fn2)
@@ -26,7 +26,7 @@ describe("Router", () => {
     })
     test("match all", () => {
         const router = new WorkerRouter()
-        const fn = async () => new Response("ok")
+        const fn = () => new Response("ok")
         router.get("/*", fn)
         router.get("/a/b/*", fn)
         expect(
@@ -44,7 +44,7 @@ describe("Router", () => {
     })
     test("params", () => {
         const router = new WorkerRouter()
-        const fn = async () => new Response("ok")
+        const fn = () => new Response("ok")
         router.get("/:p", fn)
         router.get("/:p1/:p2", fn)
         router.get("/a/:p2", fn)
@@ -74,7 +74,7 @@ describe("Router", () => {
     })
     test("error", () => {
         const router = new WorkerRouter()
-        const fn = async () => new Response("ok")
+        const fn = () => new Response("ok")
         expect(() => router.get("/*/b", fn)).toThrowErrorMatchingSnapshot()
     })
 })

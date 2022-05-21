@@ -19,7 +19,7 @@ const worker = createSimpleWorker(
             return HttpMethodNotAllowed(["POST"])
         }
 
-        const payload: RollbarPayload = await req.json()
+        const payload: RollbarPayload | undefined = await req.json()
         if (payload?.event_name !== "occurrence") {
             const msg = `unknown event: "${payload?.event_name}"`
             console.log(msg)

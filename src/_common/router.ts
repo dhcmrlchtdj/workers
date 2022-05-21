@@ -96,7 +96,7 @@ class BaseRouter<T> {
 }
 
 export type Params = Map<string, string>
-type Handler<Context> = (ctx: Context) => Promise<Response>
+type Handler<Context> = (ctx: Context) => Response | Promise<Response>
 
 export class WorkerRouter<Context> {
     private _router: BaseRouter<Handler<Context>>

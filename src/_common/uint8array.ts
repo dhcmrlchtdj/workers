@@ -7,7 +7,8 @@ export const fromStr = (s: string) => new TextEncoder().encode(s)
 export const toStr = (u: Uint8Array) => new TextDecoder().decode(u)
 
 export const fromHex = (hex: string) =>
-    new Uint8Array(hex.match(/[0-9a-zA-Z]{2}/g)!.map((x) => parseInt(x, 16)))
+    // @ts-expect-error
+    new Uint8Array(hex.match(/[0-9a-zA-Z]{2}/g).map((x) => parseInt(x, 16)))
 
 export const toHex = (u: Uint8Array) =>
     Array.from(u)

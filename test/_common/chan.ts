@@ -1,6 +1,6 @@
 import { Channel, Select } from "../../src/_common/chan"
 
-const noop = () => {}
+const noop = () => true
 
 describe("Channel", () => {
     test("non-block", () => {
@@ -38,12 +38,14 @@ describe("Select", () => {
         expect(() => select.send(ch, 2, noop)).toThrow()
     })
 
-    test("select running", async () => {
+    test("select running", () => {
         const select = new Select()
         const ch = new Channel<number>()
 
         select.receive(ch, noop)
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         select.select()
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         expect(select.select()).rejects.toThrow()
     })
 

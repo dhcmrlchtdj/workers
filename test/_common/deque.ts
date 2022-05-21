@@ -3,12 +3,12 @@ import { Deque } from "../../src/_common/deque"
 describe("Deque", () => {
     test("grow case 1", () => {
         const deque = Deque.fromArray([1, 2, 3, 4, 5, 6, 7])
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
 
         deque.pushBack(8)
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
     })
@@ -19,12 +19,12 @@ describe("Deque", () => {
         deque.pushBack(6)
         deque.pushBack(7)
         deque.pushFrontArray([5, 4, 3, 2, 1])
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
 
         deque.pushBack(8)
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
     })
@@ -35,12 +35,12 @@ describe("Deque", () => {
         deque.pushBackArray([3, 4, 5, 6, 7])
         deque.pushFront(2)
         deque.pushFront(1)
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
 
         deque.pushBack(8)
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
     })
@@ -51,12 +51,12 @@ describe("Deque", () => {
         deque.pushBack(1)
         deque.pushBack(2)
         deque.pushBack(3)
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
 
         deque.pushBack(4)
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
     })
@@ -65,12 +65,12 @@ describe("Deque", () => {
         const deque = new Deque()
 
         deque.pushBackArray([1, 2, 3])
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
 
         deque.pushBack(4)
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
     })
@@ -79,7 +79,7 @@ describe("Deque", () => {
         const deque = new Deque()
 
         deque.pushBackArray([1, 2, 3, 4])
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
     })
@@ -90,12 +90,12 @@ describe("Deque", () => {
         deque.pushFront(1)
         deque.pushFront(2)
         deque.pushFront(3)
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
 
         deque.pushFront(4)
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
     })
@@ -104,12 +104,12 @@ describe("Deque", () => {
         const deque = new Deque()
 
         deque.pushFrontArray([1, 2, 3])
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
 
         deque.pushFront(4)
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
     })
@@ -118,7 +118,7 @@ describe("Deque", () => {
         const deque = new Deque()
 
         deque.pushFrontArray([1, 2, 3, 4])
-        //@ts-ignore
+        // @ts-expect-error
         expect(deque.buf).toMatchSnapshot()
         expect(deque.toArray()).toMatchSnapshot()
     })

@@ -41,4 +41,7 @@ test: $(test_compiled)
 $(test_compiled): node_modules/tsconfig.tsbuildinfo
 	esbuild --bundle --format=esm --target=es2020 --platform=node --outfile=$@ ${@:.test.js=}
 
-.PHONY: build check force fmt $(targets) test $(test_compiled)
+lint:
+	eslint --ext=".ts" src test
+
+.PHONY: build check force fmt $(targets) test $(test_compiled) lint

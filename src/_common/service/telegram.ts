@@ -6,14 +6,13 @@ import type {
 import { POST } from "../feccan"
 
 export const encodeHtmlEntities = (raw: string): string => {
-    const pairs = {
+    const pairs: Record<string, string> = {
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
         '"': "&quot;",
     }
-    // @ts-ignore
-    return raw.replace(/[&<>"]/g, (matched) => pairs[matched])
+    return raw.replace(/[&<>"]/g, (matched) => pairs[matched]!)
 }
 
 export class Telegram {
@@ -25,7 +24,7 @@ export class Telegram {
     }
 
     sentByMe(msg: Message): boolean {
-        if (this.username === null) throw new Error("username is null")
+        if (this.username === undefined) throw new Error("undefined username")
         return !!(
             msg.from &&
             msg.from.is_bot &&
@@ -34,8 +33,8 @@ export class Telegram {
     }
 
     extractCommand(msg: Message): { cmd: string; arg: string } | undefined {
-        if (this.username === undefined) throw new Error("username undefined")
-        if (!msg || !msg.text || !msg.entities) return undefined
+        if (this.username === undefined) throw new Error("undefined username")
+        if (!msg.text || !msg.entities) return undefined
         const text = msg.text
         const command = msg.entities
             .filter((entity) => entity.type === "bot_command")

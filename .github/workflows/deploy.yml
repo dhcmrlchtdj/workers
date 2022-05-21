@@ -31,7 +31,10 @@ jobs:
               env:
                   PNPM_HOME: /home/runner/.local/bin
 
-            - run: make test
+            - run: |
+                make check
+                make lint
+                make test
 
             - run: make src/feedbox
             - working-directory: src/feedbox

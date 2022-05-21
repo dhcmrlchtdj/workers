@@ -74,7 +74,7 @@ type HerokuBackup = {
     to_name: string | "SCHEDULED BACKUP" | "BACKUP"
     to_type: string | "gof3r"
     to_url: string
-    options: {}
+    options: unknown
     source_bytes: number
     processed_bytes: number
     succeeded: boolean
