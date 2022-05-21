@@ -13,13 +13,12 @@ const worker = createScheduler(
     "backup-heroku-pg",
     async (_controller, env: ENV) => {
         const file = await fetchBackup(env)
-        if (file !== null && file.content !== null) {
-            await env.R2Backup.put(file.name, file.content, {
-                httpMetadata: { contentType: "application/octet-stream" },
-            })
-        } else {
+        if (file === null || file.content === null) {
             throw new Error("failed to fetch backup")
         }
+        await env.R2Backup.put(file.name, file.content, {
+            httpMetadata: { contentType: "application/octet-stream" },
+        })
     },
 )
 

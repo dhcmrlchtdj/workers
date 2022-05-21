@@ -25,11 +25,7 @@ export class Telegram {
 
     sentByMe(msg: Message): boolean {
         if (this.username === undefined) throw new Error("undefined username")
-        return !!(
-            msg.from &&
-            msg.from.is_bot &&
-            msg.from.username == this.username
-        )
+        return !!(msg.from?.is_bot && msg.from.username == this.username)
     }
 
     extractCommand(msg: Message): { cmd: string; arg: string } | undefined {
