@@ -1,6 +1,6 @@
-import { GET, POST } from "../_common/feccan"
-import { encode } from "../_common/base64"
-import { createScheduler } from "../_common/listen"
+import { GET, POST } from "../_common/feccan.js"
+import { encode } from "../_common/base64.js"
+import { createScheduler } from "../_common/listen.js"
 
 type ENV = {
     ROLLBAR_KEY: string

@@ -1,6 +1,6 @@
-import { Deferred } from "./deferred"
-import { Deque } from "./deque"
-import { Option, Some, None } from "./option"
+import { Deferred } from "./deferred.js"
+import { Deque } from "./deque.js"
+import { Option, Some, None } from "./option.js"
 
 let currentId = 0
 const genId = () => currentId++

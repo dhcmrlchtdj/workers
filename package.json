@@ -5,6 +5,7 @@
     "repository": "git@github.com:dhcmrlchtdj/workers.git",
     "author": "h11 <nirisix@gmail.com>",
     "license": "MIT",
+    "type": "module",
     "packageManager": "pnpm@7.1.5",
     "devDependencies": {
         "@cloudflare/workers-types": "3.11.0",
@@ -16,7 +17,6 @@
         "eslint-config-prettier": "8.5.0",
         "jest": "28.1.0",
         "prettier": "2.6.2",
-        "telegram-typings": "5.0.0",
         "typescript": "4.7.2"
     },
     "prettier": {

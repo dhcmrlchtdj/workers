@@ -1,8 +1,8 @@
-import type { Update, Message } from "telegram-typings"
-import type { RouterContext } from "../_common/listen"
-import { Telegram } from "../_common/service/telegram"
-import type { Env } from "./types"
-import { execute } from "./bot_command"
+import type { Update, Message } from "../_common/service/telegram-typings.js"
+import type { RouterContext } from "../_common/listen.js"
+import { Telegram } from "../_common/service/telegram.js"
+import type { Env } from "./types.js"
+import { execute } from "./bot_command.js"
 
 const handleMsg = async (env: Env, msg: Message) => {
     if (!msg.text || !msg.entities) return

@@ -2,9 +2,9 @@ import {
     HttpBadRequest,
     HttpMethodNotAllowed,
     HttpOk,
-} from "../_common/http-response"
-import { createSimpleWorker } from "../_common/listen"
-import { encodeHtmlEntities, Telegram } from "../_common/service/telegram"
+} from "../_common/http-response.js"
+import { createSimpleWorker } from "../_common/listen.js"
+import { encodeHtmlEntities, Telegram } from "../_common/service/telegram.js"
 
 // https://docs.rollbar.com/docs/webhooks
 

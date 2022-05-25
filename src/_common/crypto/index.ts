@@ -1,2 +1,2 @@
-export * from "./hmac"
-export * from "./hash"
+export * from "./hmac.js"
+export * from "./hash.js"

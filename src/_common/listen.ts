@@ -1,8 +1,8 @@
-import type { Params } from "./router"
-import { WorkerRouter } from "./router"
-import type { Monitor } from "./monitor"
-import { Rollbar } from "./service/rollbar"
-import { HttpInternalServerError, HttpNotFound, HttpOk } from "./http-response"
+import type { Params } from "./router.js"
+import { WorkerRouter } from "./router.js"
+import type { Monitor } from "./monitor.js"
+import { Rollbar } from "./service/rollbar.js"
+import { HttpInternalServerError, HttpNotFound, HttpOk } from "./http-response.js"
 
 export function createSimpleWorker<Env>(
     handler: ExportedHandlerFetchHandler<Env>,

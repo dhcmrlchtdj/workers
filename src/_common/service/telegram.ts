@@ -2,8 +2,8 @@ import type {
     InlineKeyboardMarkup,
     Message,
     ChatMember,
-} from "telegram-typings"
-import { POST } from "../feccan"
+} from "./telegram-typings.js"
+import { POST } from "../feccan.js"
 
 export const encodeHtmlEntities = (raw: string): string => {
     const pairs: Record<string, string> = {

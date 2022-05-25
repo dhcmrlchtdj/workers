@@ -1,5 +1,5 @@
-import { decode } from "./base64"
-import { HttpBadRequest, HttpUnauthorized } from "./http-response"
+import { decode } from "./base64.js"
+import { HttpBadRequest, HttpUnauthorized } from "./http-response.js"
 
 // https://developers.cloudflare.com/workers/examples/basic-auth/
 

@@ -2,7 +2,7 @@
 // https://docs.fauna.com/fauna/current/start/fql_for_sql_users.html
 // https://dashboard.fauna.com/webshell/@db/kv
 
-import { POST } from "../feccan"
+import { POST } from "../feccan.js"
 
 export class FaunaClient {
     private auth: string

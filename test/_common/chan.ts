@@ -1,4 +1,4 @@
-import { Channel, Select } from "../../src/_common/chan"
+import { Channel, Select } from "../../src/_common/chan.js"
 
 const noop = () => true
 

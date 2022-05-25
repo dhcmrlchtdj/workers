@@ -1,4 +1,4 @@
-import { Deque } from "../../src/_common/deque"
+import { Deque } from "../../src/_common/deque.js"
 
 describe("Deque", () => {
     test("grow case 1", () => {

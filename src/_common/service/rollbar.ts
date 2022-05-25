@@ -3,8 +3,8 @@
 // https://github.com/rollbar/rollbar.js
 // https://github.com/stacktracejs/error-stack-parser
 
-import { POST } from "../feccan"
-import { UUIDv4 } from "../uuid"
+import { POST } from "../feccan.js"
+import { UUIDv4 } from "../uuid.js"
 
 type Level = "critical" | "error" | "warning" | "info" | "debug"
 

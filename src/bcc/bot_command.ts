@@ -1,7 +1,7 @@
-import type { Message } from "telegram-typings"
-import { Database } from "../_common/service/database"
-import { Telegram } from "../_common/service/telegram"
-import type { Env } from "./types"
+import type { Message } from "../_common/service/telegram-typings.js"
+import { Database } from "../_common/service/database.js"
+import { Telegram } from "../_common/service/telegram.js"
+import type { Env } from "./types.js"
 
 const createActions = (env: Env) => {
     const database = new Database(env.DB_API, env.DB_TOKEN)

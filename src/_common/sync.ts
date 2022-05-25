@@ -1,5 +1,5 @@
-import { Deferred } from "./deferred"
-import { Option, Some, None } from "./option"
+import { Deferred } from "./deferred.js"
+import { Option, Some, None } from "./option.js"
 
 ///
 

@@ -1,4 +1,4 @@
-import { POST } from "../feccan"
+import { POST } from "../feccan.js"
 
 export const BASE_AWS_OREGON = "https://us-west-2-1.aws.cloud2.influxdata.com"
 

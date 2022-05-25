@@ -1,6 +1,6 @@
-import { createWorkerByRouter } from "../_common/listen"
-import type { Env } from "./types"
-import { webhook } from "./webhook"
+import { createWorkerByRouter } from "../_common/listen.js"
+import type { Env } from "./types.js"
+import { webhook } from "./webhook.js"
 
 const worker = createWorkerByRouter<Env>(
     "bcc",

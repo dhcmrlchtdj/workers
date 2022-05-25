@@ -2,9 +2,9 @@
 // https://www.backblaze.com/b2/docs/s3_compatible_api.html
 // https://github.com/mhart/aws4fetch/blob/master/src/main.js
 
-import { createHash, createHMAC } from "../crypto"
-import { PUT } from "../feccan"
-import { format } from "../format-date"
+import { createHash, createHMAC } from "../crypto/index.js"
+import { PUT } from "../feccan.js"
+import { format } from "../format-date.js"
 
 // https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L191
 const UNSIGNABLE_HEADERS = new Set([

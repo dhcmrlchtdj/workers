@@ -1,14 +1,14 @@
 import {
     Telegram,
     encodeHtmlEntities as enc,
-} from "../_common/service/telegram"
-import { getBA } from "../_common/basic_auth"
-import { createWorker } from "../_common/listen"
+} from "../_common/service/telegram.js"
+import { getBA } from "../_common/basic_auth.js"
+import { createWorker } from "../_common/listen.js"
 import {
     HttpBadRequest,
     HttpOk,
     HttpUnauthorized,
-} from "../_common/http-response"
+} from "../_common/http-response.js"
 
 type ENV = {
     IP: KVNamespace

@@ -1,4 +1,4 @@
-import { WorkerRouter } from "../../src/_common/router"
+import { WorkerRouter } from "../../src/_common/router.js"
 
 describe("Router", () => {
     test("static", () => {
