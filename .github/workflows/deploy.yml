@@ -13,7 +13,7 @@ jobs:
             # https://github.com/marketplace/actions/checkout
             - uses: actions/checkout@v3.0.2
             # https://github.com/marketplace/actions/setup-node-js-environment
-            - uses: actions/setup-node@v3.1.1
+            - uses: actions/setup-node@v3.2.0
               with:
                   node-version: 18
             # https://github.com/marketplace/actions/cache
@@ -26,7 +26,8 @@ jobs:
             - run: |
                   corepack enable pnpm
                   pnpm install
-                  pnpm add -g wrangler@2.0.3
+                  # https://www.npmjs.com/package/wrangler
+                  pnpm add -g wrangler@2.0.6
                   pnpm store prune
               env:
                   PNPM_HOME: /home/runner/.local/bin
