@@ -27,7 +27,7 @@ jobs:
                   corepack enable pnpm
                   pnpm install
                   # https://www.npmjs.com/package/wrangler
-                  pnpm add -g wrangler@2.0.6
+                  pnpm add -g wrangler@2.0.7
                   pnpm store prune
               env:
                   PNPM_HOME: /home/runner/.local/bin
