@@ -101,3 +101,13 @@ jobs:
                   printf '${{ secrets.BACKUP_HEROKU_PG_APP }}' | wrangler secret put 'BACKUP_HEROKU_PG_APP'
                   printf '${{ secrets.BACKUP_HEROKU_PG_TOKEN }}' | wrangler secret put 'BACKUP_HEROKU_PG_TOKEN'
                   wrangler publish
+
+            - run: make src/backup-papertrail
+            - working-directory: src/backup-papertrail
+              env:
+                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+                  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+              run: |
+                  printf '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  printf '${{ secrets.BACKUP_PAPERTRAIL_TOKEN }}' | wrangler secret put 'BACKUP_PAPERTRAIL_TOKEN'
+                  wrangler publish
