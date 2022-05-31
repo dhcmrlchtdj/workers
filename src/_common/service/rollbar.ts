@@ -28,6 +28,7 @@ export class Rollbar {
                 platform: "cloudflare-worker",
                 language: "javascript",
                 uuid: UUIDv4(),
+                context: this.project,
                 ...body,
             },
         })
@@ -38,27 +39,27 @@ export class Rollbar {
     }
 
     private log(level: Level, error: unknown, req: Request | undefined) {
-        let err: Error
         if (error instanceof Error) {
-            err = error
-        } else {
-            err = new Error(error as string)
-        }
-        const body = {
-            title: `${err.name}: ${err.message}`,
-            body: {
-                trace: {
-                    project: this.project,
-                    exception: {
-                        class: err.name,
-                        message: err.message,
-                    },
-                    frames: parseError(err),
+            const body = {
+                title: `${error.name}: ${error.message}`,
+                body: {
+                    trace_chain: errorToTraceChain(error, []),
                 },
-            },
-            request: parseRequest(req),
+                request: parseRequest(req),
+            }
+            return this.send(level, body)
+        } else {
+            const body = {
+                title: `${error}`,
+                body: {
+                    message: {
+                        body: `${error}`,
+                    },
+                },
+                request: parseRequest(req),
+            }
+            return this.send(level, body)
         }
-        return this.send(level, body)
     }
 
     error(err: unknown, req?: Request): Promise<Response> {
@@ -116,4 +117,19 @@ function parseError(error: Error) {
             }
         })
     return stacks
+}
+
+function errorToTraceChain(error: Error, chain: unknown[]): unknown[] {
+    chain.push({
+        exception: {
+            class: error.name,
+            message: error.message,
+        },
+        frames: parseError(error),
+    })
+    if (error.cause) {
+        return errorToTraceChain(error.cause, chain)
+    } else {
+        return chain
+    }
 }
