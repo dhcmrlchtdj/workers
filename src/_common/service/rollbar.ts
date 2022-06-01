@@ -43,7 +43,7 @@ export class Rollbar {
             const body = {
                 title: `${error.name}: ${error.message}`,
                 body: {
-                    trace_chain: errorToTraceChain(error, []),
+                    trace_chain: errorToTraceChain(error),
                 },
                 request: parseRequest(req),
             }
@@ -119,17 +119,25 @@ function parseError(error: Error) {
     return stacks
 }
 
-function errorToTraceChain(error: Error, chain: unknown[]): unknown[] {
-    chain.push({
-        exception: {
-            class: error.name,
-            message: error.message,
-        },
-        frames: parseError(error),
-    })
-    if (error.cause) {
-        return errorToTraceChain(error.cause, chain)
-    } else {
-        return chain
+function errorToTraceChain(error: Error) {
+    const errorChain = []
+    let err: Error | undefined = error
+    while (err instanceof Error) {
+        errorChain.push(err)
+        err = err.cause
     }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (err !== undefined) {
+        errorChain.push(new Error(err))
+    }
+
+    const traceChain = errorChain.map((err) => ({
+        exception: {
+            class: err.name,
+            message: err.message,
+        },
+        frames: parseError(err),
+    }))
+
+    return traceChain
 }
