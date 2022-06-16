@@ -4,7 +4,6 @@
 // https://github.com/stacktracejs/error-stack-parser
 
 import { POST } from "../feccan.js"
-import { UUIDv4 } from "../uuid.js"
 
 type Level = "critical" | "error" | "warning" | "info" | "debug"
 
@@ -27,7 +26,7 @@ export class Rollbar {
                 timestamp: (Date.now() / 1000) | 0,
                 platform: "cloudflare-worker",
                 language: "javascript",
-                uuid: UUIDv4(),
+                uuid: crypto.randomUUID(),
                 context: this.project,
                 ...body,
             },
