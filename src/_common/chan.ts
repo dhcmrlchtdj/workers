@@ -1,5 +1,6 @@
 import { Deferred } from "./deferred.js"
 import { Deque } from "./deque.js"
+import { LinkedHashMap } from "./linkedhashmap.js"
 import { Option, Some, None } from "./option.js"
 
 let currentId = 0
@@ -34,12 +35,12 @@ const fastSend = Symbol()
 const fastReceive = Symbol()
 
 export class Channel<T = unknown> {
-    private senders: Deque<Sender<T>>
-    private receivers: Deque<Receiver<T>>
+    private senders: LinkedHashMap<number, Sender<T>>
+    private receivers: LinkedHashMap<number, Receiver<T>>
     private closed: boolean
     constructor() {
-        this.senders = new Deque()
-        this.receivers = new Deque()
+        this.senders = new LinkedHashMap()
+        this.receivers = new LinkedHashMap()
         this.closed = false
     }
     close() {
@@ -75,36 +76,32 @@ export class Channel<T = unknown> {
         }
         if (this.closed) {
             if (this.receivers.length > 0 && this.senders.length === 0) {
-                this.receivers = Deque.fromArray(
-                    this.receivers.filter((receiver) => {
-                        if (receiver.tryLock()) {
-                            receiver.defer.resolve(None)
-                            receiver.complete(receiver.id)
-                            return false
-                        } else {
-                            return true
-                        }
-                    }),
-                )
+                this.receivers.removeIf((_, receiver) => {
+                    if (receiver.tryLock()) {
+                        receiver.defer.resolve(None)
+                        receiver.complete(receiver.id)
+                        return true
+                    } else {
+                        return false
+                    }
+                })
             }
         }
     }
     [sendersAdd](sender: Sender<T>) {
-        this.senders.pushBack(sender)
+        this.senders.pushBack(sender.id, sender)
         this.rendezvous()
     }
     [sendersRemove](id: number) {
-        this.senders = Deque.fromArray(this.senders.filter((x) => x.id !== id))
+        this.senders.removeByKey(id)
         this.rendezvous()
     }
     [receiversAdd](receiver: Receiver<T>) {
-        this.receivers.pushBack(receiver)
+        this.receivers.pushBack(receiver.id, receiver)
         this.rendezvous()
     }
     [receiversRemove](id: number) {
-        this.receivers = Deque.fromArray(
-            this.receivers.filter((x) => x.id !== id),
-        )
+        this.receivers.removeByKey(id)
         this.rendezvous()
     }
     async send(data: T): Promise<boolean> {
