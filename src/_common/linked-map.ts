@@ -1,6 +1,6 @@
 import { Option, Some, None } from "./option.js"
 
-export class LinkedDeque<K, V> {
+export class LinkedMap<K, V> {
     private map: Map<K, Node<K, V>>
     private listHead: Node<K, V>
     private listTail: Node<K, V>
@@ -48,7 +48,7 @@ export class LinkedDeque<K, V> {
     }
     pushFront(key: K, value: V) {
         const node = new Node(key, value)
-        node.insertAfter(this.listHead)
+        node.insert(this.listHead, this.listHead.next!)
         this.map.set(key, node)
     }
 
@@ -58,14 +58,14 @@ export class LinkedDeque<K, V> {
         return node.value
     }
     popBack(): Option<V> {
-        if (this.length === 0) return None
+        if (this.map.size === 0) return None
         const node = this.listTail.prev!
         this._del(node)
         return Some(node.value)
     }
     pushBack(key: K, value: V) {
         const node = new Node(key, value)
-        node.insertBefore(this.listTail)
+        node.insert(this.listTail.prev!, this.listTail)
         this.map.set(key, node)
     }
 }
@@ -87,15 +87,7 @@ class Node<K, V> {
         prev.next = next
         next.prev = prev
     }
-    insertAfter(prev: Node<K, V>) {
-        const next = prev.next!
-        this.prev = prev
-        prev.next = this
-        this.next = next
-        next.prev = this
-    }
-    insertBefore(next: Node<K, V>) {
-        const prev = next.prev!
+    insert(prev: Node<K, V>, next: Node<K, V>) {
         this.prev = prev
         prev.next = this
         this.next = next

@@ -1,6 +1,6 @@
 import { Deferred } from "./deferred.js"
 import { Deque } from "./deque.js"
-import { LinkedDeque } from "./linked-deque.js"
+import { LinkedMap } from "./linked-map.js"
 import { Option, Some, None } from "./option.js"
 
 let currentId = 0
@@ -35,12 +35,12 @@ const fastSend = Symbol()
 const fastReceive = Symbol()
 
 export class Channel<T = unknown> {
-    private senders: LinkedDeque<number, Sender<T>>
-    private receivers: LinkedDeque<number, Receiver<T>>
+    private senders: LinkedMap<number, Sender<T>>
+    private receivers: LinkedMap<number, Receiver<T>>
     private closed: boolean
     constructor() {
-        this.senders = new LinkedDeque()
-        this.receivers = new LinkedDeque()
+        this.senders = new LinkedMap()
+        this.receivers = new LinkedMap()
         this.closed = false
     }
     close() {
