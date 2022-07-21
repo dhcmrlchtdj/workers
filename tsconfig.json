@@ -20,7 +20,7 @@
 
         "moduleResolution": "NodeNext",
         "isolatedModules": true,
-        "resolveJsonModule": true,
+        "resolveJsonModule": false,
         "esModuleInterop": false,
 
         "strict": true,
