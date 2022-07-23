@@ -12,27 +12,21 @@ const noop = () => true
 
 type Sender<T> = {
     id: number
+    status: "pending" | "done" // this is set/updated by Selection
+    tryLock(): boolean
+    abort(): void
+    complete(id: number): void
     defer: Deferred<boolean>
     data: T
-    tryLock(): boolean
-    abort(): void
-    complete(id: number): void
 }
-
 type Receiver<T> = {
     id: number
-    defer: Deferred<Option<T>>
+    status: "pending" | "done" // this is set/updated by Selection
     tryLock(): boolean
     abort(): void
     complete(id: number): void
+    defer: Deferred<Option<T>>
 }
-
-const sendersAdd = Symbol()
-const sendersRemove = Symbol()
-const receiversAdd = Symbol()
-const receiversRemove = Symbol()
-const fastSend = Symbol()
-const fastReceive = Symbol()
 
 export class Channel<T = unknown> {
     private senders: LinkedMap<number, Sender<T>>
@@ -43,18 +37,30 @@ export class Channel<T = unknown> {
         this.receivers = new LinkedMap()
         this.closed = false
     }
+
     close() {
         // don't close a channel from the receiver side
         // don't close a channel if the channel has multiple concurrent senders
         // by Go101
         if (this.closed) return
         this.closed = true
-        this.rendezvous()
+        this.sync()
     }
     isClosed(): boolean {
         return this.closed
     }
-    private rendezvous() {
+
+    // cleanup done selection
+    private _taskDone(this: void, _: unknown, val: Sender<T> | Receiver<T>) {
+        return val.status === "done"
+    }
+    private cleanup() {
+        this.senders.removeIf(this._taskDone)
+        this.receivers.removeIf(this._taskDone)
+    }
+
+    private sync() {
+        this.cleanup()
         while (this.receivers.length > 0 && this.senders.length > 0) {
             const receiver = this.receivers.getFront()
             const sender = this.senders.getFront()
@@ -88,44 +94,35 @@ export class Channel<T = unknown> {
             }
         }
     }
-    [sendersAdd](sender: Sender<T>) {
+
+    private sendersAdd(sender: Sender<T>) {
         this.senders.pushBack(sender.id, sender)
-        this.rendezvous()
-    }
-    [sendersRemove](id: number) {
-        this.senders.removeByKey(id)
-        this.rendezvous()
-    }
-    [receiversAdd](receiver: Receiver<T>) {
-        this.receivers.pushBack(receiver.id, receiver)
-        this.rendezvous()
-    }
-    [receiversRemove](id: number) {
-        this.receivers.removeByKey(id)
-        this.rendezvous()
+        this.sync()
     }
     async send(data: T): Promise<boolean> {
-        const r = this[fastSend](data)
+        const r = this.fastSend(data)
         if (r !== null) {
             return r
         } else {
             const sender: Sender<T> = {
                 id: genId(),
-                data,
-                defer: new Deferred<boolean>(),
+                status: "pending",
                 tryLock: alwaysTrue,
                 abort: noop,
                 complete: noop,
+                data,
+                defer: new Deferred<boolean>(),
             }
-            this[sendersAdd](sender)
+            this.sendersAdd(sender)
             return await sender.defer.promise
         }
     }
     trySend(data: T): boolean {
-        const r = this[fastSend](data)
+        const r = this.fastSend(data)
         return r ?? false
     }
-    [fastSend](data: T): boolean | null {
+    private fastSend(data: T): boolean | null {
+        this.cleanup()
         if (this.closed) {
             return false
         } else {
@@ -146,27 +143,34 @@ export class Channel<T = unknown> {
             }
         }
     }
+
+    private receiversAdd(receiver: Receiver<T>) {
+        this.receivers.pushBack(receiver.id, receiver)
+        this.sync()
+    }
     async receive(): Promise<Option<T>> {
-        const r = this[fastReceive]()
+        const r = this.fastReceive()
         if (r !== null) {
             return r
         } else {
             const receiver: Receiver<T> = {
                 id: genId(),
-                defer: new Deferred<Option<T>>(),
+                status: "pending",
                 tryLock: alwaysTrue,
                 abort: noop,
                 complete: noop,
+                defer: new Deferred<Option<T>>(),
             }
-            this[receiversAdd](receiver)
+            this.receiversAdd(receiver)
             return await receiver.defer.promise
         }
     }
     tryReceive(): Option<T> {
-        const r = this[fastReceive]()
+        const r = this.fastReceive()
         return r ?? None
     }
-    [fastReceive](): Option<T> | null {
+    private fastReceive(): Option<T> | null {
+        this.cleanup()
         if (this.receivers.length > 0) {
             return null
         } else if (this.senders.length > 0) {
@@ -196,6 +200,7 @@ type Selection<T> =
           id: number
           op: "send"
           chan: Channel<T>
+          sender: Sender<T> | null
           data: T
           callback: (sent: boolean, id?: number) => unknown
       }
@@ -203,6 +208,7 @@ type Selection<T> =
           id: number
           op: "receive"
           chan: Channel<T>
+          receiver: Receiver<T> | null
           callback: (data: Option<T>, id?: number) => unknown
       }
 
@@ -232,6 +238,7 @@ export class Select {
             id,
             op: "send",
             chan,
+            sender: null,
             data,
             callback,
         }
@@ -251,6 +258,7 @@ export class Select {
             id,
             op: "receive",
             chan,
+            receiver: null,
             callback,
         }
         // @ts-expect-error
@@ -258,9 +266,9 @@ export class Select {
         return id
     }
     async select(init?: { signal?: AbortSignal }): Promise<number | null> {
-        if (this.selections.length === 0) return null
-
         this.beforeSelect()
+
+        if (this.selections.length === 0) return null
 
         const signal = this.getAbortSignal(init)
         if (signal.aborted) return null
@@ -299,30 +307,36 @@ export class Select {
                 if (selection.op === "send") {
                     const sender: Sender<unknown> = {
                         id: selection.id,
-                        data: selection.data,
-                        defer: new Deferred(),
+                        status: "pending",
                         tryLock: tryLock,
                         abort: done.reject,
                         complete: done.resolve,
+                        data: selection.data,
+                        defer: new Deferred(),
                     }
+                    selection.sender = sender
                     // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     sender.defer.promise.then((r) =>
                         selection.callback(r, selection.id),
                     )
-                    selection.chan[sendersAdd](sender)
+                    // @ts-expect-error
+                    selection.chan.sendersAdd(sender)
                 } else {
                     const receiver: Receiver<unknown> = {
                         id: selection.id,
-                        defer: new Deferred(),
+                        status: "pending",
                         tryLock: tryLock,
                         abort: done.reject,
                         complete: done.resolve,
+                        defer: new Deferred(),
                     }
+                    selection.receiver = receiver
                     // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     receiver.defer.promise.then((r) =>
                         selection.callback(r, selection.id),
                     )
-                    selection.chan[receiversAdd](receiver)
+                    // @ts-expect-error
+                    selection.chan.receiversAdd(receiver)
                 }
                 if (done.isFulfilled) break
             }
@@ -355,8 +369,8 @@ export class Select {
         return selected
     }
     trySelect(): number | null {
-        if (this.selections.length === 0) return null
         this.beforeSelect()
+        if (this.selections.length === 0) return null
         return this.fastSelect()
     }
     private getAbortSignal(init?: { signal?: AbortSignal }): {
@@ -390,13 +404,15 @@ export class Select {
         for (let i = 0, len = this.selections.length; i < len; i++) {
             const selection = this.selections.get(i)
             if (selection.op === "send") {
-                const r = selection.chan[fastSend](selection.data)
+                // @ts-expect-error
+                const r = selection.chan.fastSend(selection.data)
                 if (r !== null) {
                     selection.callback(r, selection.id)
                     return selection.id
                 }
             } else {
-                const r = selection.chan[fastReceive]()
+                // @ts-expect-error
+                const r = selection.chan.fastReceive()
                 if (r !== null) {
                     selection.callback(r, selection.id)
                     return selection.id
@@ -408,10 +424,10 @@ export class Select {
     private cleanup(length: number): void {
         for (let i = 0; i < length; i++) {
             const selection = this.selections.get(i)
-            if (selection.op === "send") {
-                selection.chan[sendersRemove](selection.id)
-            } else {
-                selection.chan[receiversRemove](selection.id)
+            if (selection.op === "send" && selection.sender) {
+                selection.sender.status = "done"
+            } else if (selection.op == "receive" && selection.receiver) {
+                selection.receiver.status = "done"
             }
         }
     }
