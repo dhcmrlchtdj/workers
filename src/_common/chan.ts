@@ -343,22 +343,25 @@ export class Select {
             try {
                 selected = await Promise.race([
                     done.promise,
-                    signal.defer.promise, // never resolve
+                    signal.defer.promise, // pending or rejected
                 ])
+                // one channel is selected
                 this.state = "idle" // stop loop
             } catch (_) {
+                // aborted by signal, but the select is done
+                // XXX: is it possible?
                 if (done.isResolved) {
-                    // XXX: is it possible?
-                    // aborted by signal, but the select is done
                     selected = await done.promise
                     this.state = "idle" // stop loop
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                } else if (signal.aborted) {
-                    /* XXX: typescript doesn't know that signal will be updated */
-                    // aborted by signal
+                }
+                // aborted by signal
+                // XXX: typescript doesn't know that signal will be updated
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                else if (signal.aborted) {
                     this.state = "idle" // stop loop
-                } else {
-                    // aborted by select
+                }
+                // aborted by select
+                else {
                     // continue next loop
                 }
             }
