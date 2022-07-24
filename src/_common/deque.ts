@@ -5,25 +5,39 @@ import { Option, Some, None } from "./option.js"
 // https://github.com/petkaantonov/deque
 export class Deque<T> {
     // front | ...[head]...[tail]... | back
-    private head: number // current head index
-    private len: number // current length, max(len) = cap - 1
+    //    H       T
+    // [. o o o o . . . ]
+    private head: number // current head index, read
+    private tail: number // current tail index, write
     private buf: T[]
     private cap: number // cap must to be power of two
     private mask: number
     constructor(capacity?: number) {
         this.head = 0
-        this.len = 0
+        this.tail = 0
         this.cap = getCapacity(capacity)
         this.mask = this.cap - 1
         this.buf = new Array<T>(this.cap)
     }
-    get length(): number {
-        return this.len
+
+    private isEmpty(): boolean {
+        return this.head === this.tail
+    }
+    private checkCapacity(size: number) {
+        if (this.length + size >= this.cap) {
+            this.growTo(this.length + size + 1)
+        }
+    }
+    private inc(idx: number, n = 1): number {
+        return (idx + n) & this.mask
+    }
+    private dec(idx: number, n = 1): number {
+        return (idx - n + this.cap) & this.mask
     }
     private growTo(capacity: number) {
         const oldCap = this.cap
         const head = this.head
-        const tail = (head + this.len) & this.mask
+        const tail = this.tail
 
         this.cap = getCapacity(capacity)
         this.mask = this.cap - 1
@@ -39,84 +53,83 @@ export class Deque<T> {
             // [o o . o o o o o ]
             //        H             T
             // [. . . o o o o o o o . . . . . . ]
-            const size = tail
-            move(this.buf, size, 0, oldCap)
+            const n = tail
+            move(this.buf, n, 0, oldCap)
+            this.tail = oldCap + n
         } else {
             //            T H
             // [o o o o o . o o ]
             //            T                 H
             // [o o o o o . . . . . . . . . o o ]
-            const size = oldCap - head
-            const newHead = this.cap - size
-            move(this.buf, size, head, newHead)
+            const n = oldCap - head
+            const newHead = this.cap - n
+            move(this.buf, n, head, newHead)
             this.head = newHead
         }
     }
-    private checkCapacity(size: number) {
-        if (this.len + size >= this.cap) {
-            this.growTo(this.len + size + 1)
-        }
+
+    get length(): number {
+        return (this.tail - this.head + this.cap) & this.mask
     }
+
     pushBack(value: T) {
         this.checkCapacity(1)
-        const idx = (this.head + this.len) & this.mask
+        const idx = this.tail
         this.buf[idx] = value
-        this.len++
+        this.tail = this.inc(idx)
     }
     pushBackArray(arr: T[]) {
         const len = arr.length
         this.checkCapacity(len)
-        const idx = this.head + this.len
+        const idx = this.tail
         for (let i = 0; i < len; i++) {
-            this.buf[(idx + i) % this.mask] = arr[i]!
+            this.buf[this.inc(idx, i)] = arr[i]!
         }
-        this.len += len
+        this.tail = this.inc(idx, len)
     }
     popBack(): Option<T> {
-        if (this.len === 0) {
+        if (this.isEmpty()) {
             return None
         } else {
-            const idx = (this.head + this.len) & this.mask
+            const idx = this.dec(this.tail)
             const item = this.buf[idx]!
             // @ts-expect-error
             this.buf[idx] = undefined // cleanup
-            this.len--
+            this.tail = idx
             return Some(item)
         }
     }
     peekBack(): Option<T> {
-        return this._peek(this.head + this.len)
+        return this._peek(this.tail)
     }
     getBack(): T {
-        return this._get(this.head + this.len)
+        return this._get(this.tail)
     }
+
     pushFront(value: T) {
         this.checkCapacity(1)
-        const idx = (this.head - 1 + this.cap) & this.mask
-        this.head = idx
+        const idx = this.dec(this.head)
         this.buf[idx] = value
-        this.len++
+        this.head = idx
     }
     pushFrontArray(arr: T[]) {
         const len = arr.length
         this.checkCapacity(len)
         const idx = this.head - 1
         for (let i = 0; i < len; i++) {
-            this.buf[(idx - i + this.cap) & this.mask] = arr[i]!
+            this.buf[this.dec(idx, i)] = arr[i]!
         }
-        this.head = (this.head - len + this.cap) & this.mask
-        this.len += len
+        this.head = this.dec(this.head, len)
     }
     popFront(): Option<T> {
-        if (this.len === 0) {
+        if (this.isEmpty()) {
             return None
         } else {
             const idx = this.head
             const item = this.buf[idx]!
-            this.head = (this.head + 1) & this.mask
             // @ts-expect-error
             this.buf[idx] = undefined // cleanup
-            this.len--
+            this.head = this.inc(idx)
             return Some(item)
         }
     }
@@ -126,83 +139,84 @@ export class Deque<T> {
     getFront(): T {
         return this._get(this.head)
     }
+
     peek(index: number): Option<T> {
-        if (index >= 0 && index < this.len) {
-            return this._peek(this.head + index)
+        if (index >= 0 && index < this.length) {
+            return this._peek(this.inc(this.head, index))
         } else {
             return None
         }
     }
     get(index: number): T {
-        if (index >= 0 && index < this.len) {
-            return this._get(this.head + index)
+        if (index >= 0 && index < this.length) {
+            return this._get(this.inc(this.head, index))
         } else {
             throw new Error("invalid index")
         }
     }
+
     private _peek(index: number): Option<T> {
-        if (this.len === 0) return None
-        const idx = index & this.mask
-        return Some(this.buf[idx]!)
+        if (this.isEmpty()) return None
+        return Some(this.buf[index]!)
     }
     private _get(index: number): T {
-        if (this.len === 0) throw new Error("Deque.get")
-        const idx = index & this.mask
-        return this.buf[idx]!
+        if (this.isEmpty()) throw new Error("Deque.get")
+        return this.buf[index]!
     }
+
     static fromArray<R>(arr: R[]): Deque<R> {
         const deque = new Deque<R>(arr.length)
         deque.pushBackArray(arr)
         return deque
     }
     toArray(): T[] {
-        const ret = new Array<T>(this.length)
-        for (let i = 0, len = this.len; i < len; i++) {
-            const item = this.buf[(this.head + i) & this.mask]!
-            ret[i] = item
+        const ret: T[] = []
+        for (let i = 0, len = this.length; i < len; i++) {
+            const item = this.buf[this.inc(this.head, i)]!
+            ret.push(item)
         }
         return ret
     }
     forEach(fn: (value: T, index?: number) => unknown) {
-        for (let i = 0, len = this.len; i < len; i++) {
-            const item = this.buf[(this.head + i) & this.mask]!
+        for (let i = 0, len = this.length; i < len; i++) {
+            const item = this.buf[this.inc(this.head, i)]!
             fn(item, i)
         }
     }
     map<R>(fn: (value: T, index?: number) => R): R[] {
-        const ret = new Array<R>(this.len)
-        for (let i = 0, len = this.len; i < len; i++) {
-            const item = this.buf[(this.head + i) & this.mask]!
-            ret[i] = fn(item, i)
+        const ret: R[] = []
+        for (let i = 0, len = this.length; i < len; i++) {
+            const item = this.buf[this.inc(this.head, i)]!
+            ret.push(fn(item, i))
         }
         return ret
     }
     filter(fn: (value: T, index?: number) => boolean): T[] {
         const ret: T[] = []
-        for (let i = 0, len = this.len; i < len; i++) {
-            const item = this.buf[(this.head + i) & this.mask]!
+        for (let i = 0, len = this.length; i < len; i++) {
+            const item = this.buf[this.inc(this.head, i)]!
             if (fn(item, i)) ret.push(item)
         }
         return ret
     }
     some(fn: (value: T, index?: number) => boolean): boolean {
-        for (let i = 0, len = this.len; i < len; i++) {
-            const item = this.buf[(this.head + i) & this.mask]!
+        for (let i = 0, len = this.length; i < len; i++) {
+            const item = this.buf[this.inc(this.head, i)]!
             if (fn(item, i)) return true
         }
         return false
     }
     every(fn: (value: T, index?: number) => boolean): boolean {
-        for (let i = 0, len = this.len; i < len; i++) {
-            const item = this.buf[(this.head + i) & this.mask]!
+        for (let i = 0, len = this.length; i < len; i++) {
+            const item = this.buf[this.inc(this.head, i)]!
             if (!fn(item, i)) return false
         }
         return true
     }
 }
 
-function move(target: unknown[], size: number, fromPos: number, toPos: number) {
-    for (let i = 0; i < size; i++) {
+function move(target: unknown[], n: number, fromPos: number, toPos: number) {
+    for (let i = 0; i < n; i++) {
         target[toPos + i] = target[fromPos + i]
         target[fromPos + i] = undefined
     }
