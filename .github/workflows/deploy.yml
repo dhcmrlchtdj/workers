@@ -8,7 +8,7 @@ on:
 jobs:
     deploy:
         # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#choosing-github-hosted-runners
-        runs-on: ubuntu-20.04
+        runs-on: ubuntu-22.04
         steps:
             # https://github.com/marketplace/actions/checkout
             - uses: actions/checkout@v3.0.2
@@ -36,13 +36,6 @@ jobs:
                   make -j check lint
                   make -j test
                   make -j build
-
-            - working-directory: src/feedbox
-              env:
-                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-                  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-              run: |
-                  wrangler publish
 
             - working-directory: src/current-ip
               env:
