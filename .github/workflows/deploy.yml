@@ -48,19 +48,6 @@ jobs:
                   printf '${{ secrets.IP_PASS_NUC }}' | wrangler secret put 'IP_PASS_NUC'
                   wrangler publish
 
-            - working-directory: src/bcc
-              env:
-                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-                  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-              run: |
-                  printf '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
-                  printf '${{ secrets.DB_API }}' | wrangler secret put 'DB_API'
-                  printf '${{ secrets.DB_TOKEN }}' | wrangler secret put 'DB_TOKEN'
-                  printf '${{ secrets.BCC_BOT_TOKEN }}' | wrangler secret put 'BCC_BOT_TOKEN'
-                  printf '${{ secrets.BCC_WEBHOOK_PATH }}' | wrangler secret put 'BCC_WEBHOOK_PATH'
-                  wrangler publish
-                  curl -s -f 'https://api.telegram.org/bot${{ secrets.BCC_BOT_TOKEN }}/setWebhook?url=https%3A%2F%2Fworker.h11.io%2Ftelegram%2Fbcc%2F${{ secrets.BCC_WEBHOOK_PATH }}'
-
             - working-directory: src/rollbar
               env:
                   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
@@ -77,23 +64,4 @@ jobs:
               run: |
                   printf '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
                   printf '${{ secrets.BACKUP_PASS_BEANCOUNT }}' | wrangler secret put 'BACKUP_PASS_BEANCOUNT'
-                  wrangler publish
-
-            - working-directory: src/backup-heroku-pg
-              env:
-                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-                  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-              run: |
-                  printf '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
-                  printf '${{ secrets.BACKUP_HEROKU_PG_APP }}' | wrangler secret put 'BACKUP_HEROKU_PG_APP'
-                  printf '${{ secrets.BACKUP_HEROKU_PG_TOKEN }}' | wrangler secret put 'BACKUP_HEROKU_PG_TOKEN'
-                  wrangler publish
-
-            - working-directory: src/backup-papertrail
-              env:
-                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-                  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-              run: |
-                  printf '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
-                  printf '${{ secrets.BACKUP_PAPERTRAIL_TOKEN }}' | wrangler secret put 'BACKUP_PAPERTRAIL_TOKEN'
                   wrangler publish
