@@ -118,16 +118,15 @@ function parseError(error: Error) {
     return stacks
 }
 
-function errorToTraceChain(error: Error) {
+function errorToTraceChain(error: unknown) {
     const errorChain = []
-    let err: Error | undefined = error
+    let err: unknown = error
     while (err instanceof Error) {
         errorChain.push(err)
         err = err.cause
     }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (err !== undefined) {
-        errorChain.push(new Error(err))
+    if (err) {
+        errorChain.push(new Error(err as string))
     }
 
     const traceChain = errorChain.map((err) => ({

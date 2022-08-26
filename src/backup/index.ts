@@ -20,7 +20,7 @@ const worker = createWorker("backup", async (req: Request, env: ENV) => {
     }
 
     const ct = req.headers.get("content-type")
-    if (!ct || !ct.startsWith("multipart/form-data; boundary")) {
+    if (!ct?.startsWith("multipart/form-data; boundary")) {
         return HttpUnsupportedMediaType()
     }
 
