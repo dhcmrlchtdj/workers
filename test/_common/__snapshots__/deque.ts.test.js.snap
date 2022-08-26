@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Deque grow case 1 1`] = `
-Array [
+[
   1,
   2,
   3,
@@ -14,7 +14,7 @@ Array [
 `;
 
 exports[`Deque grow case 1 2`] = `
-Array [
+[
   1,
   2,
   3,
@@ -26,7 +26,7 @@ Array [
 `;
 
 exports[`Deque grow case 1 3`] = `
-Array [
+[
   1,
   2,
   3,
@@ -47,7 +47,7 @@ Array [
 `;
 
 exports[`Deque grow case 1 4`] = `
-Array [
+[
   1,
   2,
   3,
@@ -60,7 +60,7 @@ Array [
 `;
 
 exports[`Deque grow case 2 1`] = `
-Array [
+[
   6,
   7,
   ,
@@ -73,7 +73,7 @@ Array [
 `;
 
 exports[`Deque grow case 2 2`] = `
-Array [
+[
   1,
   2,
   3,
@@ -85,7 +85,7 @@ Array [
 `;
 
 exports[`Deque grow case 2 3`] = `
-Array [
+[
   undefined,
   undefined,
   ,
@@ -106,7 +106,7 @@ Array [
 `;
 
 exports[`Deque grow case 2 4`] = `
-Array [
+[
   1,
   2,
   3,
@@ -119,7 +119,7 @@ Array [
 `;
 
 exports[`Deque grow case 3 1`] = `
-Array [
+[
   3,
   4,
   5,
@@ -132,7 +132,7 @@ Array [
 `;
 
 exports[`Deque grow case 3 2`] = `
-Array [
+[
   1,
   2,
   3,
@@ -144,7 +144,7 @@ Array [
 `;
 
 exports[`Deque grow case 3 3`] = `
-Array [
+[
   3,
   4,
   5,
@@ -165,7 +165,7 @@ Array [
 `;
 
 exports[`Deque grow case 3 4`] = `
-Array [
+[
   1,
   2,
   3,
@@ -178,7 +178,7 @@ Array [
 `;
 
 exports[`Deque pushBackArray 0 1`] = `
-Array [
+[
   1,
   2,
   3,
@@ -187,7 +187,7 @@ Array [
 `;
 
 exports[`Deque pushBackArray 0 2`] = `
-Array [
+[
   1,
   2,
   3,
@@ -195,7 +195,7 @@ Array [
 `;
 
 exports[`Deque pushBackArray 0 3`] = `
-Array [
+[
   1,
   2,
   3,
@@ -208,7 +208,7 @@ Array [
 `;
 
 exports[`Deque pushBackArray 0 4`] = `
-Array [
+[
   1,
   2,
   3,
@@ -217,7 +217,7 @@ Array [
 `;
 
 exports[`Deque pushBackArray 1 1`] = `
-Array [
+[
   1,
   2,
   3,
@@ -226,7 +226,7 @@ Array [
 `;
 
 exports[`Deque pushBackArray 1 2`] = `
-Array [
+[
   1,
   2,
   3,
@@ -234,7 +234,7 @@ Array [
 `;
 
 exports[`Deque pushBackArray 1 3`] = `
-Array [
+[
   1,
   2,
   3,
@@ -247,7 +247,7 @@ Array [
 `;
 
 exports[`Deque pushBackArray 1 4`] = `
-Array [
+[
   1,
   2,
   3,
@@ -256,7 +256,7 @@ Array [
 `;
 
 exports[`Deque pushBackArray 2 1`] = `
-Array [
+[
   1,
   2,
   3,
@@ -269,7 +269,7 @@ Array [
 `;
 
 exports[`Deque pushBackArray 2 2`] = `
-Array [
+[
   1,
   2,
   3,
@@ -278,7 +278,7 @@ Array [
 `;
 
 exports[`Deque pushFrontArray 0 1`] = `
-Array [
+[
   ,
   3,
   2,
@@ -287,7 +287,7 @@ Array [
 `;
 
 exports[`Deque pushFrontArray 0 2`] = `
-Array [
+[
   3,
   2,
   1,
@@ -295,7 +295,7 @@ Array [
 `;
 
 exports[`Deque pushFrontArray 0 3`] = `
-Array [
+[
   4,
   3,
   2,
@@ -308,7 +308,7 @@ Array [
 `;
 
 exports[`Deque pushFrontArray 0 4`] = `
-Array [
+[
   4,
   3,
   2,
@@ -317,7 +317,7 @@ Array [
 `;
 
 exports[`Deque pushFrontArray 1 1`] = `
-Array [
+[
   ,
   3,
   2,
@@ -326,7 +326,7 @@ Array [
 `;
 
 exports[`Deque pushFrontArray 1 2`] = `
-Array [
+[
   3,
   2,
   1,
@@ -334,7 +334,7 @@ Array [
 `;
 
 exports[`Deque pushFrontArray 1 3`] = `
-Array [
+[
   4,
   3,
   2,
@@ -347,7 +347,7 @@ Array [
 `;
 
 exports[`Deque pushFrontArray 1 4`] = `
-Array [
+[
   4,
   3,
   2,
@@ -356,7 +356,7 @@ Array [
 `;
 
 exports[`Deque pushFrontArray 2 1`] = `
-Array [
+[
   ,
   ,
   ,
@@ -369,7 +369,7 @@ Array [
 `;
 
 exports[`Deque pushFrontArray 2 2`] = `
-Array [
+[
   4,
   3,
   2,
