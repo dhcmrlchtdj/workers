@@ -1,9 +1,9 @@
 {
-    "private": true,
-    "name": "workers",
-    "version": "0.0.0",
-    "repository": "git@github.com:dhcmrlchtdj/workers.git",
-    "author": "h11 <nirisix@gmail.com>",
-    "license": "MIT",
-    "main": "index.js"
+	"private": true,
+	"name": "workers",
+	"version": "0.0.0",
+	"repository": "git@github.com:dhcmrlchtdj/workers.git",
+	"author": "h11 <nirisix@gmail.com>",
+	"license": "MIT",
+	"main": "index.js"
 }

@@ -1,40 +1,40 @@
 {
-    "include": ["src/**/*.ts", "test/**/*.ts"],
-    "exclude": ["src/_archived/"],
-    "compilerOptions": {
-        "outDir": "node_modules/",
-        "noEmit": true,
+	"include": ["src/**/*.ts", "test/**/*.ts"],
+	"exclude": ["src/_archived/"],
+	"compilerOptions": {
+		"outDir": "node_modules/",
+		"noEmit": true,
 
-        "module": "NodeNext",
-        "target": "ESNext",
-        "lib": ["ESNext"],
-        "types": ["@cloudflare/workers-types", "@types/jest"],
+		"module": "NodeNext",
+		"target": "ESNext",
+		"lib": ["ESNext"],
+		"types": ["@cloudflare/workers-types", "@types/jest"],
 
-        "sourceMap": false,
-        "inlineSourceMap": false,
-        "inlineSources": false,
-        "removeComments": true,
-        "importHelpers": false,
-        "declaration": false,
-        "incremental": true,
+		"sourceMap": false,
+		"inlineSourceMap": false,
+		"inlineSources": false,
+		"removeComments": true,
+		"importHelpers": false,
+		"declaration": false,
+		"incremental": true,
 
-        "moduleResolution": "NodeNext",
-        "isolatedModules": true,
-        "resolveJsonModule": false,
-        "esModuleInterop": false,
+		"moduleResolution": "NodeNext",
+		"isolatedModules": true,
+		"resolveJsonModule": false,
+		"esModuleInterop": false,
 
-        "strict": true,
-        "allowUnreachableCode": false,
-        "allowUnusedLabels": false,
-        "exactOptionalPropertyTypes": true,
-        "noFallthroughCasesInSwitch": true,
-        "noImplicitOverride": true,
-        "noImplicitReturns": true,
-        "noPropertyAccessFromIndexSignature": true,
-        "noUncheckedIndexedAccess": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
+		"strict": true,
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"exactOptionalPropertyTypes": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitOverride": true,
+		"noImplicitReturns": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noUncheckedIndexedAccess": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
 
-        "pretty": true
-    }
+		"pretty": true
+	}
 }

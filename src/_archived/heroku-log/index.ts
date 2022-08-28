@@ -18,42 +18,42 @@ declare const HEROKU_LOG_INFLUX_TOKEN: string
 ///
 
 const influx = new InfluxClient(
-    HEROKU_LOG_INFLUX_TOKEN,
-    BASE_AWS_OREGON,
-    "h11",
-    "feedbox",
-    "ms",
+	HEROKU_LOG_INFLUX_TOKEN,
+	BASE_AWS_OREGON,
+	"h11",
+	"feedbox",
+	"ms",
 )
 
 const router = new WorkerRouter()
 router.post(
-    `/heroku-log/${HEROKU_LOG_WEBHOOK_PATH}`,
-    async ({ event, monitor }) => {
-        const req = event.request
-        if (req.headers.get("content-type") !== "application/logplex-1") {
-            throw new Error("415 Unsupported Media Type")
-        }
-        validate(req, "token", HEROKU_LOG_BA_TOKEN)
+	`/heroku-log/${HEROKU_LOG_WEBHOOK_PATH}`,
+	async ({ event, monitor }) => {
+		const req = event.request
+		if (req.headers.get("content-type") !== "application/logplex-1") {
+			throw new Error("415 Unsupported Media Type")
+		}
+		validate(req, "token", HEROKU_LOG_BA_TOKEN)
 
-        const text = await req.text()
-        const logs = text
-            .split("\n")
-            .map(parse)
-            .filter((x): x is Logplex => x !== null)
-            .map(transform)
-            .filter((x): x is Line => x !== null)
-            .map((x) => x.serialize())
-            .join("\n")
+		const text = await req.text()
+		const logs = text
+			.split("\n")
+			.map(parse)
+			.filter((x): x is Logplex => x !== null)
+			.map(transform)
+			.filter((x): x is Line => x !== null)
+			.map((x) => x.serialize())
+			.join("\n")
 
-        if (logs.length > 0) {
-            const sendToInflux = influx
-                .write(logs)
-                .catch((err) => monitor.error(err, req))
-            event.waitUntil(sendToInflux)
-        }
+		if (logs.length > 0) {
+			const sendToInflux = influx
+				.write(logs)
+				.catch((err) => monitor.error(err, req))
+			event.waitUntil(sendToInflux)
+		}
 
-        return new Response("ok", { status: 200 })
-    },
+		return new Response("ok", { status: 200 })
+	},
 )
 
 ///

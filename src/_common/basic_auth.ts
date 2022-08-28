@@ -4,29 +4,29 @@ import { HttpBadRequest, HttpUnauthorized } from "./http-response.js"
 // https://developers.cloudflare.com/workers/examples/basic-auth/
 
 export function getBA(auth: string | null): [string, string] {
-    if (!auth) {
-        // eslint-disable-next-line @typescript-eslint/no-throw-literal
-        throw HttpUnauthorized(["Basic"])
-    }
+	if (!auth) {
+		// eslint-disable-next-line @typescript-eslint/no-throw-literal
+		throw HttpUnauthorized(["Basic"])
+	}
 
-    const [scheme, encoded] = auth.split(" ")
-    if (scheme !== "Basic" || !encoded) {
-        // eslint-disable-next-line @typescript-eslint/no-throw-literal
-        throw HttpBadRequest("malformed authorization header")
-    }
+	const [scheme, encoded] = auth.split(" ")
+	if (scheme !== "Basic" || !encoded) {
+		// eslint-disable-next-line @typescript-eslint/no-throw-literal
+		throw HttpBadRequest("malformed authorization header")
+	}
 
-    const decoded = decode(encoded)
-    const index = decoded.indexOf(":")
-    // eslint-disable-next-line no-control-regex
-    if (index === -1 || /[\x00-\x1F\x7F]/.test(decoded)) {
-        // eslint-disable-next-line @typescript-eslint/no-throw-literal
-        throw HttpBadRequest("invalid authorization value")
-    }
+	const decoded = decode(encoded)
+	const index = decoded.indexOf(":")
+	// eslint-disable-next-line no-control-regex
+	if (index === -1 || /[\x00-\x1F\x7F]/.test(decoded)) {
+		// eslint-disable-next-line @typescript-eslint/no-throw-literal
+		throw HttpBadRequest("invalid authorization value")
+	}
 
-    return [decoded.substring(0, index), decoded.substring(index + 1)]
+	return [decoded.substring(0, index), decoded.substring(index + 1)]
 }
 
 export function validate(req: Request, user: string, pass: string) {
-    const [u, p] = getBA(req.headers.get("authorization"))
-    if (u !== user || p !== pass) throw new Error("unauthorized")
+	const [u, p] = getBA(req.headers.get("authorization"))
+	if (u !== user || p !== pass) throw new Error("unauthorized")
 }

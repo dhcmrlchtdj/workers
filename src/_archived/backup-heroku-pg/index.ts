@@ -3,95 +3,95 @@ import { encode } from "../_common/base64.js"
 import { createScheduler } from "../_common/listen.js"
 
 type ENV = {
-    ROLLBAR_KEY: string
-    BACKUP_HEROKU_PG_APP: string
-    BACKUP_HEROKU_PG_TOKEN: string
-    R2Backup: R2Bucket
+	ROLLBAR_KEY: string
+	BACKUP_HEROKU_PG_APP: string
+	BACKUP_HEROKU_PG_TOKEN: string
+	R2Backup: R2Bucket
 }
 
 const worker = createScheduler(
-    "backup-heroku-pg",
-    async (_controller, env: ENV) => {
-        const file = await fetchBackup(env)
-        if (file === null || file.content === null) {
-            throw new Error("failed to fetch backup")
-        }
-        await env.R2Backup.put(file.name, file.content, {
-            httpMetadata: { contentType: "application/octet-stream" },
-        })
-    },
+	"backup-heroku-pg",
+	async (_controller, env: ENV) => {
+		const file = await fetchBackup(env)
+		if (file === null || file.content === null) {
+			throw new Error("failed to fetch backup")
+		}
+		await env.R2Backup.put(file.name, file.content, {
+			httpMetadata: { contentType: "application/octet-stream" },
+		})
+	},
 )
 
 export default worker
 
 async function fetchBackup(env: ENV): Promise<{
-    content: ReadableStream | null
-    name: string
+	content: ReadableStream | null
+	name: string
 } | null> {
-    // https://github.com/heroku/cli/blob/v7.47.0/packages/pg-v5/commands/backups/url.js
-    const headers = {
-        accept: "application/json",
-        authorization: "Basic " + encode(":" + env.BACKUP_HEROKU_PG_TOKEN),
-    }
+	// https://github.com/heroku/cli/blob/v7.47.0/packages/pg-v5/commands/backups/url.js
+	const headers = {
+		accept: "application/json",
+		authorization: "Basic " + encode(":" + env.BACKUP_HEROKU_PG_TOKEN),
+	}
 
-    const host = "postgres-starter-api.heroku.com"
-    const backups: HerokuBackup[] = await GET(
-        `https://${host}/client/v11/apps/${env.BACKUP_HEROKU_PG_APP}/transfers`,
-        headers,
-    ).then((r) => r.json())
-    const last = backups
-        .sort((a, b) => b.num - a.num)
-        .find((x) => x.succeeded && x.to_type === "gof3r")
-    if (!last) return null
+	const host = "postgres-starter-api.heroku.com"
+	const backups: HerokuBackup[] = await GET(
+		`https://${host}/client/v11/apps/${env.BACKUP_HEROKU_PG_APP}/transfers`,
+		headers,
+	).then((r) => r.json())
+	const last = backups
+		.sort((a, b) => b.num - a.num)
+		.find((x) => x.succeeded && x.to_type === "gof3r")
+	if (!last) return null
 
-    const download: HerokuDownload = await POST(
-        `https://${host}/client/v11/apps/${env.BACKUP_HEROKU_PG_APP}/transfers/${last.num}/actions/public-url`,
-        null,
-        headers,
-    ).then((r) => r.json())
-    const created_at = last.created_at
-        .replace(" +0000", "")
-        .replace(" ", "_")
-        .replace(/:/g, "")
+	const download: HerokuDownload = await POST(
+		`https://${host}/client/v11/apps/${env.BACKUP_HEROKU_PG_APP}/transfers/${last.num}/actions/public-url`,
+		null,
+		headers,
+	).then((r) => r.json())
+	const created_at = last.created_at
+		.replace(" +0000", "")
+		.replace(" ", "_")
+		.replace(/:/g, "")
 
-    const content = await GET(download.url).then((r) => r.body)
+	const content = await GET(download.url).then((r) => r.body)
 
-    return {
-        content,
-        name: `database/heroku/feedbox/${created_at}_rev${last.num}.dump`,
-    }
+	return {
+		content,
+		name: `database/heroku/feedbox/${created_at}_rev${last.num}.dump`,
+	}
 }
 
 ///
 
 type HerokuBackup = {
-    uuid: string
-    num: number
-    from_name: string
-    from_type: string
-    from_url: string
-    to_name: string | "SCHEDULED BACKUP" | "BACKUP"
-    to_type: string | "gof3r"
-    to_url: string
-    options: unknown
-    source_bytes: number
-    processed_bytes: number
-    succeeded: boolean
-    warnings: number
-    created_at: string
-    started_at: string | null
-    canceled_at: string | null
-    updated_at: string | null
-    finished_at: string | null
-    deleted_at: string | null
-    purged_at: string | null
-    num_keep: number
-    schedule?: {
-        uuid: string
-    }
+	uuid: string
+	num: number
+	from_name: string
+	from_type: string
+	from_url: string
+	to_name: string | "SCHEDULED BACKUP" | "BACKUP"
+	to_type: string | "gof3r"
+	to_url: string
+	options: unknown
+	source_bytes: number
+	processed_bytes: number
+	succeeded: boolean
+	warnings: number
+	created_at: string
+	started_at: string | null
+	canceled_at: string | null
+	updated_at: string | null
+	finished_at: string | null
+	deleted_at: string | null
+	purged_at: string | null
+	num_keep: number
+	schedule?: {
+		uuid: string
+	}
 }
 
 type HerokuDownload = {
-    expires_at: string
-    url: string
+	expires_at: string
+	url: string
 }

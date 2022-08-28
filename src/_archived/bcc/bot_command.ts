@@ -4,39 +4,39 @@ import { Telegram } from "../_common/service/telegram.js"
 import type { Env } from "./types.js"
 
 const createActions = (env: Env) => {
-    const database = new Database(env.DB_API, env.DB_TOKEN)
+	const database = new Database(env.DB_API, env.DB_TOKEN)
 
-    const telegram = new Telegram(env.BCC_BOT_TOKEN, "blind_carbon_copy_bot")
-    const actions = new Map<
-        string,
-        (arg: string, msg: Message) => Promise<void>
-    >()
+	const telegram = new Telegram(env.BCC_BOT_TOKEN, "blind_carbon_copy_bot")
+	const actions = new Map<
+		string,
+		(arg: string, msg: Message) => Promise<void>
+	>()
 
-    actions.set("/whoami", async (_arg: string, msg: Message) => {
-        const chat_id = msg.chat.id
-        const text = JSON.stringify(
-            {
-                chat_id,
-                ...(msg.from ?? {}),
-            },
-            null,
-            4,
-        )
-        await telegram.send("sendMessage", {
-            chat_id,
-            text,
-            reply_to_message_id: msg.message_id,
-        })
-    })
+	actions.set("/whoami", async (_arg: string, msg: Message) => {
+		const chat_id = msg.chat.id
+		const text = JSON.stringify(
+			{
+				chat_id,
+				...(msg.from ?? {}),
+			},
+			null,
+			4,
+		)
+		await telegram.send("sendMessage", {
+			chat_id,
+			text,
+			reply_to_message_id: msg.message_id,
+		})
+	})
 
-    const modifyTags = async (sql: string, arg: string, msg: Message) => {
-        const tags = arg.trim().split(/\s+/).filter(Boolean)
-        if (tags.length < 1) return
-        await database.raw(sql, msg.chat.id, tags)
-    }
+	const modifyTags = async (sql: string, arg: string, msg: Message) => {
+		const tags = arg.trim().split(/\s+/).filter(Boolean)
+		if (tags.length < 1) return
+		await database.raw(sql, msg.chat.id, tags)
+	}
 
-    actions.set("/add", async (arg: string, msg: Message) => {
-        const sql = `
+	actions.set("/add", async (arg: string, msg: Message) => {
+		const sql = `
         WITH t(tags) AS (
             SELECT ARRAY(
                 SELECT UNNEST($2::TEXT[])
@@ -48,11 +48,11 @@ const createActions = (env: Env) => {
         ON CONFLICT(chat_id)
         DO UPDATE SET tags = EXCLUDED.tags
         `
-        await modifyTags(sql, arg, msg)
-    })
+		await modifyTags(sql, arg, msg)
+	})
 
-    actions.set("/remove", async (arg: string, msg: Message) => {
-        const sql = `
+	actions.set("/remove", async (arg: string, msg: Message) => {
+		const sql = `
         WITH t(tags) AS (
             SELECT ARRAY(
                 SELECT UNNEST(tags) FROM bcc WHERE chat_id=$1
@@ -62,82 +62,82 @@ const createActions = (env: Env) => {
         )
         UPDATE bcc SET tags = t.tags FROM t WHERE bcc.chat_id=$1
         `
-        await modifyTags(sql, arg, msg)
-    })
+		await modifyTags(sql, arg, msg)
+	})
 
-    const getTagList = async (
-        chatId: number,
-    ): Promise<string | "not found"> => {
-        const arr = await database.queryOne<string[][]>(
-            "SELECT to_jsonb(tags) FROM bcc WHERE chat_id=$1",
-            chatId,
-        )
-        const tags = arr?.[0]?.sort() ?? []
-        if (tags.length === 0) {
-            return "not found"
-        }
-        const text = tags.reduce(
-            (prev: { tag: string; text: string }, curr: string) => {
-                if (prev.tag[1] === curr[1]) {
-                    prev.text += " " + curr
-                } else {
-                    prev.text += "\n" + curr
-                    prev.tag = curr
-                }
-                return prev
-            },
-            { tag: "", text: "" },
-        )
-        return text.text
-    }
+	const getTagList = async (
+		chatId: number,
+	): Promise<string | "not found"> => {
+		const arr = await database.queryOne<string[][]>(
+			"SELECT to_jsonb(tags) FROM bcc WHERE chat_id=$1",
+			chatId,
+		)
+		const tags = arr?.[0]?.sort() ?? []
+		if (tags.length === 0) {
+			return "not found"
+		}
+		const text = tags.reduce(
+			(prev: { tag: string; text: string }, curr: string) => {
+				if (prev.tag[1] === curr[1]) {
+					prev.text += " " + curr
+				} else {
+					prev.text += "\n" + curr
+					prev.tag = curr
+				}
+				return prev
+			},
+			{ tag: "", text: "" },
+		)
+		return text.text
+	}
 
-    actions.set("/list", async (_arg: string, msg: Message) => {
-        const chat_id = msg.chat.id
-        const tagList = await getTagList(chat_id)
-        await telegram.send("sendMessage", { chat_id, text: tagList })
-    })
+	actions.set("/list", async (_arg: string, msg: Message) => {
+		const chat_id = msg.chat.id
+		const tagList = await getTagList(chat_id)
+		await telegram.send("sendMessage", { chat_id, text: tagList })
+	})
 
-    actions.set("/update", async (_arg: string, msg: Message) => {
-        const replied = msg.reply_to_message
-        if (!replied) return
+	actions.set("/update", async (_arg: string, msg: Message) => {
+		const replied = msg.reply_to_message
+		if (!replied) return
 
-        if (msg.chat.type !== "channel") {
-            if (!telegram.sentByMe(replied)) return
-        }
+		if (msg.chat.type !== "channel") {
+			if (!telegram.sentByMe(replied)) return
+		}
 
-        const chat_id = msg.chat.id
-        const tagList = await getTagList(chat_id)
-        if (replied.text === tagList) return
+		const chat_id = msg.chat.id
+		const tagList = await getTagList(chat_id)
+		if (replied.text === tagList) return
 
-        if (msg.chat.type === "channel") {
-            await telegram.send("sendMessage", {
-                chat_id,
-                text: `backup\n${replied.text}`,
-            })
-        }
+		if (msg.chat.type === "channel") {
+			await telegram.send("sendMessage", {
+				chat_id,
+				text: `backup\n${replied.text}`,
+			})
+		}
 
-        await telegram.send("editMessageText", {
-            chat_id,
-            message_id: replied.message_id,
-            text: tagList,
-        })
-    })
+		await telegram.send("editMessageText", {
+			chat_id,
+			message_id: replied.message_id,
+			text: tagList,
+		})
+	})
 
-    return actions
+	return actions
 }
 
 export const execute = async (
-    env: Env,
-    cmd: string,
-    arg: string,
-    msg: Message,
+	env: Env,
+	cmd: string,
+	arg: string,
+	msg: Message,
 ) => {
-    const telegram = new Telegram(env.BCC_BOT_TOKEN, "blind_carbon_copy_bot")
-    const isAdmin = await telegram.fromAdmin(msg)
-    if (!isAdmin) return
-    const actions = createActions(env)
-    const act = actions.get(cmd)
-    if (act !== undefined) {
-        await act(arg, msg)
-    }
+	const telegram = new Telegram(env.BCC_BOT_TOKEN, "blind_carbon_copy_bot")
+	const isAdmin = await telegram.fromAdmin(msg)
+	if (!isAdmin) return
+	const actions = createActions(env)
+	const act = actions.get(cmd)
+	if (act !== undefined) {
+		await act(arg, msg)
+	}
 }

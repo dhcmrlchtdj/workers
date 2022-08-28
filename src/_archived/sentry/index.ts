@@ -9,40 +9,40 @@ declare const MY_TELEGRAM_CHAT_ID: string
 const telegram = new Telegram(TELEGRAM_BOT_TOKEN)
 
 addEventListener("fetch", (event) => {
-    event.respondWith(handle(event.request))
+	event.respondWith(handle(event.request))
 })
 
 async function handle(request: Request) {
-    if (request.method.toUpperCase() === "POST") {
-        try {
-            const text = await request.text()
-            const sig = request.headers.get("Sentry-Hook-Signature")
-            const fromSentry = await verifySignature(
-                SENTRY_HOOK_SECRET,
-                text,
-                sig,
-            )
-            if (fromSentry) {
-                const body = JSON.parse(text)
-                await telegram.send("sendMessage", {
-                    chat_id: Number(MY_TELEGRAM_CHAT_ID),
-                    text: JSON.stringify(body, null, 4),
-                })
-            }
-        } catch (_) {}
-    }
-    return new Response(null, { status: 204 })
+	if (request.method.toUpperCase() === "POST") {
+		try {
+			const text = await request.text()
+			const sig = request.headers.get("Sentry-Hook-Signature")
+			const fromSentry = await verifySignature(
+				SENTRY_HOOK_SECRET,
+				text,
+				sig,
+			)
+			if (fromSentry) {
+				const body = JSON.parse(text)
+				await telegram.send("sendMessage", {
+					chat_id: Number(MY_TELEGRAM_CHAT_ID),
+					text: JSON.stringify(body, null, 4),
+				})
+			}
+		} catch (_) {}
+	}
+	return new Response(null, { status: 204 })
 }
 
 // https://docs.sentry.io/workflow/integrations/integration-platform/webhooks/?platform=node#verifying-the-signature
 async function verifySignature(
-    secret: string,
-    message: string,
-    signature: string | null,
+	secret: string,
+	message: string,
+	signature: string | null,
 ): Promise<boolean> {
-    if (signature === null) return false
-    const sig = await createHMAC("SHA-256", secret)
-        .update(message)
-        .digest("hex")
-    return sig === signature
+	if (signature === null) return false
+	const sig = await createHMAC("SHA-256", secret)
+		.update(message)
+		.digest("hex")
+	return sig === signature
 }

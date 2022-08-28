@@ -1,25 +1,25 @@
 export type Option<T> = {
-    isNone: boolean
-    isSome: boolean
-    unwrap(): T
-    map<K>(f: (x: T) => K): Option<K>
-    bind<K>(f: (x: T) => Option<K>): Option<K>
+	isNone: boolean
+	isSome: boolean
+	unwrap(): T
+	map<K>(f: (x: T) => K): Option<K>
+	bind<K>(f: (x: T) => Option<K>): Option<K>
 }
 
 export const None: Option<never> = {
-    isNone: true,
-    isSome: false,
-    unwrap: () => {
-        throw new Error("Option.unwrap")
-    },
-    map: () => None,
-    bind: () => None,
+	isNone: true,
+	isSome: false,
+	unwrap: () => {
+		throw new Error("Option.unwrap")
+	},
+	map: () => None,
+	bind: () => None,
 }
 
 export const Some = <T>(x: T): Option<T> => ({
-    isNone: false,
-    isSome: true,
-    unwrap: () => x,
-    map: (f) => Some(f(x)),
-    bind: (f) => f(x),
+	isNone: false,
+	isSome: true,
+	unwrap: () => x,
+	map: (f) => Some(f(x)),
+	bind: (f) => f(x),
 })
