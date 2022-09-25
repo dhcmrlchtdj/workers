@@ -11,10 +11,11 @@ import {
 type ENV = {
 	ROLLBAR_KEY: string
 	BACKUP_PASS_BEANCOUNT: string
+	BACKUP_PASS_FEEDBOX: string
 	R2Backup: R2Bucket
 }
 
-const worker = createWorker("backup", async (req: Request, env: ENV) => {
+const worker = createWorker("backup", (req: Request, env: ENV) => {
 	if (req.method.toUpperCase() !== "POST") {
 		return HttpMethodNotAllowed(["POST"])
 	}
@@ -25,27 +26,48 @@ const worker = createWorker("backup", async (req: Request, env: ENV) => {
 	}
 
 	const [user, pass] = getBA(req.headers.get("authorization"))
-	if (user === "beancount") {
-		if (pass === env.BACKUP_PASS_BEANCOUNT) {
-			const body = await req.formData()
-			const file = body.get("file")
-			if (!(file instanceof File)) {
-				throw new Error("`file` is not a file")
-			}
-			const date = format(new Date(), "YYYYMMDD_hhmmss")
-			const obj = await env.R2Backup.put(
-				`beancount/${date}.tar.zst.age`,
-				file.stream(),
-				{
-					httpMetadata: { contentType: "application/octet-stream" },
-				},
-			)
-			return HttpCreated(obj.httpEtag)
-		}
+	if (user === "beancount" && pass === env.BACKUP_PASS_BEANCOUNT) {
+		return backupBeancount(req, env)
+	} else if (user === "feedbox" && pass === env.BACKUP_PASS_FEEDBOX) {
+		return backupFeedbox(req, env)
 	}
 
 	console.log(`invalid user/pass: "${user}" "${pass}"`)
 	return HttpUnauthorized(["Basic"])
 })
+
+async function backupBeancount(req: Request, env: ENV): Promise<Response> {
+	const body = await req.formData()
+	const file = body.get("file")
+	if (!(file instanceof File)) {
+		throw new Error("`file` is not a file")
+	}
+	const date = format(new Date(), "YYYYMMDD_hhmmss")
+	const obj = await env.R2Backup.put(
+		`beancount/${date}.tar.zst.age`,
+		file.stream(),
+		{
+			httpMetadata: { contentType: "application/octet-stream" },
+		},
+	)
+	return HttpCreated(obj.httpEtag)
+}
+
+async function backupFeedbox(req: Request, env: ENV): Promise<Response> {
+	const body = await req.formData()
+	const file = body.get("file")
+	if (!(file instanceof File)) {
+		throw new Error("`file` is not a file")
+	}
+	const filename = body.get("filename")
+	const obj = await env.R2Backup.put(
+		`database/feedbox/${filename}`,
+		file.stream(),
+		{
+			httpMetadata: { contentType: "application/octet-stream" },
+		},
+	)
+	return HttpCreated(obj.httpEtag)
+}
 
 export default worker
