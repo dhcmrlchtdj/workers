@@ -59,9 +59,9 @@ async function backupFeedbox(req: Request, env: ENV): Promise<Response> {
 	if (!(file instanceof File)) {
 		throw new Error("`file` is not a file")
 	}
-	const filename = body.get("filename")
+	const date = format(new Date(), "YYYYMMDD_hhmmss")
 	const obj = await env.R2Backup.put(
-		`database/feedbox/${filename}`,
+		`database/feedbox/${date}.db`,
 		file.stream(),
 		{
 			httpMetadata: { contentType: "application/octet-stream" },
