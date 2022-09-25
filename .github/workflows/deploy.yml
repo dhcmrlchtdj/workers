@@ -64,4 +64,5 @@ jobs:
               run: |
                   printf '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
                   printf '${{ secrets.BACKUP_PASS_BEANCOUNT }}' | wrangler secret put 'BACKUP_PASS_BEANCOUNT'
+                  printf '${{ secrets.BACKUP_PASS_FEEDBOX }}' | wrangler secret put 'BACKUP_PASS_FEEDBOX'
                   wrangler publish
