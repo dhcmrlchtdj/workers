@@ -44,7 +44,7 @@ async function saveCurrentIp(env: ENV, machine: string, currIp: string) {
 		await telegram.send("sendMessage", {
 			parse_mode: "HTML",
 			chat_id: Number(env.ROLLBAR_TG_CHAT_ID),
-			text: `IP changed\n<pre>${enc(machine)} => ${enc(currIp)}</pre>`,
+			text: `IP changed: ${enc(machine)}\n<pre>HostName ${enc(currIp)}</pre>`,
 			disable_web_page_preview: true,
 		})
 	}
