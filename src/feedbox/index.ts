@@ -1,6 +1,6 @@
 export default {
-	fetch(request: Request) {
-		const host = "fbox.herokuapp.com"
+	async fetch(request: Request) {
+		const host = "feedbox.h11.dev"
 		const url = new URL(request.url)
 		url.host = host
 		const req = new Request(url.toString(), {
