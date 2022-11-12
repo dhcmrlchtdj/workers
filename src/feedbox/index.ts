@@ -10,6 +10,30 @@ export default {
 			redirect: "manual",
 		})
 		req.headers.set("host", host)
+
+		const xForwardFor = appendToXForwardFor(
+			req.headers.get("X-Forwarded-For"),
+			req.headers.get("CF-Connecting-IP"),
+		)
+		if (xForwardFor) {
+			req.headers.set("X-Forwarded-For", xForwardFor)
+		}
+
 		return fetch(req)
 	},
+}
+
+function appendToXForwardFor(
+	prev: string | null,
+	clientIp: string | null,
+): string | null {
+	if (prev) {
+		if (clientIp) {
+			return prev + ", " + clientIp
+		} else {
+			return prev
+		}
+	} else {
+		return clientIp
+	}
 }
