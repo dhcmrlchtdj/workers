@@ -11,7 +11,7 @@ export default {
 		})
 		req.headers.set("host", host)
 
-		const xForwardFor = appendToXForwardFor(
+		const xForwardFor = appendIpToXForwardFor(
 			req.headers.get("X-Forwarded-For"),
 			req.headers.get("CF-Connecting-IP"),
 		)
@@ -23,17 +23,11 @@ export default {
 	},
 }
 
-function appendToXForwardFor(
-	prev: string | null,
-	clientIp: string | null,
+function appendIpToXForwardFor(
+	xForwardFor: string | null,
+	ip: string | null,
 ): string | null {
-	if (prev) {
-		if (clientIp) {
-			return prev + ", " + clientIp
-		} else {
-			return prev
-		}
-	} else {
-		return clientIp
-	}
+	if (!ip) return xForwardFor
+	if (!xForwardFor) return ip
+	return xForwardFor + ", " + ip
 }
