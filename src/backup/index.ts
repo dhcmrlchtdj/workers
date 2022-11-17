@@ -42,9 +42,8 @@ async function backupBeancount(req: Request, env: ENV): Promise<Response> {
 	if (!(file instanceof File)) {
 		throw new Error("`file` is not a file")
 	}
-	const date = format(new Date(), "YYYYMMDD_hhmmss")
 	const obj = await env.R2Backup.put(
-		`beancount/${date}.tar.zst.age`,
+		`beancount/${generateFilename(file.name)}`,
 		file.stream(),
 		{
 			httpMetadata: { contentType: "application/octet-stream" },
@@ -59,15 +58,23 @@ async function backupFeedbox(req: Request, env: ENV): Promise<Response> {
 	if (!(file instanceof File)) {
 		throw new Error("`file` is not a file")
 	}
-	const date = format(new Date(), "YYYYMMDD_hhmmss")
 	const obj = await env.R2Backup.put(
-		`database/feedbox/${date}.db`,
+		`database/feedbox/${generateFilename(file.name)}`,
 		file.stream(),
 		{
 			httpMetadata: { contentType: "application/octet-stream" },
 		},
 	)
 	return HttpCreated(obj.httpEtag)
+}
+
+function generateFilename(name: string | null | undefined): string {
+	const date = format(new Date(), "YYYYMMDD_hhmmss")
+	if (name) {
+		return date + "-" + name
+	} else {
+		return date
+	}
 }
 
 export default worker
