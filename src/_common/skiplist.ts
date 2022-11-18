@@ -72,8 +72,8 @@ export class SkipList<I extends SkipItem> {
 		}
 	}
 
-	/// true: inserted new item
-	/// false: replaced old item
+	/// true: new item inserted
+	/// false: old item replaced
 	insert(item: I): boolean {
 		const update = new Array<SkipNode<I>>(this.level)
 
@@ -93,10 +93,10 @@ export class SkipList<I extends SkipItem> {
 			const newLevel = randomLevel()
 
 			if (newLevel > this.level) {
-				this.level = newLevel
 				for (let i = this.level; i < newLevel; i++) {
 					update[i] = this.header
 				}
+				this.level = newLevel
 			}
 
 			const newNode = new SkipNode(newLevel, item)
