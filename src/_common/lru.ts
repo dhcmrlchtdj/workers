@@ -1,3 +1,4 @@
+import { LinkedList, Entry } from "./linked-list.js"
 import { Option, Some, None } from "./option.js"
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
@@ -9,55 +10,6 @@ export interface CachePolicy<K, V> {
 	set(key: K, value: V): Option<V> // replaced value
 	remove(key: K): Option<V> // removed value
 	keys(): K[]
-}
-
-class Entry<K, V> {
-	prev: Entry<K, V>
-	next: Entry<K, V>
-	key: K
-	value: V
-	constructor(key: K, value: V) {
-		this.key = key
-		this.value = value
-		this.prev = null!
-		this.next = null!
-	}
-}
-
-class LinkedList<K, V> {
-	head: Entry<K, V>
-	tail: Entry<K, V>
-	constructor() {
-		const sentinel = new Entry(null, null) as Entry<K, V>
-		sentinel.prev = sentinel
-		sentinel.next = sentinel
-		this.head = sentinel
-		this.tail = sentinel
-	}
-	addFirst(e: Entry<K, V>) {
-		this.insert(e, this.head, this.head.next)
-	}
-	removeLast(): Entry<K, V> {
-		const last = this.tail.prev
-		this.remove(last)
-		return last
-	}
-	moveToFirst(e: Entry<K, V>) {
-		this.remove(e)
-		this.insert(e, this.head, this.head.next)
-	}
-	remove(e: Entry<K, V>) {
-		e.prev.next = e.next
-		e.next.prev = e.prev
-		e.prev = null!
-		e.next = null!
-	}
-	insert(e: Entry<K, V>, prev: Entry<K, V>, next: Entry<K, V>) {
-		e.prev = prev
-		prev.next = e
-		e.next = next
-		next.prev = e
-	}
 }
 
 export class LRU<K, V> implements CachePolicy<K, V> {
