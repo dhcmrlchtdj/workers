@@ -1,7 +1,7 @@
 import { Deferred } from "./deferred.js"
 import { Deque } from "./deque.js"
-import { LinkedMap } from "./linked-map.js"
 import { Option, Some, None } from "./option.js"
+import {OrderedMap} from "./ordered-map.js"
 
 let currentId = 0
 const genId = () => currentId++
@@ -29,12 +29,12 @@ type Receiver<T> = {
 }
 
 export class Channel<T = unknown> {
-	private senders: LinkedMap<number, Sender<T>>
-	private receivers: LinkedMap<number, Receiver<T>>
+	private senders: OrderedMap<number, Sender<T>>
+	private receivers: OrderedMap<number, Receiver<T>>
 	private closed: boolean
 	constructor() {
-		this.senders = new LinkedMap()
-		this.receivers = new LinkedMap()
+		this.senders = new OrderedMap()
+		this.receivers = new OrderedMap()
 		this.closed = false
 	}
 
@@ -61,13 +61,13 @@ export class Channel<T = unknown> {
 
 	private sync() {
 		this.cleanup()
-		while (this.receivers.length > 0 && this.senders.length > 0) {
-			const receiver = this.receivers.getFront()
-			const sender = this.senders.getFront()
+		while (this.receivers.size() > 0 && this.senders.size() > 0) {
+			const receiver = this.receivers.getFirst().unwrap()
+			const sender = this.senders.getFirst().unwrap()
 			if (receiver.tryLock()) {
 				if (sender.tryLock()) {
-					this.receivers.popFront()
-					this.senders.popFront()
+					this.receivers.removeFirst()
+					this.senders.removeFirst()
 					receiver.defer.resolve(Some(sender.data))
 					receiver.complete(receiver.id)
 					sender.defer.resolve(true)
@@ -81,7 +81,7 @@ export class Channel<T = unknown> {
 			}
 		}
 		if (this.closed) {
-			if (this.receivers.length > 0 && this.senders.length === 0) {
+			if (this.receivers.size() > 0 && this.senders.size() === 0) {
 				this.receivers.removeIf((_, receiver) => {
 					if (receiver.tryLock()) {
 						receiver.defer.resolve(None)
@@ -96,7 +96,7 @@ export class Channel<T = unknown> {
 	}
 
 	private sendersAdd(sender: Sender<T>) {
-		this.senders.pushBack(sender.id, sender)
+		this.senders.addLast(sender.id, sender)
 		this.sync()
 	}
 	async send(data: T): Promise<boolean> {
@@ -126,12 +126,12 @@ export class Channel<T = unknown> {
 		if (this.closed) {
 			return false
 		} else {
-			if (this.senders.length > 0) {
+			if (this.senders.size() > 0) {
 				return null
-			} else if (this.receivers.length > 0) {
-				const receiver = this.receivers.getFront()
+			} else if (this.receivers.size() > 0) {
+				const receiver = this.receivers.getFirst().unwrap()
 				if (receiver.tryLock()) {
-					this.receivers.popFront()
+					this.receivers.removeFirst()
 					receiver.defer.resolve(Some(data))
 					receiver.complete(receiver.id)
 					return true
@@ -145,7 +145,7 @@ export class Channel<T = unknown> {
 	}
 
 	private receiversAdd(receiver: Receiver<T>) {
-		this.receivers.pushBack(receiver.id, receiver)
+		this.receivers.addLast(receiver.id, receiver)
 		this.sync()
 	}
 	async receive(): Promise<Option<T>> {
@@ -171,12 +171,12 @@ export class Channel<T = unknown> {
 	}
 	private fastReceive(): Option<T> | null {
 		this.cleanup()
-		if (this.receivers.length > 0) {
+		if (this.receivers.size() > 0) {
 			return null
-		} else if (this.senders.length > 0) {
-			const sender = this.senders.getFront()
+		} else if (this.senders.size() > 0) {
+			const sender = this.senders.getFirst().unwrap()
 			if (sender.tryLock()) {
-				this.senders.popFront()
+				this.senders.removeFirst()
 				sender.defer.resolve(true)
 				sender.complete(sender.id)
 				return Some(sender.data)
