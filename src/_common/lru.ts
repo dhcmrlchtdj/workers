@@ -49,6 +49,8 @@ class LinkedList<K, V> {
 	remove(e: Entry<K, V>) {
 		e.prev.next = e.next
 		e.next.prev = e.prev
+		e.prev = null!
+		e.next = null!
 	}
 	insert(e: Entry<K, V>, prev: Entry<K, V>, next: Entry<K, V>) {
 		e.prev = prev
@@ -84,7 +86,6 @@ export class LRU<K, V> implements CachePolicy<K, V> {
 		if (e === undefined) {
 			const e = new Entry(key, value)
 			if (this.map.size >= this.capacity) {
-				// remove lastest
 				const old = this.list.removeLast()
 				this.map.delete(old.key)
 			}
@@ -108,7 +109,7 @@ export class LRU<K, V> implements CachePolicy<K, V> {
 			return Some(e.value)
 		}
 	}
-	removeLast(): Option<Entry<K, V>> {
+	_removeLast(): Option<Entry<K, V>> {
 		if (this.map.size === 0) return None
 		const e = this.list.removeLast()
 		this.map.delete(e.key)
@@ -208,16 +209,16 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 			if (recentSize === this.capacity) {
 				// case 4.1
 				if (this.recent.size() < this.capacity) {
-					this.recentEvicted.removeLast()
+					this.recentEvicted._removeLast()
 					replaced = this._replace(false)
 				} else {
-					const e = this.recent.removeLast()
+					const e = this.recent._removeLast()
 					replaced = e.map((e) => e.value)
 				}
 			} else if (recentSize + frequentSize >= this.capacity) {
 				// case 4.2
 				if (recentSize + frequentSize === this.capacity * 2) {
-					this.frequentEvicted.removeLast()
+					this.frequentEvicted._removeLast()
 				}
 				replaced = this._replace(false)
 			}
@@ -239,7 +240,7 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 			const needToDrop = sizeRecent > this.p
 			const haveToDrop = sizeRecent === this.p && hitFrequentEvicted
 			if (needToDrop || haveToDrop) {
-				return this.recent.removeLast().map((e) => {
+				return this.recent._removeLast().map((e) => {
 					this.recentEvicted.set(e.key, null)
 					return e.value
 				})
@@ -247,7 +248,7 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 		}
 
 		// replace frequent
-		return this.frequent.removeLast().map((e) => {
+		return this.frequent._removeLast().map((e) => {
 			this.frequentEvicted.set(e.key, null)
 			return e.value
 		})
