@@ -25,6 +25,20 @@ export class LRU<K, V> implements CachePolicy<K, V> {
 	size(): number {
 		return this.map.size
 	}
+	keys(): K[] {
+		return [...this.map.keys()]
+	}
+	has(key: K): boolean {
+		return this.map.has(key)
+	}
+	peek(key: K): Option<V> {
+		const e = this.map.get(key)
+		if (e === undefined) {
+			return None
+		} else {
+			return Some(e.value)
+		}
+	}
 	get(key: K): Option<V> {
 		const e = this.map.get(key)
 		if (e === undefined) {
@@ -46,10 +60,10 @@ export class LRU<K, V> implements CachePolicy<K, V> {
 			this.map.set(key, e)
 			return None
 		} else {
-			const replaced = Some(e.value)
+			const replaced = e.value
 			e.value = value
 			this.list.moveToFirst(e)
-			return replaced
+			return Some(replaced)
 		}
 	}
 	remove(key: K): Option<V> {
@@ -67,20 +81,6 @@ export class LRU<K, V> implements CachePolicy<K, V> {
 		const e = this.list.removeLast()
 		this.map.delete(e.key)
 		return Some(e)
-	}
-	has(key: K): boolean {
-		return this.map.has(key)
-	}
-	peek(key: K): Option<V> {
-		const e = this.map.get(key)
-		if (e === undefined) {
-			return None
-		} else {
-			return Some(e.value)
-		}
-	}
-	keys(): K[] {
-		return [...this.map.keys()]
 	}
 }
 
@@ -122,8 +122,7 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 	set(key: K, value: V): Option<V> {
 		if (this.frequent.has(key)) {
 			// case 1
-			const replaced = this.frequent.set(key, value)
-			return replaced
+			return this.frequent.set(key, value)
 		} else if (this.recent.has(key)) {
 			// case 1
 			const replaced = this.recent.remove(key)

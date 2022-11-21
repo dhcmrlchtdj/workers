@@ -50,13 +50,22 @@ export class Channel<T = unknown> {
 		return this.closed
 	}
 
-	// cleanup done selection
-	private _taskDone(this: void, _: unknown, val: Sender<T> | Receiver<T>) {
-		return val.status === "done"
+	private removeIf<K, V>(
+		m: LinkedMap<K, V>,
+		fn: (key: K, value: V) => boolean,
+	) {
+		for (const key of m.keys()) {
+			const value = m.get(key).unwrap()
+			if (fn(key, value)) {
+				m.remove(key)
+			}
+		}
 	}
+
+	// cleanup done selection
 	private cleanup() {
-		this.senders.removeIf(this._taskDone)
-		this.receivers.removeIf(this._taskDone)
+		this.removeIf(this.senders, (_, v) => v.status === "done")
+		this.removeIf(this.receivers, (_, v) => v.status === "done")
 	}
 
 	private sync() {
@@ -82,7 +91,7 @@ export class Channel<T = unknown> {
 		}
 		if (this.closed) {
 			if (this.receivers.size() > 0 && this.senders.size() === 0) {
-				this.receivers.removeIf((_, receiver) => {
+				this.removeIf(this.receivers, (_, receiver) => {
 					if (receiver.tryLock()) {
 						receiver.defer.resolve(None)
 						receiver.complete(receiver.id)

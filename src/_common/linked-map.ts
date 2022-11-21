@@ -22,8 +22,8 @@ export class LinkedMap<K, V> {
 		if (e === undefined) {
 			return None
 		} else {
-			this.list.remove(e)
 			this.map.delete(key)
+			this.list.remove(e)
 			return Some(e.value)
 		}
 	}
@@ -35,19 +35,14 @@ export class LinkedMap<K, V> {
 			return Some(e.value)
 		}
 	}
-	update(key: K, value: V): Option<V> {
-		const e = this.map.get(key)
-		if (e === undefined) {
-			return None
-		} else {
-			const replaced = e.value
-			e.value = value
-			return Some(replaced)
-		}
-	}
 	getFirst(): Option<V> {
 		if (this.map.size === 0) return None
 		const e = this.list.getFirst()
+		return Some(e.value)
+	}
+	getLast(): Option<V> {
+		if (this.map.size === 0) return None
+		const e = this.list.getLast()
 		return Some(e.value)
 	}
 	removeFirst(): Option<Entry<K, V>> {
@@ -90,13 +85,14 @@ export class LinkedMap<K, V> {
 			return Some(replaced)
 		}
 	}
-
-	removeIf(fn: (key: K, value: V) => boolean) {
-		for (const e of this.map.values()) {
-			if (fn(e.key, e.value)) {
-				this.map.delete(e.key)
-				this.list.remove(e)
-			}
+	update(key: K, value: V): Option<V> {
+		const e = this.map.get(key)
+		if (e === undefined) {
+			return None
+		} else {
+			const replaced = e.value
+			e.value = value
+			return Some(replaced)
 		}
 	}
 }

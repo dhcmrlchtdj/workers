@@ -12,8 +12,8 @@ export class Entry<K, V> {
 }
 
 export class LinkedList<K, V> {
-	head: Entry<K, V>
-	tail: Entry<K, V>
+	private head: Entry<K, V>
+	private tail: Entry<K, V>
 	constructor() {
 		const sentinel = new Entry(null, null) as Entry<K, V>
 		sentinel.prev = sentinel
@@ -42,15 +42,18 @@ export class LinkedList<K, V> {
 		this._add(e, this.tail.prev, this.tail)
 	}
 
-	removeFirst(): Entry<K, V> {
-		const e = this.head.next
-		this.remove(e)
+	remove(e: Entry<K, V>): Entry<K, V> {
+		e.prev.next = e.next
+		e.next.prev = e.prev
+		e.prev = null!
+		e.next = null!
 		return e
 	}
+	removeFirst(): Entry<K, V> {
+		return this.remove(this.head.next)
+	}
 	removeLast(): Entry<K, V> {
-		const e = this.tail.prev
-		this.remove(e)
-		return e
+		return this.remove(this.tail.prev)
 	}
 
 	moveToFirst(e: Entry<K, V>) {
@@ -60,12 +63,5 @@ export class LinkedList<K, V> {
 	moveToLast(e: Entry<K, V>) {
 		this.remove(e)
 		this.addLast(e)
-	}
-
-	remove(e: Entry<K, V>) {
-		e.prev.next = e.next
-		e.next.prev = e.prev
-		e.prev = null!
-		e.next = null!
 	}
 }
