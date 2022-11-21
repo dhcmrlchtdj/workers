@@ -1,7 +1,7 @@
 import { Deferred } from "./deferred.js"
 import { Deque } from "./deque.js"
+import { LinkedMap } from "./linked-map.js"
 import { Option, Some, None } from "./option.js"
-import {OrderedMap} from "./ordered-map.js"
 
 let currentId = 0
 const genId = () => currentId++
@@ -29,12 +29,12 @@ type Receiver<T> = {
 }
 
 export class Channel<T = unknown> {
-	private senders: OrderedMap<number, Sender<T>>
-	private receivers: OrderedMap<number, Receiver<T>>
+	private senders: LinkedMap<number, Sender<T>>
+	private receivers: LinkedMap<number, Receiver<T>>
 	private closed: boolean
 	constructor() {
-		this.senders = new OrderedMap()
-		this.receivers = new OrderedMap()
+		this.senders = new LinkedMap()
+		this.receivers = new LinkedMap()
 		this.closed = false
 	}
 

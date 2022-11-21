@@ -1,7 +1,7 @@
 import { LinkedList, Entry } from "./linked-list.js"
 import { Option, Some, None } from "./option.js"
 
-export class OrderedMap<K, V> {
+export class LinkedMap<K, V> {
 	private map: Map<K, Entry<K, V>>
 	private list: LinkedList<K, V>
 	constructor() {
