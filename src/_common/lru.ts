@@ -1,4 +1,5 @@
 import { LinkedList, Entry } from "./linked-list.js"
+import { LinkedMap } from "./linked-map.js"
 import { Option, Some, None } from "./option.js"
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
@@ -210,6 +211,70 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 		const removeR = this.recent.remove(key)
 		this.frequentEvicted.remove(key)
 		this.recentEvicted.remove(key)
+		return removeF.isSome ? removeF : removeR
+	}
+	keys(): K[] {
+		return [...this.frequent.keys(), ...this.recent.keys()]
+	}
+}
+
+export class TwoQueue<K, V> implements CachePolicy<K, V> {
+	private frequentCapacity: number
+	private recentCapacity: number
+	private ghostCapacity: number
+	private frequent: LRU<K, V> // Am
+	private recent: LinkedMap<K, V> // A1in
+	private ghost: LinkedMap<K, null> // A1out
+	constructor(capacity: number, frequentRatio = 0.75, ghostRatio = 0.5) {
+		this.frequentCapacity = Math.ceil(capacity * frequentRatio)
+		this.recentCapacity = capacity - this.frequentCapacity
+		this.ghostCapacity = Math.ceil(capacity * ghostRatio)
+		this.frequent = new LRU(this.frequentCapacity)
+		this.recent = new LinkedMap()
+		this.ghost = new LinkedMap()
+	}
+	size(): number {
+		return this.recent.size() + this.frequent.size()
+	}
+	has(key: K): boolean {
+		return this.frequent.has(key) || this.recent.has(key)
+	}
+	peek(key: K): Option<V> {
+		const e = this.frequent.peek(key)
+		if (e.isSome) return e
+		return this.recent.get(key)
+	}
+	get(key: K): Option<V> {
+		const e = this.frequent.get(key)
+		if (e.isSome) return e
+		return this.recent.get(key)
+	}
+	set(key: K, value: V): Option<V> {
+		if (this.frequent.has(key)) {
+			return this.frequent.set(key, value)
+		} else if (this.recent.has(key)) {
+			return this.recent.update(key, value)
+		} else if (this.ghost.has(key)) {
+			this.ghost.remove(key)
+			return this.frequent.set(key, value)
+		} else {
+			let replaced: Option<V> = None
+			if (this.recent.size() === this.recentCapacity) {
+				const e = this.recent.removeLast().unwrap()
+				replaced = Some(e.value)
+				if (this.ghost.size() === this.ghostCapacity) {
+					this.ghost.removeLast()
+				}
+				this.ghost.addFirst(e.key, null)
+			}
+			this.recent.addFirst(key, value)
+			return replaced
+		}
+	}
+	remove(key: K): Option<V> {
+		const removeF = this.frequent.remove(key)
+		const removeR = this.recent.remove(key)
+		this.ghost.remove(key)
 		return removeF.isSome ? removeF : removeR
 	}
 	keys(): K[] {
