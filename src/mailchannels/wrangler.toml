@@ -1,0 +1,5 @@
+main = "index.js"
+name = "mailchannels"
+route = "worker.h11.io/mailchannels*"
+
+compatibility_date = "2022-05-12"
