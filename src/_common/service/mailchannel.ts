@@ -46,10 +46,9 @@ export class MailChannels {
 		mail.personalizations.dkim_selector ??= this.dkim.selector
 		mail.personalizations.dkim_private_key ??= this.dkim.privateKey
 
-		const api = this.base + "/send?dry-run=true"
+		const api = this.base + "/send"
 		const body = JSON.stringify(mail)
 		const resp = await POST(api, body, {
-			accept: "application/json",
 			"content-type": "application/json",
 		})
 		return resp
