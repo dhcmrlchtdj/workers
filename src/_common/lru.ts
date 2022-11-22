@@ -53,7 +53,7 @@ export class LRU<K, V> implements CachePolicy<K, V> {
 		if (e === undefined) {
 			const e = new Entry(key, value)
 			if (this.map.size >= this.capacity) {
-				const old = this.list.removeLast()
+				const old = this.list.removeLast()!
 				this.map.delete(old.key)
 			}
 			this.list.addFirst(e)
@@ -78,7 +78,7 @@ export class LRU<K, V> implements CachePolicy<K, V> {
 	}
 	_removeLast(): Option<Entry<K, V>> {
 		if (this.map.size === 0) return None
-		const e = this.list.removeLast()
+		const e = this.list.removeLast()!
 		this.map.delete(e.key)
 		return Some(e)
 	}
@@ -136,10 +136,10 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 				this.capacity,
 				this.p + Math.max(1, Math.floor(sizeF / sizeR)),
 			)
-			const replaced = this._replace(false)
+			this._replace(false)
 			this.recentEvicted.remove(key)
 			this.frequent.set(key, value)
-			return replaced
+			return None
 		} else if (this.frequentEvicted.has(key)) {
 			// case 3
 			const sizeF = this.frequentEvicted.size()
@@ -148,13 +148,12 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 				0,
 				this.p - Math.max(1, Math.floor(sizeR / sizeF)),
 			)
-			const replaced = this._replace(true)
+			this._replace(true)
 			this.frequentEvicted.remove(key)
 			this.frequent.set(key, value)
-			return replaced
+			return None
 		} else {
 			// case 4
-			let replaced: Option<V> = None
 			const recentSize = this.recent.size() + this.recentEvicted.size()
 			const frequentSize =
 				this.frequent.size() + this.frequentEvicted.size()
@@ -162,29 +161,28 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 				// case 4.1
 				if (this.recent.size() < this.capacity) {
 					this.recentEvicted._removeLast()
-					replaced = this._replace(false)
+					this._replace(false)
 				} else {
-					const e = this.recent._removeLast()
-					replaced = e.map((e) => e.value)
+					this.recent._removeLast()
 				}
 			} else if (recentSize + frequentSize >= this.capacity) {
 				// case 4.2
 				if (recentSize + frequentSize === this.capacity * 2) {
 					this.frequentEvicted._removeLast()
 				}
-				replaced = this._replace(false)
+				this._replace(false)
 			}
 			this.recent.set(key, value)
-			return replaced
+			return None
 		}
 	}
-	private _replace(hitFrequentEvicted: boolean): Option<V> {
+	private _replace(hitFrequentEvicted: boolean): void {
 		const sizeRecent = this.recent.size()
 		const sizeFrequence = this.frequent.size()
 
 		// have enough space
 		if (sizeRecent + sizeFrequence < this.capacity) {
-			return None
+			return
 		}
 
 		// replace recent
@@ -192,18 +190,17 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 			const needToDrop = sizeRecent > this.p
 			const haveToDrop = sizeRecent === this.p && hitFrequentEvicted
 			if (needToDrop || haveToDrop) {
-				return this.recent._removeLast().map((e) => {
-					this.recentEvicted.set(e.key, null)
-					return e.value
-				})
+				this.recent
+					._removeLast()
+					.map((e) => this.recentEvicted.set(e.key, null))
+				return
 			}
 		}
 
 		// replace frequent
-		return this.frequent._removeLast().map((e) => {
-			this.frequentEvicted.set(e.key, null)
-			return e.value
-		})
+		this.frequent
+			._removeLast()
+			.map((e) => this.frequentEvicted.set(e.key, null))
 	}
 	remove(key: K): Option<V> {
 		const removeF = this.frequent.remove(key)

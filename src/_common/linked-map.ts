@@ -37,23 +37,23 @@ export class LinkedMap<K, V> {
 	}
 	getFirst(): Option<V> {
 		if (this.map.size === 0) return None
-		const e = this.list.getFirst()
+		const e = this.list.getFirst()!
 		return Some(e.value)
 	}
 	getLast(): Option<V> {
 		if (this.map.size === 0) return None
-		const e = this.list.getLast()
+		const e = this.list.getLast()!
 		return Some(e.value)
 	}
 	removeFirst(): Option<Entry<K, V>> {
 		if (this.map.size === 0) return None
-		const e = this.list.removeFirst()
+		const e = this.list.removeFirst()!
 		this.map.delete(e.key)
 		return Some(e)
 	}
 	removeLast(): Option<Entry<K, V>> {
 		if (this.map.size === 0) return None
-		const e = this.list.removeLast()
+		const e = this.list.removeLast()!
 		this.map.delete(e.key)
 		return Some(e)
 	}
