@@ -28,6 +28,7 @@ node_modules/tsconfig.tsbuildinfo: node_modules $(shell ls {src,test}/**/*.ts)
 upgrade:
 	pnpm update --latest # --interactive
 
+# https://developers.cloudflare.com/workers/platform/compatibility-dates/#change-history
 update_compatibility_date:
 	@for t in $(targets); do \
 		gsed -i \

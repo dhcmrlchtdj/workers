@@ -2,6 +2,6 @@ main = "index.js"
 name = "backup"
 route = "worker.h11.io/backup*"
 
-compatibility_date = "2022-05-12"
+compatibility_date = "2022-11-22"
 
 r2_buckets = [{ binding = "R2Backup", bucket_name = "backup" }]
