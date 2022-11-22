@@ -1,6 +1,6 @@
-import { LinkedList, Entry } from "./linked-list.js"
+import { Entry } from "./linked-list.js"
 import { LinkedMap } from "./linked-map.js"
-import { Option, Some, None } from "./option.js"
+import { Option, None } from "./option.js"
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export interface CachePolicy<K, V> {
@@ -15,89 +15,59 @@ export interface CachePolicy<K, V> {
 
 export class LRU<K, V> implements CachePolicy<K, V> {
 	private capacity: number
-	private map: Map<K, Entry<K, V>>
-	private list: LinkedList<K, V>
+	private map: LinkedMap<K, V>
 	constructor(capacity: number) {
 		this.capacity = capacity
-		this.map = new Map()
-		this.list = new LinkedList()
+		this.map = new LinkedMap()
 	}
 	size(): number {
-		return this.map.size
+		return this.map.size()
 	}
 	keys(): K[] {
-		return [...this.map.keys()]
+		return this.map.keys()
 	}
 	has(key: K): boolean {
 		return this.map.has(key)
 	}
 	peek(key: K): Option<V> {
-		const e = this.map.get(key)
-		if (e === undefined) {
-			return None
-		} else {
-			return Some(e.value)
-		}
+		return this.map.get(key)
 	}
 	get(key: K): Option<V> {
 		const e = this.map.get(key)
-		if (e === undefined) {
-			return None
-		} else {
-			this.list.moveToFirst(e)
-			return Some(e.value)
+		if (e.isSome) {
+			this.map.moveToFirst(key)
 		}
+		return e
 	}
 	set(key: K, value: V): Option<V> {
-		const e = this.map.get(key)
-		if (e === undefined) {
-			const e = new Entry(key, value)
-			if (this.map.size >= this.capacity) {
-				const old = this.list.removeLast()!
-				this.map.delete(old.key)
-			}
-			this.list.addFirst(e)
-			this.map.set(key, e)
-			return None
-		} else {
-			const replaced = e.value
-			e.value = value
-			this.list.moveToFirst(e)
-			return Some(replaced)
+		const replaced = this.map.addFirst(key, value)
+		if (this.map.size() > this.capacity) {
+			this.map.removeLast()
 		}
+		return replaced
 	}
 	remove(key: K): Option<V> {
-		const e = this.map.get(key)
-		if (e === undefined) {
-			return None
-		} else {
-			this.list.remove(e)
-			this.map.delete(key)
-			return Some(e.value)
-		}
+		return this.map.remove(key)
 	}
 	_removeLast(): Option<Entry<K, V>> {
-		if (this.map.size === 0) return None
-		const e = this.list.removeLast()!
-		this.map.delete(e.key)
-		return Some(e)
+		return this.map.removeLast()
 	}
 }
 
 export class ARC<K, V> implements CachePolicy<K, V> {
 	private capacity: number
 	private p: number
-	private recent: LRU<K, V> // T1
-	private recentEvicted: LRU<K, null> // B1
+	private recent: LinkedMap<K, V> // T1
+	private recentEvicted: LinkedMap<K, null> // B1
 	private frequent: LRU<K, V> // T2
-	private frequentEvicted: LRU<K, null> // B2
+	private frequentEvicted: LinkedMap<K, null> // B2
 	constructor(capacity: number) {
 		this.capacity = capacity
 		this.p = 0
-		this.recent = new LRU(capacity)
-		this.recentEvicted = new LRU(capacity)
+		this.recent = new LinkedMap()
+		this.recentEvicted = new LinkedMap()
 		this.frequent = new LRU(capacity)
-		this.frequentEvicted = new LRU(capacity)
+		this.frequentEvicted = new LinkedMap()
 	}
 	size(): number {
 		return this.recent.size() + this.frequent.size()
@@ -108,7 +78,7 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 	peek(key: K): Option<V> {
 		const e = this.frequent.peek(key)
 		if (e.isSome) return e
-		return this.recent.peek(key)
+		return this.recent.get(key)
 	}
 	get(key: K): Option<V> {
 		const e = this.recent.remove(key)
@@ -160,19 +130,19 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 			if (recentSize === this.capacity) {
 				// case 4.1
 				if (this.recent.size() < this.capacity) {
-					this.recentEvicted._removeLast()
+					this.recentEvicted.removeLast()
 					this._replace(false)
 				} else {
-					this.recent._removeLast()
+					this.recent.removeLast()
 				}
 			} else if (recentSize + frequentSize >= this.capacity) {
 				// case 4.2
 				if (recentSize + frequentSize === this.capacity * 2) {
-					this.frequentEvicted._removeLast()
+					this.frequentEvicted.removeLast()
 				}
 				this._replace(false)
 			}
-			this.recent.set(key, value)
+			this.recent.addFirst(key, value)
 			return None
 		}
 	}
@@ -190,17 +160,21 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 			const needToDrop = sizeRecent > this.p
 			const haveToDrop = sizeRecent === this.p && hitFrequentEvicted
 			if (needToDrop || haveToDrop) {
-				this.recent
-					._removeLast()
-					.map((e) => this.recentEvicted.set(e.key, null))
+				const e = this.recent.removeLast().unwrap()
+				this.recentEvicted.addFirst(e.key, null)
+				if (this.recentEvicted.size() > this.capacity) {
+					this.recentEvicted.removeLast()
+				}
 				return
 			}
 		}
 
 		// replace frequent
-		this.frequent
-			._removeLast()
-			.map((e) => this.frequentEvicted.set(e.key, null))
+		const e = this.frequent._removeLast().unwrap()
+		this.frequentEvicted.addFirst(e.key, null)
+		if (this.frequentEvicted.size() > this.capacity) {
+			this.frequentEvicted.removeLast()
+		}
 	}
 	remove(key: K): Option<V> {
 		const removeF = this.frequent.remove(key)
@@ -252,19 +226,17 @@ export class TwoQueue<K, V> implements CachePolicy<K, V> {
 			return this.recent.update(key, value)
 		} else if (this.ghost.has(key)) {
 			this.ghost.remove(key)
-			return this.frequent.set(key, value)
+			return None
 		} else {
-			let replaced: Option<V> = None
-			if (this.recent.size() === this.recentCapacity) {
+			this.recent.addFirst(key, value)
+			if (this.recent.size() > this.recentCapacity) {
 				const e = this.recent.removeLast().unwrap()
-				replaced = Some(e.value)
-				if (this.ghost.size() === this.ghostCapacity) {
+				this.ghost.addFirst(e.key, null)
+				if (this.ghost.size() > this.ghostCapacity) {
 					this.ghost.removeLast()
 				}
-				this.ghost.addFirst(e.key, null)
 			}
-			this.recent.addFirst(key, value)
-			return replaced
+			return None
 		}
 	}
 	remove(key: K): Option<V> {

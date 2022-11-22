@@ -17,16 +17,7 @@ export class LinkedMap<K, V> {
 	has(key: K): boolean {
 		return this.map.has(key)
 	}
-	remove(key: K): Option<V> {
-		const e = this.map.get(key)
-		if (e === undefined) {
-			return None
-		} else {
-			this.map.delete(key)
-			this.list.remove(e)
-			return Some(e.value)
-		}
-	}
+
 	get(key: K): Option<V> {
 		const e = this.map.get(key)
 		if (e === undefined) {
@@ -45,6 +36,17 @@ export class LinkedMap<K, V> {
 		const e = this.list.getLast()!
 		return Some(e.value)
 	}
+
+	remove(key: K): Option<V> {
+		const e = this.map.get(key)
+		if (e === undefined) {
+			return None
+		} else {
+			this.map.delete(key)
+			this.list.remove(e)
+			return Some(e.value)
+		}
+	}
 	removeFirst(): Option<Entry<K, V>> {
 		if (this.map.size === 0) return None
 		const e = this.list.removeFirst()!
@@ -56,6 +58,17 @@ export class LinkedMap<K, V> {
 		const e = this.list.removeLast()!
 		this.map.delete(e.key)
 		return Some(e)
+	}
+
+	update(key: K, value: V): Option<V> {
+		const e = this.map.get(key)
+		if (e === undefined) {
+			return None
+		} else {
+			const replaced = e.value
+			e.value = value
+			return Some(replaced)
+		}
 	}
 	addFirst(key: K, value: V): Option<V> {
 		const e = this.map.get(key)
@@ -85,14 +98,15 @@ export class LinkedMap<K, V> {
 			return Some(replaced)
 		}
 	}
-	update(key: K, value: V): Option<V> {
-		const e = this.map.get(key)
-		if (e === undefined) {
-			return None
-		} else {
-			const replaced = e.value
-			e.value = value
-			return Some(replaced)
+
+	moveToFirst(key: K) {
+		if (this.map.has(key)) {
+			this.list.moveToFirst(this.map.get(key)!)
+		}
+	}
+	moveToLast(key: K) {
+		if (this.map.has(key)) {
+			this.list.moveToLast(this.map.get(key)!)
 		}
 	}
 }
