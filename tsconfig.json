@@ -8,7 +8,7 @@
 		"module": "NodeNext",
 		"target": "ESNext",
 		"lib": ["ESNext"],
-		"types": ["@cloudflare/workers-types", "@types/jest"],
+		"types": ["@cloudflare/workers-types/experimental", "@types/jest"],
 
 		"sourceMap": false,
 		"inlineSourceMap": false,

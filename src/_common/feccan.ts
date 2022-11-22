@@ -1,13 +1,10 @@
-type RequestInfo = Request | string
+type ReqInit = RequestInit<RequestInitCfProperties>
 
-async function feccan(
-	input: RequestInfo,
-	init?: RequestInit,
-): Promise<Response> {
+async function feccan(input: RequestInfo, init?: ReqInit): Promise<Response> {
 	const resp = await fetch(input, init)
 	if (resp.status < 200 || resp.status >= 300) {
 		const text = await resp.text()
-		const url = typeof input === "string" ? input : input.url
+		const url = input instanceof Request ? input.url : input.toString()
 		throw new Error(resp.statusText + "\n" + text + "\n" + url)
 	}
 	return resp
@@ -17,7 +14,7 @@ export async function GET(
 	input: RequestInfo,
 	headers?: HeadersInit,
 ): Promise<Response> {
-	const opt: RequestInit = {}
+	const opt: ReqInit = {}
 	if (headers) opt.headers = headers
 	return feccan(input, opt)
 }
@@ -27,7 +24,7 @@ export async function PUT(
 	body: BodyInit | null,
 	headers?: HeadersInit,
 ): Promise<Response> {
-	const opt: RequestInit = { method: "PUT", body }
+	const opt: ReqInit = { method: "PUT", body }
 	if (headers) opt.headers = headers
 	return feccan(input, opt)
 }
@@ -37,7 +34,7 @@ export async function POST(
 	body: BodyInit | null,
 	headers?: HeadersInit,
 ): Promise<Response> {
-	const opt: RequestInit = { method: "POST", body }
+	const opt: ReqInit = { method: "POST", body }
 	if (headers) opt.headers = headers
 	return feccan(input, opt)
 }

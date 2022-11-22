@@ -37,6 +37,7 @@ const worker = createSimpleWorker(
 					chat_id: Number(env.ROLLBAR_TG_CHAT_ID),
 					text,
 				})
+				.then(() => undefined)
 				.catch((err) => {
 					console.log(`sendMessage failed | "${err}"`)
 				}),

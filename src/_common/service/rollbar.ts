@@ -61,12 +61,12 @@ export class Rollbar {
 		}
 	}
 
-	error(err: unknown, req?: Request): Promise<Response> {
-		return this.log("error", err, req)
+	async error(err: unknown, req?: Request): Promise<void> {
+		await this.log("error", err, req)
 	}
 
-	warn(err: unknown, req?: Request): Promise<Response> {
-		return this.log("warning", err, req)
+	async warn(err: unknown, req?: Request): Promise<void> {
+		await this.log("warning", err, req)
 	}
 }
 
