@@ -1,3 +1,5 @@
+import { Option, Some, None } from "./option.js"
+
 // const SKIPLIST_MAXLEVEL = 32
 // const SKIPLIST_P = 0.25
 // function randomLevel(): number {
@@ -22,124 +24,118 @@ function randomLevel(): number {
 	return level
 }
 
-// eslint-disable-next-line
-export interface SkipItem {
-	lt(x: SkipItem): boolean
-	eq(x: SkipItem): boolean
-}
-
-class SkipNode<I extends SkipItem> {
-	item: I | undefined
-	forward: (SkipNode<I> | undefined)[]
-	constructor(level: number, item: I | undefined) {
-		this.item = item
-		this.forward = new Array<SkipNode<I> | undefined>(level)
-	}
-	lt(item: I | undefined): boolean {
-		if (item === undefined || this.item === undefined) return false
-		return this.item.lt(item)
-	}
-	eq(item: I | undefined): boolean {
-		if (item === undefined || this.item === undefined) return false
-		return this.item.eq(item)
+class SkipNode<K, V> {
+	key: K
+	value: V
+	prev: SkipNode<K, V> | undefined
+	next: (SkipNode<K, V> | undefined)[]
+	constructor(level: number, key: K, value: V) {
+		this.key = key
+		this.value = value
+		this.prev = undefined
+		this.next = new Array<SkipNode<K, V> | undefined>(level)
 	}
 }
 
-export class SkipList<I extends SkipItem> {
-	level: number
-	header: SkipNode<I>
+export class SkipList<K extends string | number, V> {
+	private level: number
+	private head: SkipNode<K, V>
 
 	constructor() {
 		this.level = 1
-		this.header = new SkipNode<I>(SKIPLIST_MAXLEVEL, undefined)
+		this.head = new SkipNode<K, V>(
+			SKIPLIST_MAXLEVEL,
+			undefined!,
+			undefined!,
+		)
 	}
 
-	search(item: I): I | undefined {
-		let curr: SkipNode<I> = this.header
+	search(key: K): Option<V> {
+		let curr: SkipNode<K, V> = this.head
 		for (let i = this.level - 1; i >= 0; i--) {
-			while (curr.forward[i]?.lt(item)) {
-				curr = curr.forward[i]!
+			while (curr.next[i] && curr.next[i]!.key < key) {
+				curr = curr.next[i]!
 			}
 		}
 
-		// when the loop ended, curr.item < item <= curr.forward[0].item
-		// so we move to curr.forward[0]
-		const node = curr.forward[0]
-		if (node?.eq(item)) {
-			return node.item
+		// when the loop ended, curr.item < item <= curr.next[0].item
+		// so we move to curr.next[0]
+		const node = curr.next[0]
+		if (node && node.key === key) {
+			return Some(node.value)
 		} else {
-			return undefined
+			return None
 		}
 	}
 
-	/// true: new item inserted
-	/// false: old item replaced
-	insert(item: I): boolean {
-		const update = new Array<SkipNode<I>>(this.level)
+	insert(key: K, value: V): Option<V> {
+		const update = new Array<SkipNode<K, V>>(this.level)
 
-		let curr: SkipNode<I> = this.header
+		let curr: SkipNode<K, V> = this.head
 		for (let i = this.level - 1; i >= 0; i--) {
-			while (curr.forward[i]?.lt(item)) {
-				curr = curr.forward[i]!
+			while (curr.next[i] && curr.next[i]!.key < key) {
+				curr = curr.next[i]!
 			}
 			update[i] = curr
 		}
 
-		const node = curr.forward[0]
-		if (node?.eq(item)) {
-			node.item = item
-			return false
+		const node = curr.next[0]
+		if (node && node.key === key) {
+			const replaced = node.value
+			node.value = value
+			return Some(replaced)
 		} else {
 			const newLevel = randomLevel()
 
 			if (newLevel > this.level) {
 				for (let i = this.level; i < newLevel; i++) {
-					update[i] = this.header
+					update[i] = this.head
 				}
 				this.level = newLevel
 			}
 
-			const newNode = new SkipNode(newLevel, item)
+			const newNode = new SkipNode(newLevel, key, value)
 			for (let i = 0; i < newLevel; i++) {
-				newNode.forward[i] = update[i]!.forward[i]
-				update[i]!.forward[i] = newNode
+				newNode.next[i] = update[i]!.next[i]
+				update[i]!.next[i] = newNode
 			}
+			newNode.prev = update[0]
+			if (newNode.next[0]) newNode.next[0].prev = newNode
 
-			return true
+			return None
 		}
 	}
 
-	/// true: deleted old item
-	/// false: not found
-	delete(item: I): boolean {
-		const update = new Array<SkipNode<I>>(this.level)
+	delete(key: K): Option<V> {
+		const update = new Array<SkipNode<K, V>>(this.level)
 
-		let curr: SkipNode<I> = this.header
+		let curr: SkipNode<K, V> = this.head
 		for (let i = this.level - 1; i >= 0; i--) {
-			while (curr.forward[i]?.lt(item)) {
-				curr = curr.forward[i]!
+			while (curr.next[i] && curr.next[i]!.key < key) {
+				curr = curr.next[i]!
 			}
 			update[i] = curr
 		}
 
-		const node = curr.forward[0]
-		if (node?.eq(item)) {
+		const node = curr.next[0]
+		if (node && node.key === key) {
 			for (let i = 0; i < update.length; i++) {
-				if (update[i]!.forward[i] === node) {
-					update[i]!.forward[i] = node.forward[i]!
+				if (update[i]!.next[i] === node) {
+					update[i]!.next[i] = node.next[i]
 				} else {
 					break
 				}
 			}
+			if (node.next[0]) node.next[0].prev = node.prev
 			while (
 				this.level > 1 &&
-				this.header.forward[this.level] === undefined
+				this.head.next[this.level - 1] === undefined
 			) {
 				this.level--
 			}
-			return true
+			return Some(node.value)
 		} else {
-			return false
+			return None
 		}
 	}
 }
