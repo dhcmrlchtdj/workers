@@ -10,7 +10,7 @@ export interface CachePolicy<K, V> {
 	get(key: K): Option<V>
 	set(key: K, value: V): Option<V> // replaced value
 	remove(key: K): Option<V> // removed value
-	keys(): K[]
+	keys(): IterableIterator<K>
 }
 
 export class LRU<K, V> implements CachePolicy<K, V> {
@@ -23,7 +23,7 @@ export class LRU<K, V> implements CachePolicy<K, V> {
 	size(): number {
 		return this.map.size()
 	}
-	keys(): K[] {
+	keys(): IterableIterator<K> {
 		return this.map.keys()
 	}
 	has(key: K): boolean {
@@ -183,8 +183,9 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 		this.recentEvicted.remove(key)
 		return removeF.isSome ? removeF : removeR
 	}
-	keys(): K[] {
-		return [...this.frequent.keys(), ...this.recent.keys()]
+	*keys(): IterableIterator<K> {
+		yield* this.frequent.keys()
+		yield* this.recent.keys()
 	}
 }
 
@@ -245,7 +246,8 @@ export class TwoQueue<K, V> implements CachePolicy<K, V> {
 		this.ghost.remove(key)
 		return removeF.isSome ? removeF : removeR
 	}
-	keys(): K[] {
-		return [...this.frequent.keys(), ...this.recent.keys()]
+	*keys(): IterableIterator<K> {
+		yield* this.frequent.keys()
+		yield* this.recent.keys()
 	}
 }

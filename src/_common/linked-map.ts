@@ -11,8 +11,8 @@ export class LinkedMap<K, V> {
 	size(): number {
 		return this.map.size
 	}
-	keys(): K[] {
-		return [...this.map.keys()]
+	keys(): IterableIterator<K> {
+		return this.map.keys()
 	}
 	has(key: K): boolean {
 		return this.map.has(key)
