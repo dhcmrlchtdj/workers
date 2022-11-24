@@ -7,10 +7,8 @@ export interface Filter {
 
 export class BitMap {
 	private bits: Uint8Array
-	size: number
 	constructor(size: number) {
 		this.bits = new Uint8Array(Math.ceil(size / 8))
-		this.size = this.bits.length * 8
 	}
 	set(pos: number) {
 		this.bits[pos >>> 3] |= 1 << (pos & 7)
@@ -26,17 +24,19 @@ export class BitMap {
 	}
 }
 
-// m: the length of BitMap
-// k: the number of hashing functions
 // n: the number of elements
+// m: the number of bits
+// k: the number of hashing functions
 // p: false positive rate
 export class BloomFilter implements Filter {
 	private b: BitMap
+	private m: number
 	private k: number
 	private h1: (key: string) => number
 	private h2: (key: string) => number
 	constructor(m: number, k: number, h1 = FNV1a, h2 = FNV1) {
 		this.b = new BitMap(m)
+		this.m = m
 		this.k = k
 		this.h1 = h1
 		this.h2 = h2
@@ -46,13 +46,16 @@ export class BloomFilter implements Filter {
 		return new this(m, k)
 	}
 	static estimate(n: number, p: number): { m: number; k: number } {
-		const k = -Math.log(p) * Math.LOG2E
-		const m = n * k * Math.LOG2E
+		// https://en.wikipedia.org/wiki/Bloom_filter#Optimal_number_of_hash_functions
+		const ln2 = Math.log(2)
+		const _m = Math.ceil((-1 * n * Math.log(p)) / ln2 ** 2)
+		const m = Math.ceil(_m / 8) * 8
+		const k = Math.ceil((m / n) * ln2)
 		return { m, k }
 	}
 
 	private g(a: number, b: number, i: number): number {
-		return (a + b * i) % this.b.size
+		return (a + b * i) % this.m
 	}
 	add(key: string): void {
 		const a = this.h1(key)
