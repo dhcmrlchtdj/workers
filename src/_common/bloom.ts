@@ -5,54 +5,74 @@ export interface Filter {
 	reset(): void
 }
 
-function assert(c: boolean) {
-	if (!c) throw new Error("assert")
+export class BitMap {
+	private bits: Uint8Array
+	size: number
+	constructor(size: number) {
+		this.bits = new Uint8Array(Math.ceil(size / 8))
+		this.size = this.bits.length * 8
+	}
+	set(pos: number) {
+		this.bits[pos >>> 3] |= 1 << (pos & 7)
+	}
+	clear(pos: number) {
+		this.bits[pos >>> 3] &= ~(1 << (pos & 7))
+	}
+	test(pos: number): boolean {
+		return (this.bits[pos >>> 3]! & (1 << (pos & 7))) !== 0
+	}
+	clearAll() {
+		this.bits.fill(0)
+	}
 }
 
-export class DoubleHashBloomFilter implements Filter {
-	private b: (boolean | undefined)[]
+// m: the length of BitMap
+// k: the number of hashing functions
+// n: the number of elements
+// p: false positive rate
+export class BloomFilter implements Filter {
+	private b: BitMap
 	private k: number
 	private h1: (key: string) => number
 	private h2: (key: string) => number
-	constructor(
-		size: number,
-		falsePositiveRate: number,
-		h1: (key: string) => number = FNV1a,
-		h2: (key: string) => number = FNV1,
-	) {
-		assert(size > 0)
-		assert(falsePositiveRate > 0 && falsePositiveRate < 1)
-
-		this.k = -Math.log(falsePositiveRate) * Math.LOG2E
-		const bits = size * this.k * Math.LOG2E
-		this.b = new Array<boolean>(Math.ceil(bits))
+	constructor(m: number, k: number, h1 = FNV1a, h2 = FNV1) {
+		this.b = new BitMap(m)
+		this.k = k
 		this.h1 = h1
 		this.h2 = h2
 	}
+	static withEstimate(n: number, p: number) {
+		const { m, k } = this.estimate(n, p)
+		return new this(m, k)
+	}
+	static estimate(n: number, p: number): { m: number; k: number } {
+		const k = -Math.log(p) * Math.LOG2E
+		const m = n * k * Math.LOG2E
+		return { m, k }
+	}
+
 	private g(a: number, b: number, i: number): number {
-		return (a + b * i) % this.b.length
+		return (a + b * i) % this.b.size
 	}
 	add(key: string): void {
 		const a = this.h1(key)
 		const b = this.h2(key)
 		for (let i = 0; i < this.k; i++) {
-			const idx = this.g(a, b, i)
-			this.b[idx] = true
+			this.b.set(this.g(a, b, i))
 		}
 	}
 	test(key: string): boolean {
 		const a = this.h1(key)
 		const b = this.h2(key)
 		for (let i = 0; i < this.k; i++) {
-			const idx = this.g(a, b, i)
-			if (this.b[idx] !== true) {
+			if (!this.b.test(this.g(a, b, i))) {
 				return false
 			}
 		}
 		return true
 	}
 	reset(): void {
-		this.b.fill(false)
+		this.b.clearAll()
 	}
 }
 
