@@ -1,3 +1,5 @@
+import { fromStr } from "./uint8array.js"
+
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export interface Filter {
 	add(key: string): void
@@ -24,6 +26,8 @@ export class BitMap {
 	}
 }
 
+// https://en.wikipedia.org/wiki/Double_hashing
+// https://en.wikipedia.org/wiki/Bloom_filter#Optimal_number_of_hash_functions
 // n: the number of elements
 // m: the number of bits
 // k: the number of hashing functions
@@ -32,43 +36,44 @@ export class BloomFilter implements Filter {
 	private b: BitMap
 	private m: number
 	private k: number
-	private h1: (key: string) => number
-	private h2: (key: string) => number
-	constructor(m: number, k: number, h1 = FNV1a, h2 = FNV1) {
+	private h: (key: string) => { h1: number; h2: number }
+	constructor(
+		m: number,
+		k: number,
+		h: (key: string) => { h1: number; h2: number },
+	) {
 		this.b = new BitMap(m)
 		this.m = m
 		this.k = k
-		this.h1 = h1
-		this.h2 = h2
+		this.h = h
 	}
-	static withEstimate(n: number, p: number) {
+	static withEstimate(
+		n: number,
+		p: number,
+		h: (key: string) => { h1: number; h2: number },
+	) {
 		const { m, k } = this.estimate(n, p)
-		return new this(m, k)
+		return new this(m, k, h)
 	}
 	static estimate(n: number, p: number): { m: number; k: number } {
-		// https://en.wikipedia.org/wiki/Bloom_filter#Optimal_number_of_hash_functions
-		const ln2 = Math.log(2)
-		const _m = Math.ceil((-1 * n * Math.log(p)) / ln2 ** 2)
+		const _m = Math.ceil(-1 * n * Math.log(p) * Math.LOG2E ** 2)
 		const m = Math.ceil(_m / 8) * 8
-		const k = Math.ceil((m / n) * ln2)
+		const k = Math.ceil(m / n / Math.LOG2E)
 		return { m, k }
 	}
 
-	private g(a: number, b: number, i: number): number {
-		return (a + b * i) % this.m
-	}
 	add(key: string): void {
-		const a = this.h1(key)
-		const b = this.h2(key)
+		const { h1, h2 } = this.h(key)
 		for (let i = 0; i < this.k; i++) {
-			this.b.set(this.g(a, b, i))
+			const pos = (h1 + i * h2 + i ** 2) % this.m
+			this.b.set(pos)
 		}
 	}
 	test(key: string): boolean {
-		const a = this.h1(key)
-		const b = this.h2(key)
+		const { h1, h2 } = this.h(key)
 		for (let i = 0; i < this.k; i++) {
-			if (!this.b.test(this.g(a, b, i))) {
+			const pos = (h1 + i * h2 + i ** 2) % this.m
+			if (!this.b.test(pos)) {
 				return false
 			}
 		}
@@ -79,22 +84,92 @@ export class BloomFilter implements Filter {
 	}
 }
 
-// there is a faster FNV implementation at https://github.com/tjwebb/fnv-plus/tree/master/benchmark
-function FNV1a(str: string): number {
-	let hash = 0x811c9dc5
-	for (let i = 0; i < str.length; i++) {
-		hash ^= str.charCodeAt(i)
-		hash +=
-			(hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24)
-	}
-	return hash >>> 0
+export function bloomHash(key: string): { h1: number; h2: number } {
+	const h1 = xxh32(fromStr(key))
+	const h2 = (h1 >> 17) | (h1 << 15)
+	// const h3 = xxh32(key, seedX);
+	// const h4 = xxh32(key, seedY);
+	return { h1, h2 }
 }
-function FNV1(str: string): number {
-	let hash = 0x811c9dc5
-	for (let i = 0; i < str.length; i++) {
-		hash +=
-			(hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24)
-		hash ^= str.charCodeAt(i)
+
+// https://github.com/Jason3S/xxhash
+// MIT
+export function xxh32(b: Uint8Array, seed = 0): number {
+	const PRIME32_1 = 2654435761
+	const PRIME32_2 = 2246822519
+	const PRIME32_3 = 3266489917
+	const PRIME32_4 = 668265263
+	const PRIME32_5 = 374761393
+
+	let acc = (seed + PRIME32_5) & 0xffffffff
+	let offset = 0
+	if (b.length >= 16) {
+		const accN = [
+			(seed + PRIME32_1 + PRIME32_2) & 0xffffffff,
+			(seed + PRIME32_2) & 0xffffffff,
+			(seed + 0) & 0xffffffff,
+			(seed - PRIME32_1) & 0xffffffff,
+		] as [number, number, number, number]
+
+		const limit = b.length - 16
+		let lane = 0
+		for (offset = 0; (offset & 0xfffffff0) <= limit; offset += 4) {
+			const i = offset
+			const laneN0 = b[i + 0]! + (b[i + 1]! << 8)
+			const laneN1 = b[i + 2]! + (b[i + 3]! << 8)
+			const laneNP = laneN0 * PRIME32_2 + ((laneN1 * PRIME32_2) << 16)
+			let acc = (accN[lane]! + laneNP) & 0xffffffff
+			acc = (acc << 13) | (acc >>> 19)
+			const acc0 = acc & 0xffff
+			const acc1 = acc >>> 16
+			accN[lane] =
+				(acc0 * PRIME32_1 + ((acc1 * PRIME32_1) << 16)) & 0xffffffff
+			lane = (lane + 1) & 0x3
+		}
+
+		acc =
+			(((accN[0] << 1) | (accN[0] >>> 31)) +
+				((accN[1] << 7) | (accN[1] >>> 25)) +
+				((accN[2] << 12) | (accN[2] >>> 20)) +
+				((accN[3] << 18) | (accN[3] >>> 14))) &
+			0xffffffff
 	}
-	return hash >>> 0
+
+	acc = (acc + b.length) & 0xffffffff
+
+	const limit = b.length - 4
+	while (offset <= limit) {
+		const i = offset
+		const laneN0 = b[i + 0]! + (b[i + 1]! << 8)
+		const laneN1 = b[i + 2]! + (b[i + 3]! << 8)
+		const laneP = laneN0 * PRIME32_3 + ((laneN1 * PRIME32_3) << 16)
+		acc = (acc + laneP) & 0xffffffff
+		acc = (acc << 17) | (acc >>> 15)
+		acc =
+			((acc & 0xffff) * PRIME32_4 + (((acc >>> 16) * PRIME32_4) << 16)) &
+			0xffffffff
+		offset += 4
+	}
+
+	while (offset < b.length) {
+		const lane = b[offset]!
+		acc = acc + lane * PRIME32_5
+		acc = (acc << 11) | (acc >>> 21)
+		acc =
+			((acc & 0xffff) * PRIME32_1 + (((acc >>> 16) * PRIME32_1) << 16)) &
+			0xffffffff
+		offset++
+	}
+
+	acc = acc ^ (acc >>> 15)
+	acc =
+		(((acc & 0xffff) * PRIME32_2) & 0xffffffff) +
+		(((acc >>> 16) * PRIME32_2) << 16)
+	acc = acc ^ (acc >>> 13)
+	acc =
+		(((acc & 0xffff) * PRIME32_3) & 0xffffffff) +
+		(((acc >>> 16) * PRIME32_3) << 16)
+	acc = acc ^ (acc >>> 16)
+
+	return acc < 0 ? acc + 4294967296 : acc
 }
