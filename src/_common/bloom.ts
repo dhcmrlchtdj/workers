@@ -173,3 +173,37 @@ export function xxh32(b: Uint8Array, seed = 0): number {
 
 	return acc < 0 ? acc + 4294967296 : acc
 }
+
+export function murmurLike(b: Uint8Array, seed = 0xbc9f1d34): number {
+	const m = 0xc6a4a793
+	let h = seed ^ (b.length * m)
+
+	let i = 0
+	while (i + 4 <= b.length) {
+		const w =
+			b[i]! | (b[i + 1]! << 8) | (b[i + 2]! << 16) | (b[i + 3]! << 24)
+		h += w
+		h *= m
+		h ^= h >> 16
+		i += 4
+	}
+	switch (b.length - i) {
+		// @ts-expect-error
+		case 3: {
+			h += b[i++]! << 16
+		}
+		// @ts-expect-error
+		// eslint-disable-next-line no-fallthrough
+		case 2: {
+			h += b[i++]! << 8
+		}
+		// eslint-disable-next-line no-fallthrough
+		case 1: {
+			h += b[i]!
+			h *= m
+			h ^= h >> 24
+		}
+	}
+
+	return h
+}
