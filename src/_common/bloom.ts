@@ -95,11 +95,11 @@ export function bloomHash(key: string): { h1: number; h2: number } {
 // https://github.com/Jason3S/xxhash
 // MIT
 export function xxh32(b: Uint8Array, seed = 0): number {
-	const PRIME32_1 = 2654435761
-	const PRIME32_2 = 2246822519
-	const PRIME32_3 = 3266489917
-	const PRIME32_4 = 668265263
-	const PRIME32_5 = 374761393
+	const PRIME32_1 = 0x9e3779b1
+	const PRIME32_2 = 0x85ebca77
+	const PRIME32_3 = 0xc2b2ae3d
+	const PRIME32_4 = 0x27d4eb2f
+	const PRIME32_5 = 0x165667b1
 
 	let acc = (seed + PRIME32_5) & 0xffffffff
 	let offset = 0
@@ -113,18 +113,16 @@ export function xxh32(b: Uint8Array, seed = 0): number {
 
 		const limit = b.length - 16
 		let lane = 0
-		for (offset = 0; (offset & 0xfffffff0) <= limit; offset += 4) {
+		while ((offset & 0xfffffff0) <= limit) {
 			const i = offset
-			const laneN0 = b[i + 0]! + (b[i + 1]! << 8)
-			const laneN1 = b[i + 2]! + (b[i + 3]! << 8)
-			const laneNP = laneN0 * PRIME32_2 + ((laneN1 * PRIME32_2) << 16)
-			let acc = (accN[lane]! + laneNP) & 0xffffffff
+			const w =
+				b[i]! | (b[i + 1]! << 8) | (b[i + 2]! << 16) | (b[i + 3]! << 24)
+			const laneN = Math.imul(w, PRIME32_2) >>> 0
+			let acc = (accN[lane]! + laneN) & 0xffffffff
 			acc = (acc << 13) | (acc >>> 19)
-			const acc0 = acc & 0xffff
-			const acc1 = acc >>> 16
-			accN[lane] =
-				(acc0 * PRIME32_1 + ((acc1 * PRIME32_1) << 16)) & 0xffffffff
+			accN[lane] = Math.imul(acc, PRIME32_1) >>> 0
 			lane = (lane + 1) & 0x3
+			offset += 4
 		}
 
 		acc =
@@ -140,14 +138,12 @@ export function xxh32(b: Uint8Array, seed = 0): number {
 	const limit = b.length - 4
 	while (offset <= limit) {
 		const i = offset
-		const laneN0 = b[i + 0]! + (b[i + 1]! << 8)
-		const laneN1 = b[i + 2]! + (b[i + 3]! << 8)
-		const laneP = laneN0 * PRIME32_3 + ((laneN1 * PRIME32_3) << 16)
+		const w =
+			b[i]! | (b[i + 1]! << 8) | (b[i + 2]! << 16) | (b[i + 3]! << 24)
+		const laneP = Math.imul(w, PRIME32_3) >>> 0
 		acc = (acc + laneP) & 0xffffffff
 		acc = (acc << 17) | (acc >>> 15)
-		acc =
-			((acc & 0xffff) * PRIME32_4 + (((acc >>> 16) * PRIME32_4) << 16)) &
-			0xffffffff
+		acc = Math.imul(acc, PRIME32_4) >>> 0
 		offset += 4
 	}
 
@@ -155,26 +151,20 @@ export function xxh32(b: Uint8Array, seed = 0): number {
 		const lane = b[offset]!
 		acc = acc + lane * PRIME32_5
 		acc = (acc << 11) | (acc >>> 21)
-		acc =
-			((acc & 0xffff) * PRIME32_1 + (((acc >>> 16) * PRIME32_1) << 16)) &
-			0xffffffff
+		acc = Math.imul(acc, PRIME32_1) >>> 0
 		offset++
 	}
 
 	acc = acc ^ (acc >>> 15)
-	acc =
-		(((acc & 0xffff) * PRIME32_2) & 0xffffffff) +
-		(((acc >>> 16) * PRIME32_2) << 16)
+	acc = Math.imul(acc, PRIME32_2) >>> 0
 	acc = acc ^ (acc >>> 13)
-	acc =
-		(((acc & 0xffff) * PRIME32_3) & 0xffffffff) +
-		(((acc >>> 16) * PRIME32_3) << 16)
+	acc = Math.imul(acc, PRIME32_3) >>> 0
 	acc = acc ^ (acc >>> 16)
 
-	return acc < 0 ? acc + 4294967296 : acc
+	return acc >>> 0
 }
 
-export function murmurLike(b: Uint8Array, seed = 0xbc9f1d34): number {
+export function murmur1(b: Uint8Array, seed = 0xbc9f1d34): number {
 	const m = 0xc6a4a793
 	let h = seed ^ (b.length * m)
 
