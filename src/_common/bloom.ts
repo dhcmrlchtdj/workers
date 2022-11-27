@@ -164,36 +164,39 @@ export function xxh32(b: Uint8Array, seed = 0): number {
 	return acc >>> 0
 }
 
-export function murmur1(b: Uint8Array, seed = 0xbc9f1d34): number {
+const pad = (n: number): number => (n > 127 ? n | 0xffffff00 : n)
+export function murmur(b: Uint8Array, seed = 0xbc9f1d34): number {
 	const m = 0xc6a4a793
-	let h = seed ^ (b.length * m)
+	const limit = b.length
+	let h = seed ^ (limit * m)
 
 	let i = 0
-	while (i + 4 <= b.length) {
+	while (i + 4 <= limit) {
 		const w =
 			b[i]! | (b[i + 1]! << 8) | (b[i + 2]! << 16) | (b[i + 3]! << 24)
-		h += w
-		h *= m
-		h ^= h >> 16
+		h = (h + w)
+		h = Math.imul(h, m)
+		h = h ^ (h >>> 16)
 		i += 4
 	}
-	switch (b.length - i) {
+
+	/* eslint-disable no-fallthrough */
+	switch (limit - i) {
 		// @ts-expect-error
 		case 3: {
-			h += b[i++]! << 16
+			h = (h + (pad(b[i + 2]!) << 16))
 		}
 		// @ts-expect-error
-		// eslint-disable-next-line no-fallthrough
 		case 2: {
-			h += b[i++]! << 8
+			h = (h + (pad(b[i + 1]!) << 8))
 		}
-		// eslint-disable-next-line no-fallthrough
 		case 1: {
-			h += b[i]!
-			h *= m
-			h ^= h >> 24
+			h = (h + pad(b[i]!))
+			h = Math.imul(h, m)
+			h = h ^ (h >>> 24)
 		}
 	}
+	/* eslint-enable no-fallthrough */
 
-	return h
+	return h >>> 0
 }
