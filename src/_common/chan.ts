@@ -6,25 +6,21 @@ import { Option, Some, None } from "./option.js"
 let currentId = 0
 const genId = () => currentId++
 const alwaysTrue = () => true
-const noop = () => true
+const noop = () => {}
 
 ///
 
 type Sender<T> = {
 	id: number
-	status: "pending" | "done" // this is set/updated by Selection
 	tryLock(): boolean
-	abort(): void
-	complete(id: number): void
+	unlock(): void
 	defer: Deferred<boolean>
 	data: T
 }
 type Receiver<T> = {
 	id: number
-	status: "pending" | "done" // this is set/updated by Selection
 	tryLock(): boolean
-	abort(): void
-	complete(id: number): void
+	unlock(): void
 	defer: Deferred<Option<T>>
 }
 
@@ -50,26 +46,7 @@ export class Channel<T = unknown> {
 		return this.closed
 	}
 
-	private removeIf<K, V>(
-		m: LinkedMap<K, V>,
-		fn: (key: K, value: V) => boolean,
-	) {
-		for (const key of m.keys()) {
-			const value = m.get(key).unwrap()
-			if (fn(key, value)) {
-				m.remove(key)
-			}
-		}
-	}
-
-	// cleanup done selection
-	private cleanup() {
-		this.removeIf(this.senders, (_, v) => v.status === "done")
-		this.removeIf(this.receivers, (_, v) => v.status === "done")
-	}
-
 	private sync() {
-		this.cleanup()
 		while (this.receivers.size() > 0 && this.senders.size() > 0) {
 			const receiver = this.receivers.getFirst().unwrap()
 			const sender = this.senders.getFirst().unwrap()
@@ -78,11 +55,9 @@ export class Channel<T = unknown> {
 					this.receivers.removeFirst()
 					this.senders.removeFirst()
 					receiver.defer.resolve(Some(sender.data))
-					receiver.complete(receiver.id)
 					sender.defer.resolve(true)
-					sender.complete(sender.id)
 				} else {
-					receiver.abort()
+					receiver.unlock()
 					break
 				}
 			} else {
@@ -91,21 +66,23 @@ export class Channel<T = unknown> {
 		}
 		if (this.closed) {
 			if (this.receivers.size() > 0 && this.senders.size() === 0) {
-				this.removeIf(this.receivers, (_, receiver) => {
+				for (const rid of this.receivers.keys()) {
+					const receiver = this.receivers.get(rid).unwrap()
 					if (receiver.tryLock()) {
 						receiver.defer.resolve(None)
-						receiver.complete(receiver.id)
-						return true
-					} else {
-						return false
+						this.receivers.remove(rid)
 					}
-				})
+				}
 			}
 		}
 	}
 
 	private sendersAdd(sender: Sender<T>) {
 		this.senders.addLast(sender.id, sender)
+		this.sync()
+	}
+	private sendersRemove(sender: Sender<T>) {
+		this.senders.remove(sender.id)
 		this.sync()
 	}
 	async send(data: T): Promise<boolean> {
@@ -115,10 +92,8 @@ export class Channel<T = unknown> {
 		} else {
 			const sender: Sender<T> = {
 				id: genId(),
-				status: "pending",
 				tryLock: alwaysTrue,
-				abort: noop,
-				complete: noop,
+				unlock: noop,
 				data,
 				defer: new Deferred<boolean>(),
 			}
@@ -131,7 +106,6 @@ export class Channel<T = unknown> {
 		return r ?? false
 	}
 	private fastSend(data: T): boolean | null {
-		this.cleanup()
 		if (this.closed) {
 			return false
 		} else {
@@ -142,7 +116,6 @@ export class Channel<T = unknown> {
 				if (receiver.tryLock()) {
 					this.receivers.removeFirst()
 					receiver.defer.resolve(Some(data))
-					receiver.complete(receiver.id)
 					return true
 				} else {
 					return null
@@ -157,6 +130,10 @@ export class Channel<T = unknown> {
 		this.receivers.addLast(receiver.id, receiver)
 		this.sync()
 	}
+	private receiversRemove(receiver: Receiver<T>) {
+		this.receivers.remove(receiver.id)
+		this.sync()
+	}
 	async receive(): Promise<Option<T>> {
 		const r = this.fastReceive()
 		if (r !== null) {
@@ -164,10 +141,8 @@ export class Channel<T = unknown> {
 		} else {
 			const receiver: Receiver<T> = {
 				id: genId(),
-				status: "pending",
 				tryLock: alwaysTrue,
-				abort: noop,
-				complete: noop,
+				unlock: noop,
 				defer: new Deferred<Option<T>>(),
 			}
 			this.receiversAdd(receiver)
@@ -179,7 +154,6 @@ export class Channel<T = unknown> {
 		return r ?? None
 	}
 	private fastReceive(): Option<T> | null {
-		this.cleanup()
 		if (this.receivers.size() > 0) {
 			return null
 		} else if (this.senders.size() > 0) {
@@ -187,7 +161,6 @@ export class Channel<T = unknown> {
 			if (sender.tryLock()) {
 				this.senders.removeFirst()
 				sender.defer.resolve(true)
-				sender.complete(sender.id)
 				return Some(sender.data)
 			} else {
 				return null
@@ -280,104 +253,10 @@ export class Select {
 		if (this.selections.length === 0) return null
 
 		const signal = this.getAbortSignal(init)
-		if (signal.aborted) return null
-
-		// setup lock
-		let locked = false
-		const tryLock = () => {
-			if (locked || signal.aborted) {
-				return false
-			} else {
-				locked = true
-				return true
-			}
-		}
-
-		let selected: number | null = null
+		if (signal.isRejected) return null
 
 		this.state = "running"
-		while (this.state === "running") {
-			locked = false
-
-			// fast send/receive
-			selected = this.fastSelect()
-			if (selected !== null) {
-				this.state = "idle"
-				break
-			}
-
-			// block all channels
-			const done = new Deferred<number>()
-			let idx = 0
-			const len = this.selections.length
-			while (idx < len) {
-				const selection = this.selections.get(idx)
-				idx++
-				if (selection.op === "send") {
-					const sender: Sender<unknown> = {
-						id: selection.id,
-						status: "pending",
-						tryLock: tryLock,
-						abort: done.reject,
-						complete: done.resolve,
-						data: selection.data,
-						defer: new Deferred(),
-					}
-					selection.sender = sender
-					// eslint-disable-next-line @typescript-eslint/no-floating-promises
-					sender.defer.promise.then((r) =>
-						selection.callback(r, selection.id),
-					)
-					// @ts-expect-error
-					selection.chan.sendersAdd(sender)
-				} else {
-					const receiver: Receiver<unknown> = {
-						id: selection.id,
-						status: "pending",
-						tryLock: tryLock,
-						abort: done.reject,
-						complete: done.resolve,
-						defer: new Deferred(),
-					}
-					selection.receiver = receiver
-					// eslint-disable-next-line @typescript-eslint/no-floating-promises
-					receiver.defer.promise.then((r) =>
-						selection.callback(r, selection.id),
-					)
-					// @ts-expect-error
-					selection.chan.receiversAdd(receiver)
-				}
-				if (done.isFulfilled) break
-			}
-			try {
-				selected = await Promise.race([
-					done.promise,
-					signal.defer.promise, // pending or rejected
-				])
-				// one channel is selected
-				this.state = "idle" // stop loop
-			} catch (_) {
-				// aborted by signal, but the select is done
-				// XXX: is it possible?
-				if (done.isResolved) {
-					selected = await done.promise
-					this.state = "idle" // stop loop
-				}
-				// aborted by signal
-				// XXX: typescript doesn't know that signal will be updated
-				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-				else if (signal.aborted) {
-					this.state = "idle" // stop loop
-				}
-				// aborted by select
-				else {
-					// continue next loop
-				}
-			}
-
-			this.cleanup(idx)
-		}
-
+		const selected = this.fastSelect() ?? (await this.slowSelect(signal))
 		return selected
 	}
 	trySelect(): number | null {
@@ -385,21 +264,17 @@ export class Select {
 		if (this.selections.length === 0) return null
 		return this.fastSelect()
 	}
-	private getAbortSignal(init?: { signal?: AbortSignal }): {
-		aborted: boolean
-		defer: Deferred<never>
-	} {
-		const fakeSignal = {
-			aborted: false,
-			defer: new Deferred<never>(),
-		}
+	private getAbortSignal(init?: { signal?: AbortSignal }): Deferred<never> {
+		const fakeSignal = new Deferred<never>()
 		const signal = init?.signal
 		if (signal) {
-			fakeSignal.aborted = signal.aborted
-			signal.addEventListener("abort", () => {
-				fakeSignal.aborted = true
-				fakeSignal.defer.reject()
-			})
+			if (signal.aborted) {
+				fakeSignal.reject()
+			} else {
+				signal.addEventListener("abort", () => {
+					fakeSignal.reject()
+				})
+			}
 		}
 		return fakeSignal
 	}
@@ -433,13 +308,104 @@ export class Select {
 		}
 		return null
 	}
-	private cleanup(length: number): void {
-		for (let i = 0; i < length; i++) {
+	private async slowSelect(signal: Deferred<never>): Promise<number | null> {
+		let selected: number | null = null
+		while (this.state === "running") {
+			const done = this.setup(signal)
+
+			try {
+				selected = await Promise.race([
+					done.promise,
+					signal.promise, // pending or rejected
+				])
+				// one channel is selected
+				this.state = "idle" // stop loop
+			} catch (_) {
+				// aborted by signal, but the select is done
+				// XXX: is it possible?
+				if (done.isResolved) {
+					selected = await done.promise
+					this.state = "idle" // stop loop
+				}
+				// aborted by signal
+				// XXX: typescript doesn't know that signal will be updated
+				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+				else if (signal.isRejected) {
+					this.state = "idle" // stop loop
+				}
+				// aborted by select
+				else {
+					// continue next loop
+				}
+			}
+
+			this.cleanup()
+		}
+
+		return selected
+	}
+	private setup(signal: Deferred<never>): Deferred<number> {
+		const done = new Deferred<number>()
+
+		// setup lock
+		let locked = false
+		const tryLock = () => {
+			if (locked || signal.isRejected || done.isFulfilled) {
+				locked = true
+				return false
+			} else {
+				locked = true
+				return true
+			}
+		}
+
+		for (let i = 0, len = this.selections.length; i < len; i++) {
+			const selection = this.selections.get(i)
+			if (selection.op === "send") {
+				const sender: Sender<unknown> = {
+					id: selection.id,
+					tryLock: tryLock,
+					unlock: done.reject,
+					data: selection.data,
+					defer: new Deferred(),
+				}
+				selection.sender = sender
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				sender.defer.promise.then((r) => {
+					done.resolve(selection.id)
+					selection.callback(r, selection.id)
+				})
+				// @ts-expect-error
+				selection.chan.sendersAdd(sender)
+			} else {
+				const receiver: Receiver<unknown> = {
+					id: selection.id,
+					tryLock: tryLock,
+					unlock: done.reject,
+					defer: new Deferred(),
+				}
+				selection.receiver = receiver
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				receiver.defer.promise.then((r) => {
+					done.resolve(selection.id)
+					selection.callback(r, selection.id)
+				})
+				// @ts-expect-error
+				selection.chan.receiversAdd(receiver)
+			}
+			if (done.isFulfilled) break
+		}
+		return done
+	}
+	private cleanup(): void {
+		for (let i = 0, len = this.selections.length; i < len; i++) {
 			const selection = this.selections.get(i)
 			if (selection.op === "send" && selection.sender) {
-				selection.sender.status = "done"
+				// @ts-expect-error
+				selection.chan.sendersRemove(selection.sender)
 			} else if (selection.op == "receive" && selection.receiver) {
-				selection.receiver.status = "done"
+				// @ts-expect-error
+				selection.chan.receiversRemove(selection.receiver)
 			}
 		}
 	}
