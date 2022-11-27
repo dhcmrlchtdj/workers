@@ -10,17 +10,25 @@ import { Option, Some, None } from "./option.js"
 //     return Math.min(SKIPLIST_MAXLEVEL, level)
 // }
 
+// const SKIPLIST_MAXLEVEL = 16
+// const SKIPLIST_P = 0.5
+// function randomLevel(): number {
+//     let level = 1
+//     let x = Math.floor(Math.random() * 0xffff) // [0x0, 0xffff)
+//     while ((x & 0x1) === 1) {
+//         x >>= 1
+//         level++
+//     }
+//     return level
+// }
+
 const SKIPLIST_MAXLEVEL = 16
 // const SKIPLIST_P = 0.5
 function randomLevel(): number {
 	// https://ticki.github.io/blog/skip-lists-done-right/
 	// https://graphics.stanford.edu/~seander/bithacks.html
-	let level = 1
-	let x = Math.floor(Math.random() * 0xffff) // [0x0, 0xffff)
-	while ((x & 0x1) === 1) {
-		x >>= 1
-		level++
-	}
+	const r = Math.ceil(Math.random() * 0xffff) // (0x0, 0xffff]
+	const level = Math.clz32(r) - 15 // [16, 32) - 15
 	return level
 }
 
