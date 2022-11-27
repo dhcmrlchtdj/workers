@@ -133,33 +133,31 @@ export function xxh32(b: Uint8Array, seed = 0): number {
 			((accN[3] << 18) | (accN[3] >>> 14))
 	}
 
-	acc = acc + bLen
+	acc += bLen
 
 	const limit = bLen - 4
 	while (offset <= limit) {
 		const i = offset
 		const w =
 			b[i]! | (b[i + 1]! << 8) | (b[i + 2]! << 16) | (b[i + 3]! << 24)
-		const laneP = Math.imul(w, PRIME32_3)
-		acc = acc + laneP
+		acc += Math.imul(w, PRIME32_3)
 		acc = (acc << 17) | (acc >>> 15)
 		acc = Math.imul(acc, PRIME32_4)
 		offset += 4
 	}
 
 	while (offset < bLen) {
-		const lane = b[offset]!
-		acc = acc + lane * PRIME32_5
+		acc += Math.imul(b[offset]!, PRIME32_5)
 		acc = (acc << 11) | (acc >>> 21)
 		acc = Math.imul(acc, PRIME32_1)
 		offset++
 	}
 
-	acc = acc ^ (acc >>> 15)
+	acc ^= acc >>> 15
 	acc = Math.imul(acc, PRIME32_2)
-	acc = acc ^ (acc >>> 13)
+	acc ^= acc >>> 13
 	acc = Math.imul(acc, PRIME32_3)
-	acc = acc ^ (acc >>> 16)
+	acc ^= acc >>> 16
 
 	return acc >>> 0
 }
@@ -167,33 +165,36 @@ export function xxh32(b: Uint8Array, seed = 0): number {
 const pad = (n: number): number => (n > 127 ? n | 0xffffff00 : n)
 export function murmur(b: Uint8Array, seed = 0xbc9f1d34): number {
 	const m = 0xc6a4a793
-	const limit = b.length
-	let h = seed ^ (limit * m)
+	const bLen = b.length
+	let h = seed ^ (bLen * m)
 
 	let i = 0
-	while (i + 4 <= limit) {
+	const limit = bLen - 4
+	while (i <= limit) {
 		const w =
 			b[i]! | (b[i + 1]! << 8) | (b[i + 2]! << 16) | (b[i + 3]! << 24)
-		h = h + w
+		h += w
 		h = Math.imul(h, m)
-		h = h ^ (h >>> 16)
+		h ^= h >>> 16
 		i += 4
 	}
 
 	/* eslint-disable no-fallthrough */
-	switch (limit - i) {
+	switch (bLen - i) {
 		// @ts-expect-error
 		case 3: {
-			h = h + (pad(b[i + 2]!) << 16)
+			h += pad(b[i + 2]!) << 16
+			// fallthrough
 		}
 		// @ts-expect-error
 		case 2: {
-			h = h + (pad(b[i + 1]!) << 8)
+			h += pad(b[i + 1]!) << 8
+			// fallthrough
 		}
 		case 1: {
-			h = h + pad(b[i]!)
+			h += pad(b[i]!)
 			h = Math.imul(h, m)
-			h = h ^ (h >>> 24)
+			h ^= h >>> 24
 		}
 	}
 	/* eslint-enable no-fallthrough */
