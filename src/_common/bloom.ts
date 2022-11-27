@@ -101,64 +101,64 @@ export function xxh32(b: Uint8Array, seed = 0): number {
 	const PRIME32_4 = 0x27d4eb2f
 	const PRIME32_5 = 0x165667b1
 
-	let acc = (seed + PRIME32_5) & 0xffffffff
+	const bLen = b.length
+	let acc = seed + PRIME32_5
 	let offset = 0
-	if (b.length >= 16) {
+	if (bLen >= 16) {
 		const accN = [
-			(seed + PRIME32_1 + PRIME32_2) & 0xffffffff,
-			(seed + PRIME32_2) & 0xffffffff,
-			(seed + 0) & 0xffffffff,
-			(seed - PRIME32_1) & 0xffffffff,
+			seed + PRIME32_1 + PRIME32_2,
+			seed + PRIME32_2,
+			seed,
+			seed - PRIME32_1,
 		] as [number, number, number, number]
 
-		const limit = b.length - 16
+		const limit = bLen - 16
 		let lane = 0
 		while ((offset & 0xfffffff0) <= limit) {
 			const i = offset
 			const w =
 				b[i]! | (b[i + 1]! << 8) | (b[i + 2]! << 16) | (b[i + 3]! << 24)
-			const laneN = Math.imul(w, PRIME32_2) >>> 0
-			let acc = (accN[lane]! + laneN) & 0xffffffff
-			acc = (acc << 13) | (acc >>> 19)
-			accN[lane] = Math.imul(acc, PRIME32_1) >>> 0
+			const laneN = Math.imul(w, PRIME32_2)
+			let accL = accN[lane]! + laneN
+			accL = (accL << 13) | (accL >>> 19)
+			accN[lane] = Math.imul(accL, PRIME32_1)
 			lane = (lane + 1) & 0x3
 			offset += 4
 		}
 
 		acc =
-			(((accN[0] << 1) | (accN[0] >>> 31)) +
-				((accN[1] << 7) | (accN[1] >>> 25)) +
-				((accN[2] << 12) | (accN[2] >>> 20)) +
-				((accN[3] << 18) | (accN[3] >>> 14))) &
-			0xffffffff
+			((accN[0] << 1) | (accN[0] >>> 31)) +
+			((accN[1] << 7) | (accN[1] >>> 25)) +
+			((accN[2] << 12) | (accN[2] >>> 20)) +
+			((accN[3] << 18) | (accN[3] >>> 14))
 	}
 
-	acc = (acc + b.length) & 0xffffffff
+	acc = acc + bLen
 
-	const limit = b.length - 4
+	const limit = bLen - 4
 	while (offset <= limit) {
 		const i = offset
 		const w =
 			b[i]! | (b[i + 1]! << 8) | (b[i + 2]! << 16) | (b[i + 3]! << 24)
-		const laneP = Math.imul(w, PRIME32_3) >>> 0
-		acc = (acc + laneP) & 0xffffffff
+		const laneP = Math.imul(w, PRIME32_3)
+		acc = acc + laneP
 		acc = (acc << 17) | (acc >>> 15)
-		acc = Math.imul(acc, PRIME32_4) >>> 0
+		acc = Math.imul(acc, PRIME32_4)
 		offset += 4
 	}
 
-	while (offset < b.length) {
+	while (offset < bLen) {
 		const lane = b[offset]!
 		acc = acc + lane * PRIME32_5
 		acc = (acc << 11) | (acc >>> 21)
-		acc = Math.imul(acc, PRIME32_1) >>> 0
+		acc = Math.imul(acc, PRIME32_1)
 		offset++
 	}
 
 	acc = acc ^ (acc >>> 15)
-	acc = Math.imul(acc, PRIME32_2) >>> 0
+	acc = Math.imul(acc, PRIME32_2)
 	acc = acc ^ (acc >>> 13)
-	acc = Math.imul(acc, PRIME32_3) >>> 0
+	acc = Math.imul(acc, PRIME32_3)
 	acc = acc ^ (acc >>> 16)
 
 	return acc >>> 0
@@ -174,7 +174,7 @@ export function murmur(b: Uint8Array, seed = 0xbc9f1d34): number {
 	while (i + 4 <= limit) {
 		const w =
 			b[i]! | (b[i + 1]! << 8) | (b[i + 2]! << 16) | (b[i + 3]! << 24)
-		h = (h + w)
+		h = h + w
 		h = Math.imul(h, m)
 		h = h ^ (h >>> 16)
 		i += 4
@@ -184,14 +184,14 @@ export function murmur(b: Uint8Array, seed = 0xbc9f1d34): number {
 	switch (limit - i) {
 		// @ts-expect-error
 		case 3: {
-			h = (h + (pad(b[i + 2]!) << 16))
+			h = h + (pad(b[i + 2]!) << 16)
 		}
 		// @ts-expect-error
 		case 2: {
-			h = (h + (pad(b[i + 1]!) << 8))
+			h = h + (pad(b[i + 1]!) << 8)
 		}
 		case 1: {
-			h = (h + pad(b[i]!))
+			h = h + pad(b[i]!)
 			h = Math.imul(h, m)
 			h = h ^ (h >>> 24)
 		}

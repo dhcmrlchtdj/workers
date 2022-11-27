@@ -17,6 +17,8 @@ describe("BloomFilter", () => {
 		cases.forEach(([i, o]) => {
 			expect(xxh32(fromStr(i))).toBe(o)
 		})
+		expect(xxh32(fromStr("a"), 1)).toBe(4111757423)
+		expect(xxh32(fromStr("a"), 2 ** 32 - 1)).toBe(3443684653)
 	})
 
 	test("murmur", () => {
