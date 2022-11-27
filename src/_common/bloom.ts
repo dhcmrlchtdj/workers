@@ -162,6 +162,8 @@ export function xxh32(b: Uint8Array, seed = 0): number {
 	return acc >>> 0
 }
 
+// https://github.com/cockroachdb/pebble
+// BSD-3-Clause
 const pad = (n: number): number => (n > 127 ? n | 0xffffff00 : n)
 export function murmur(b: Uint8Array, seed = 0xbc9f1d34): number {
 	const m = 0xc6a4a793

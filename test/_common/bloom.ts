@@ -3,7 +3,6 @@ import { murmur, xxh32 } from "../../src/_common/bloom.js"
 
 describe("BloomFilter", () => {
 	test("xxh32", () => {
-		// https://github.com/Jason3S/xxhash/blob/main/src/xxHash32.test.ts
 		const cases = [
 			["a", 0x550d7456],
 			["ab", 0x4999fc53],
