@@ -80,11 +80,9 @@ export class Channel<T = unknown> {
 
 	private sendersAdd(sender: Sender<T>) {
 		this.senders.addLast(sender.id, sender)
-		this.sync()
 	}
 	private sendersRemove(sender: Sender<T>) {
 		this.senders.remove(sender.id)
-		this.sync()
 	}
 	async send(data: T): Promise<boolean> {
 		const r = this.fastSend(data)
@@ -98,7 +96,7 @@ export class Channel<T = unknown> {
 				data,
 				defer: new Deferred<boolean>(),
 			}
-			this.sendersAdd(sender)
+			this.senders.addLast(sender.id, sender)
 			return await sender.defer.promise
 		}
 	}
@@ -129,11 +127,9 @@ export class Channel<T = unknown> {
 
 	private receiversAdd(receiver: Receiver<T>) {
 		this.receivers.addLast(receiver.id, receiver)
-		this.sync()
 	}
 	private receiversRemove(receiver: Receiver<T>) {
 		this.receivers.remove(receiver.id)
-		this.sync()
 	}
 	async receive(): Promise<Option<T>> {
 		const r = this.fastReceive()
@@ -146,7 +142,7 @@ export class Channel<T = unknown> {
 				unlock: noop,
 				defer: new Deferred<Option<T>>(),
 			}
-			this.receiversAdd(receiver)
+			this.receivers.addLast(receiver.id, receiver)
 			return await receiver.defer.promise
 		}
 	}
@@ -315,53 +311,70 @@ export class Select {
 	}
 	private async slowSelect(signal: Deferred<never>): Promise<number | null> {
 		let selected: number | null = null
-		while (this.state === "running") {
-			const done = this.setup(signal)
-
+		const done = new Deferred<number>()
+		const boxedCont = { inner: new Deferred<never>() }
+		this.setup(signal, done, boxedCont)
+		for (;;) {
+			this.wakeup(done)
 			try {
 				selected = await Promise.race([
-					done.promise,
-					signal.promise, // pending or rejected
+					signal.promise, // pending or rejected, never resolved
+					boxedCont.inner.promise, // pending or rejected, never resolved
+					done.promise, // pending or resolved, never rejected
 				])
-				// one channel is selected
-				this.state = "idle" // stop loop
+				break // one channel is selected
 			} catch (_) {
 				// aborted by signal, but the select is done
 				// XXX: is it possible?
 				if (done.isResolved) {
 					selected = await done.promise
-					this.state = "idle" // stop loop
+					break
 				}
 				// aborted by signal
 				// XXX: typescript doesn't know that signal will be updated
 				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 				else if (signal.isRejected) {
-					this.state = "idle" // stop loop
+					selected = null
+					break
 				}
-				// aborted by select
-				else {
+				// aborted by boxedCont
+				else if (boxedCont.inner.isRejected) {
 					// continue next loop
 				}
+				// XXX: any other cases?
+				else {
+					assert(false, "unreachable")
+				}
 			}
-
-			this.cleanup()
+			// reset boxedCont
+			boxedCont.inner = new Deferred<never>()
 		}
-
+		this.cleanup()
 		return selected
 	}
-	private setup(signal: Deferred<never>): Deferred<number> {
-		const done = new Deferred<number>()
-
+	private setup(
+		signal: Deferred<never>,
+		done: Deferred<number>,
+		boxedCont: { inner: Deferred<never> },
+	) {
 		// setup lock
 		let locked = false
 		const tryLock = () => {
-			if (locked || signal.isRejected || done.isFulfilled) {
-				locked = true
+			if (
+				locked ||
+				signal.isRejected ||
+				done.isResolved ||
+				boxedCont.inner.isRejected
+			) {
 				return false
 			} else {
 				locked = true
 				return true
 			}
+		}
+		const unlock = () => {
+			boxedCont.inner.reject()
+			locked = false
 		}
 
 		for (let i = 0, len = this.selections.length; i < len; i++) {
@@ -369,8 +382,8 @@ export class Select {
 			if (selection.op === "send") {
 				const sender: Sender<unknown> = {
 					id: selection.id,
-					tryLock: tryLock,
-					unlock: done.reject,
+					tryLock,
+					unlock,
 					data: selection.data,
 					defer: new Deferred(),
 				}
@@ -385,8 +398,8 @@ export class Select {
 			} else {
 				const receiver: Receiver<unknown> = {
 					id: selection.id,
-					tryLock: tryLock,
-					unlock: done.reject,
+					tryLock,
+					unlock,
 					defer: new Deferred(),
 				}
 				selection.receiver = receiver
@@ -400,7 +413,18 @@ export class Select {
 			}
 			if (done.isFulfilled) break
 		}
+
 		return done
+	}
+	private wakeup(done: Deferred<number>): void {
+		for (let i = 0, len = this.selections.length; i < len; i++) {
+			const selection = this.selections.get(i)
+			// @ts-expect-error
+			selection.chan.sync()
+			if (done.isResolved) {
+				break
+			}
+		}
 	}
 	private cleanup(): void {
 		for (let i = 0, len = this.selections.length; i < len; i++) {
@@ -412,6 +436,8 @@ export class Select {
 				// @ts-expect-error
 				selection.chan.receiversRemove(selection.receiver)
 			}
+			// @ts-expect-error
+			selection.chan.sync()
 		}
 	}
 }

@@ -110,4 +110,31 @@ describe("Select", () => {
 
 		await background
 	})
+
+	test("select channel 3", async () => {
+		const ch1 = new Channel<number>()
+
+		const background = (async () => {
+			const r1 = await ch1.send(10)
+			expect(r1).toBe(true)
+
+			const r2 = await ch1.send(10)
+			expect(r2).toBe(true)
+		})()
+
+		const select = new Select()
+
+		const id = select.receive(ch1, (data, i) => {
+			expect(data.unwrap()).toBe(10)
+			expect(i).toBe(id)
+		})
+
+		const r1 = await select.select()
+		expect(r1).toBe(id)
+
+		const r2 = await select.select()
+		expect(r2).toBe(id)
+
+		await background
+	})
 })
