@@ -1,3 +1,4 @@
+import { assert } from "./assert.js"
 import { Deferred } from "./deferred.js"
 import { Deque } from "./deque.js"
 import { LinkedMap } from "./linked-map.js"
@@ -212,9 +213,11 @@ export class Select {
 		data: T,
 		callback: (sent: boolean, id?: number) => unknown,
 	): number {
-		if (this.selections.some((sel) => sel.chan === chan)) {
-			throw new Error("[Select] duplicated channel")
-		}
+		assert(
+			!this.selections.some((sel) => sel.chan === chan),
+			"[Select] duplicated channel",
+		)
+
 		const id = genId()
 		const selection: Selection<T> = {
 			id,
@@ -232,9 +235,11 @@ export class Select {
 		chan: Channel<T>,
 		callback: (data: Option<T>, id?: number) => unknown,
 	): number {
-		if (this.selections.some((sel) => sel.chan === chan)) {
-			throw new Error("[Select] duplicated channel")
-		}
+		assert(
+			!this.selections.some((sel) => sel.chan === chan),
+			"[Select] duplicated channel",
+		)
+
 		const id = genId()
 		const selection: Selection<T> = {
 			id,
@@ -257,6 +262,7 @@ export class Select {
 
 		this.state = "running"
 		const selected = this.fastSelect() ?? (await this.slowSelect(signal))
+		this.state = "idle"
 		return selected
 	}
 	trySelect(): number | null {
@@ -279,9 +285,8 @@ export class Select {
 		return fakeSignal
 	}
 	private beforeSelect(): void {
-		if (this.state !== "idle") {
-			throw new Error("[Select] not a idle selector")
-		}
+		assert(this.state === "idle", "[Select] not a idle selector")
+
 		// randomize
 		this.selections = Deque.fromArray(
 			this.selections.toArray().sort(() => Math.random() - 0.5),
