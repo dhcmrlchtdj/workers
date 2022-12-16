@@ -11,17 +11,17 @@ describe("Router", () => {
 		router.get("/a", fn1)
 		router.get("/a/b", fn2)
 		router.get("/a/b/c", fn3)
-		expect(router.route(new Request("https://localhost/")).handler).toBe(
+		expect(router.route(new Request("https://localhost/"))?.handler).toBe(
 			fn0,
 		)
-		expect(router.route(new Request("https://localhost/a")).handler).toBe(
+		expect(router.route(new Request("https://localhost/a"))?.handler).toBe(
 			fn1,
 		)
-		expect(router.route(new Request("https://localhost/a/b")).handler).toBe(
+		expect(router.route(new Request("https://localhost/a/b"))?.handler).toBe(
 			fn2,
 		)
 		expect(
-			router.route(new Request("https://localhost/a/b/c")).handler,
+			router.route(new Request("https://localhost/a/b/c"))?.handler,
 		).toBe(fn3)
 	})
 	test("match all", () => {

@@ -1,97 +1,94 @@
-type Route<T> = {
-	handler: T | null
-	static: Map<string, Route<T>>
-	parameter: Map<string, Route<T>>
+import { assert } from "./assert.js"
+
+class Node<T> {
+	matched: T | null
+	static: Map<string, Node<T>>
+	parameter: Map<string, Node<T>>
 	wildcard: T | null
+	constructor() {
+		this.matched = null
+		this.static = new Map()
+		this.parameter = new Map()
+		this.wildcard = null
+	}
 }
 
-class BaseRouter<T> {
-	private _route: Route<T>
+class Tree<T> {
+	private _root: Node<T>
 	constructor() {
-		this._route = this._newRoute()
+		this._root = new Node()
 	}
-	private _newRoute(): Route<T> {
-		return {
-			handler: null,
-			static: new Map(),
-			parameter: new Map(),
-			wildcard: null,
-		}
-	}
-	private _add(segments: string[], idx: number, handler: T, route: Route<T>) {
-		if (idx === segments.length) {
-			route.handler = handler
-		} else {
-			const seg = segments[idx]!
+	set(segments: string[], value: T): void {
+		let node = this._root
+		for (let i = 0, len = segments.length; i < len; i++) {
+			const seg = segments[i]!
 			if (seg === "*") {
-				if (segments.length - idx > 1) {
-					throw new Error('"*" must be the last segment')
-				}
-				route.wildcard = handler
+				assert(len === i + 1, '"*" must be the last segment')
+				node.wildcard = value
+				return
 			} else if (seg[0] === ":") {
 				const param = seg.slice(1)
-				const r = route.parameter.get(param) ?? this._newRoute()
-				this._add(segments, idx + 1, handler, r)
-				route.parameter.set(param, r)
+				let r = node.parameter.get(param)
+				if (r === undefined) {
+					r = new Node()
+					node.parameter.set(param, r)
+				}
+				node = r
 			} else {
-				const r = route.static.get(seg) ?? this._newRoute()
-				this._add(segments, idx + 1, handler, r)
-				route.static.set(seg, r)
+				let r = node.static.get(seg)
+				if (r === undefined) {
+					r = new Node()
+					node.static.set(seg, r)
+				}
+				node = r
 			}
 		}
+		assert(node.matched === null, "duplicated node")
+		node.matched = value
 	}
-	add(segments: string[], handler: T): this {
-		this._add(segments, 0, handler, this._route)
-		return this
+	get(segments: string[]) {
+		return this._get(segments, 0, new Map(), this._root)
 	}
-	private _lookup(
+	private _get(
 		segments: string[],
 		idx: number,
 		params: Map<string, string>,
-		route: Route<T>,
-	): { handler: T | null; params: Map<string, string> } {
+		node: Node<T>,
+	): { matched: T; params: Map<string, string> } | null {
 		if (idx === segments.length) {
-			if (route.handler !== null) {
-				return { handler: route.handler, params }
+			if (node.matched !== null) {
+				return { matched: node.matched, params }
 			}
 		} else {
 			const seg = segments[idx]!
 
-			const staticRoute = route.static.get(seg)
-			if (staticRoute !== undefined) {
-				const matched = this._lookup(
-					segments,
-					idx + 1,
-					params,
-					staticRoute,
-				)
-				if (matched.handler !== null) return matched
+			const staticNode = node.static.get(seg)
+			if (staticNode !== undefined) {
+				const found = this._get(segments, idx + 1, params, staticNode)
+				if (found !== null) return found
 			}
 
 			if (seg !== "") {
-				for (const [param, paramRoute] of route.parameter) {
-					const matched = this._lookup(
+				for (const [param, paramNode] of node.parameter) {
+					const found = this._get(
 						segments,
 						idx + 1,
 						params,
-						paramRoute,
+						paramNode,
 					)
-					if (matched.handler !== null) {
-						matched.params.set(param, seg)
-						return matched
+					if (found) {
+						found.params.set(param, seg)
+						return found
 					}
 				}
 			}
 
-			if (route.wildcard !== null) {
+			if (node.wildcard !== null) {
 				params.set("*", segments.slice(idx).join("/"))
-				return { handler: route.wildcard, params }
+				return { matched: node.wildcard, params }
 			}
 		}
-		return { handler: null, params }
-	}
-	lookup(segments: string[]) {
-		return this._lookup(segments, 0, new Map(), this._route)
+		return null
 	}
 }
 
@@ -99,9 +96,11 @@ export type Params = Map<string, string>
 type Handler<Context> = (ctx: Context) => Response | Promise<Response>
 
 export class WorkerRouter<Context> {
-	private _router: BaseRouter<Handler<Context>>
+	private _router: Tree<Handler<Context>>
+	private _fallbackHandler: Handler<Context> | null
 	constructor() {
-		this._router = new BaseRouter<Handler<Context>>()
+		this._router = new Tree<Handler<Context>>()
+		this._fallbackHandler = null
 	}
 
 	private add(
@@ -110,7 +109,7 @@ export class WorkerRouter<Context> {
 		handler: Handler<Context>,
 	): this {
 		const segments = [method.toUpperCase(), ...pathname.split("/")]
-		this._router.add(segments, handler)
+		this._router.set(segments, handler)
 		return this
 	}
 	head(pathname: string, handler: Handler<Context>): this {
@@ -128,18 +127,27 @@ export class WorkerRouter<Context> {
 	delete(pathname: string, handler: Handler<Context>): this {
 		return this.add("DELETE", pathname, handler)
 	}
+	fallback(handler: Handler<Context>): this {
+		this._fallbackHandler = handler
+		return this
+	}
 
 	route(request: Request): {
-		handler: Handler<Context> | null
+		handler: Handler<Context>
 		params: Params
-	} {
+	} | null {
 		const url = new URL(request.url)
 		const segments = [
 			request.method.toUpperCase(),
 			...url.pathname.split("/"),
 		]
-		const matched = this._router.lookup(segments)
-		const handler = matched.handler
-		return { handler, params: matched.params }
+		const found = this._router.get(segments)
+		if (found) {
+			return { handler: found.matched, params: found.params }
+		} else if (this._fallbackHandler) {
+			return { handler: this._fallbackHandler, params: new Map() }
+		} else {
+			return null
+		}
 	}
 }

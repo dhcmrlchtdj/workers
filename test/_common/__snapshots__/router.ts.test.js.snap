@@ -38,12 +38,7 @@ exports[`Router match all 4`] = `
 }
 `;
 
-exports[`Router params 1`] = `
-{
-  "handler": null,
-  "params": Map {},
-}
-`;
+exports[`Router params 1`] = `null`;
 
 exports[`Router params 2`] = `
 {
@@ -63,12 +58,7 @@ exports[`Router params 3`] = `
 }
 `;
 
-exports[`Router params 4`] = `
-{
-  "handler": null,
-  "params": Map {},
-}
-`;
+exports[`Router params 4`] = `null`;
 
 exports[`Router params 5`] = `
 {
