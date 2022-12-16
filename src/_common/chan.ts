@@ -1,6 +1,5 @@
 import { assert } from "./assert.js"
 import { Deferred } from "./deferred.js"
-import { Deque } from "./deque.js"
 import { LinkedMap } from "./linked-map.js"
 import { Option, Some, None } from "./option.js"
 
@@ -193,16 +192,10 @@ type Selection<T> =
 
 export class Select {
 	private state: "idle" | "running"
-	private selections: Deque<Selection<unknown>>
+	private selections: Selection<unknown>[]
 	constructor() {
 		this.state = "idle"
-		this.selections = new Deque()
-	}
-	clone(): Select {
-		const selections = this.selections.map((s) => ({ ...s, id: genId() }))
-		const newSelection = new Select()
-		newSelection.selections.pushBackArray(selections)
-		return newSelection
+		this.selections = []
 	}
 	send<T>(
 		chan: Channel<T>,
@@ -213,6 +206,7 @@ export class Select {
 			!this.selections.some((sel) => sel.chan === chan),
 			"[Select] duplicated channel",
 		)
+		assert(this.state === "idle", "[Select] not a idle selector")
 
 		const id = genId()
 		const selection: Selection<T> = {
@@ -224,7 +218,7 @@ export class Select {
 			callback,
 		}
 		// @ts-expect-error
-		this.selections.pushBack(selection)
+		this.selections.push(selection)
 		return id
 	}
 	receive<T>(
@@ -235,6 +229,7 @@ export class Select {
 			!this.selections.some((sel) => sel.chan === chan),
 			"[Select] duplicated channel",
 		)
+		assert(this.state === "idle", "[Select] not a idle selector")
 
 		const id = genId()
 		const selection: Selection<T> = {
@@ -245,7 +240,7 @@ export class Select {
 			callback,
 		}
 		// @ts-expect-error
-		this.selections.pushBack(selection)
+		this.selections.push(selection)
 		return id
 	}
 	async select(init?: { signal?: AbortSignal }): Promise<number | null> {
@@ -284,13 +279,10 @@ export class Select {
 		assert(this.state === "idle", "[Select] not a idle selector")
 
 		// randomize
-		this.selections = Deque.fromArray(
-			this.selections.toArray().sort(() => Math.random() - 0.5),
-		)
+		this.selections.sort(() => Math.random() - 0.5)
 	}
 	private fastSelect(): number | null {
-		for (let i = 0, len = this.selections.length; i < len; i++) {
-			const selection = this.selections.get(i)
+		for (const selection of this.selections) {
 			if (selection.op === "send") {
 				// @ts-expect-error
 				const r = selection.chan.fastSend(selection.data)
@@ -313,6 +305,7 @@ export class Select {
 		let selected: number | null = null
 		const done = new Deferred<number>()
 		const boxedCont = { inner: new Deferred<never>() }
+
 		this.setup(signal, done, boxedCont)
 		for (;;) {
 			this.wakeup(done)
@@ -350,13 +343,14 @@ export class Select {
 			boxedCont.inner = new Deferred<never>()
 		}
 		this.cleanup()
+
 		return selected
 	}
 	private setup(
 		signal: Deferred<never>,
 		done: Deferred<number>,
 		boxedCont: { inner: Deferred<never> },
-	) {
+	): void {
 		// setup lock
 		let locked = false
 		const tryLock = () => {
@@ -377,8 +371,7 @@ export class Select {
 			locked = false
 		}
 
-		for (let i = 0, len = this.selections.length; i < len; i++) {
-			const selection = this.selections.get(i)
+		for (const selection of this.selections) {
 			if (selection.op === "send") {
 				const sender: Sender<unknown> = {
 					id: selection.id,
@@ -411,24 +404,18 @@ export class Select {
 				// @ts-expect-error
 				selection.chan.receiversAdd(receiver)
 			}
-			if (done.isFulfilled) break
+			if (done.isResolved) break
 		}
-
-		return done
 	}
 	private wakeup(done: Deferred<number>): void {
-		for (let i = 0, len = this.selections.length; i < len; i++) {
-			const selection = this.selections.get(i)
+		for (const selection of this.selections) {
 			// @ts-expect-error
 			selection.chan.sync()
-			if (done.isResolved) {
-				break
-			}
+			if (done.isResolved) break
 		}
 	}
 	private cleanup(): void {
-		for (let i = 0, len = this.selections.length; i < len; i++) {
-			const selection = this.selections.get(i)
+		for (const selection of this.selections) {
 			if (selection.op === "send" && selection.sender) {
 				// @ts-expect-error
 				selection.chan.sendersRemove(selection.sender)
