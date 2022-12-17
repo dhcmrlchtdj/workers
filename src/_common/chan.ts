@@ -191,10 +191,14 @@ type Selection<T> =
 	  }
 
 export class Select {
-	private state: "idle" | "running"
+	private running: boolean
+	private backgroundRunning: boolean
+	private wakeupSet: Set<number>
 	private selections: Selection<unknown>[]
 	constructor() {
-		this.state = "idle"
+		this.running = false
+		this.backgroundRunning = false
+		this.wakeupSet = new Set()
 		this.selections = []
 	}
 	send<T>(
@@ -203,10 +207,10 @@ export class Select {
 		callback: (sent: boolean, id?: number) => unknown,
 	): number {
 		assert(
-			!this.selections.some((sel) => sel.chan === chan),
+			this.selections.every((sel) => sel.chan !== chan),
 			"[Select] duplicated channel",
 		)
-		assert(this.state === "idle", "[Select] not a idle selector")
+		assert(!this.running, "[Select] not a idle selector")
 
 		const id = genId()
 		const selection: Selection<T> = {
@@ -226,10 +230,10 @@ export class Select {
 		callback: (data: Option<T>, id?: number) => unknown,
 	): number {
 		assert(
-			!this.selections.some((sel) => sel.chan === chan),
+			this.selections.every((sel) => sel.chan !== chan),
 			"[Select] duplicated channel",
 		)
-		assert(this.state === "idle", "[Select] not a idle selector")
+		assert(!this.running, "[Select] not a idle selector")
 
 		const id = genId()
 		const selection: Selection<T> = {
@@ -251,9 +255,9 @@ export class Select {
 		const signal = this.getAbortSignal(init)
 		if (signal.isRejected) return null
 
-		this.state = "running"
+		this.running = true
 		const selected = this.fastSelect() ?? (await this.slowSelect(signal))
-		this.state = "idle"
+		this.running = false
 		return selected
 	}
 	trySelect(): number | null {
@@ -276,7 +280,7 @@ export class Select {
 		return fakeSignal
 	}
 	private beforeSelect(): void {
-		assert(this.state === "idle", "[Select] not a idle selector")
+		assert(!this.running, "[Select] not a idle selector")
 
 		// randomize
 		this.selections.sort(() => Math.random() - 0.5)
@@ -302,64 +306,25 @@ export class Select {
 		return null
 	}
 	private async slowSelect(signal: Deferred<never>): Promise<number | null> {
-		let selected: number | null = null
 		const done = new Deferred<number>()
-		const boxedCont = { inner: new Deferred<never>() }
 
-		this.setup(signal, done, boxedCont)
-		for (;;) {
-			this.wakeup(done)
-			try {
-				selected = await Promise.race([
-					signal.promise, // pending or rejected, never resolved
-					boxedCont.inner.promise, // pending or rejected, never resolved
-					done.promise, // pending or resolved, never rejected
-				])
-				break // one channel is selected
-			} catch (_) {
-				// aborted by signal, but the select is done
-				// XXX: is it possible?
-				if (done.isResolved) {
-					selected = await done.promise
-					break
-				}
-				// aborted by signal
-				// XXX: typescript doesn't know that signal will be updated
-				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-				else if (signal.isRejected) {
-					selected = null
-					break
-				}
-				// aborted by boxedCont
-				else if (boxedCont.inner.isRejected) {
-					// continue next loop
-				}
-				// XXX: any other cases?
-				else {
-					assert(false, "unreachable")
-				}
-			}
-			// reset boxedCont
-			boxedCont.inner = new Deferred<never>()
-		}
+		this.setup(signal, done)
+		this.wakeup(signal, done)
+		const selected = await this.wait(signal, done)
 		this.cleanup()
 
 		return selected
 	}
-	private setup(
-		signal: Deferred<never>,
-		done: Deferred<number>,
-		boxedCont: { inner: Deferred<never> },
-	): void {
+	private setup(signal: Deferred<never>, done: Deferred<number>): void {
 		// setup lock
 		let locked = false
-		const tryLock = () => {
-			if (
-				locked ||
-				signal.isRejected ||
-				done.isResolved ||
-				boxedCont.inner.isRejected
-			) {
+		const tryLock = (id: number) => () => {
+			if (signal.isRejected || done.isResolved) {
+				return false
+			}
+
+			if (locked) {
+				this.wakeupSet.add(id)
 				return false
 			} else {
 				locked = true
@@ -367,15 +332,17 @@ export class Select {
 			}
 		}
 		const unlock = () => {
-			boxedCont.inner.reject()
 			locked = false
+			this.wakeup(signal, done)
 		}
 
-		for (const selection of this.selections) {
+		// setup channel
+		for (let i = 0, len = this.selections.length; i < len; i++) {
+			const selection = this.selections[i]!
 			if (selection.op === "send") {
 				const sender: Sender<unknown> = {
 					id: selection.id,
-					tryLock,
+					tryLock: tryLock(i),
 					unlock,
 					data: selection.data,
 					defer: new Deferred(),
@@ -391,7 +358,7 @@ export class Select {
 			} else {
 				const receiver: Receiver<unknown> = {
 					id: selection.id,
-					tryLock,
+					tryLock: tryLock(i),
 					unlock,
 					defer: new Deferred(),
 				}
@@ -406,12 +373,51 @@ export class Select {
 			}
 			if (done.isResolved) break
 		}
+
+		// setup wakeupSet
+		for (let i = 0, len = this.selections.length; i < len; i++) {
+			this.wakeupSet.add(i)
+		}
 	}
-	private wakeup(done: Deferred<number>): void {
-		for (const selection of this.selections) {
-			// @ts-expect-error
-			selection.chan.sync()
-			if (done.isResolved) break
+	private wakeup(signal: Deferred<never>, done: Deferred<number>): void {
+		if (signal.isRejected) return
+
+		if (this.backgroundRunning) return
+		this.backgroundRunning = true
+
+		if (this.wakeupSet.size > 0) {
+			const tasks = [...this.wakeupSet.values()] // copy tasks
+			this.wakeupSet.clear() // reset tasks
+			for (let i = 0, len = tasks.length; i < len; i++) {
+				const selection = this.selections[i]!
+				// @ts-expect-error
+				selection.chan.sync()
+				if (done.isResolved) break
+			}
+		}
+
+		this.backgroundRunning = false
+	}
+	private async wait(
+		signal: Deferred<never>,
+		done: Deferred<number>,
+	): Promise<number | null> {
+		try {
+			return await Promise.race([
+				signal.promise, // pending or rejected, never resolved
+				done.promise, // pending or resolved, never rejected
+			])
+		} catch (_) {
+			// aborted by signal, but the select is done
+			// XXX: is it possible?
+			if (done.isResolved) {
+				return await done.promise
+			}
+			// aborted by signal
+			// else if (signal.isRejected) {
+			else {
+				return null
+			}
 		}
 	}
 	private cleanup(): void {
@@ -426,5 +432,7 @@ export class Select {
 			// @ts-expect-error
 			selection.chan.sync()
 		}
+
+		this.wakeupSet.clear()
 	}
 }
