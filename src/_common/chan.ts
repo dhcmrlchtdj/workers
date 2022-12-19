@@ -2,6 +2,7 @@ import { assert } from "./assert.js"
 import { Deferred } from "./deferred.js"
 import { LinkedMap } from "./linked-map.js"
 import { Option, Some, None } from "./option.js"
+import { sleep } from "./sync.js"
 
 let currentId = 0
 const genId = () => currentId++
@@ -309,6 +310,7 @@ export class Select {
 		const done = new Deferred<number>()
 
 		this.setup(signal, done)
+		// eslint-disable-next-line @typescript-eslint/no-floating-promises
 		this.wakeup(signal, done)
 		const selected = await this.wait(signal, done)
 		this.cleanup()
@@ -333,6 +335,7 @@ export class Select {
 		}
 		const unlock = () => {
 			locked = false
+			// eslint-disable-next-line @typescript-eslint/no-floating-promises
 			this.wakeup(signal, done)
 		}
 
@@ -379,13 +382,16 @@ export class Select {
 			this.wakeupSet.add(i)
 		}
 	}
-	private wakeup(signal: Deferred<never>, done: Deferred<number>): void {
+	private async wakeup(
+		signal: Deferred<never>,
+		done: Deferred<number>,
+	): Promise<void> {
 		if (signal.isRejected) return
 
 		if (this.backgroundRunning) return
 		this.backgroundRunning = true
 
-		if (this.wakeupSet.size > 0) {
+		while (this.wakeupSet.size > 0) {
 			const tasks = [...this.wakeupSet.values()] // copy tasks
 			this.wakeupSet.clear() // reset tasks
 			for (let i = 0, len = tasks.length; i < len; i++) {
@@ -394,6 +400,7 @@ export class Select {
 				selection.chan.sync()
 				if (done.isResolved) break
 			}
+			await sleep(0)
 		}
 
 		this.backgroundRunning = false
@@ -425,9 +432,11 @@ export class Select {
 			if (selection.op === "send" && selection.sender) {
 				// @ts-expect-error
 				selection.chan.sendersRemove(selection.sender)
+				selection.sender = null
 			} else if (selection.op == "receive" && selection.receiver) {
 				// @ts-expect-error
 				selection.chan.receiversRemove(selection.receiver)
+				selection.receiver = null
 			}
 			// @ts-expect-error
 			selection.chan.sync()
