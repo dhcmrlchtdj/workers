@@ -253,11 +253,13 @@ export class Select {
 
 		if (this.selections.length === 0) return null
 
-		const signal = this.getAbortSignal(init)
-		if (signal.isRejected) return null
+		const done = new Deferred<number | null>()
+
+		this.setupAbortSignal(done, init?.signal)
+		if (done.isFulfilled) return done.promise
 
 		this.running = true
-		const selected = this.fastSelect() ?? (await this.slowSelect(signal))
+		const selected = this.fastSelect() ?? (await this.slowSelect(done))
 		this.running = false
 		return selected
 	}
@@ -266,19 +268,21 @@ export class Select {
 		if (this.selections.length === 0) return null
 		return this.fastSelect()
 	}
-	private getAbortSignal(init?: { signal?: AbortSignal }): Deferred<never> {
-		const fakeSignal = new Deferred<never>()
-		const signal = init?.signal
+	private setupAbortSignal(
+		done: Deferred<number | null>,
+		signal: AbortSignal | undefined,
+	) {
 		if (signal) {
 			if (signal.aborted) {
-				fakeSignal.reject()
+				done.resolve(null)
 			} else {
-				signal.addEventListener("abort", () => {
-					fakeSignal.reject()
+				const cb = () => done.resolve(null)
+				signal.addEventListener("abort", cb)
+				done.promise.finally(() => {
+					signal.removeEventListener("abort", cb)
 				})
 			}
 		}
-		return fakeSignal
 	}
 	private beforeSelect(): void {
 		assert(!this.running, "[Select] not a idle selector")
@@ -306,22 +310,22 @@ export class Select {
 		}
 		return null
 	}
-	private async slowSelect(signal: Deferred<never>): Promise<number | null> {
-		const done = new Deferred<number>()
-
-		this.setup(signal, done)
+	private async slowSelect(
+		done: Deferred<number | null>,
+	): Promise<number | null> {
+		this.setup(done)
 		// eslint-disable-next-line @typescript-eslint/no-floating-promises
-		this.wakeup(signal, done)
-		const selected = await this.wait(signal, done)
+		this.wakeup(done)
+		await done.promise
 		this.cleanup()
 
-		return selected
+		return done.promise
 	}
-	private setup(signal: Deferred<never>, done: Deferred<number>): void {
+	private setup(done: Deferred<number | null>): void {
 		// setup lock
 		let locked = false
 		const tryLock = (id: number) => () => {
-			if (signal.isRejected || done.isResolved) {
+			if (done.isFulfilled) {
 				return false
 			}
 
@@ -336,7 +340,7 @@ export class Select {
 		const unlock = () => {
 			locked = false
 			// eslint-disable-next-line @typescript-eslint/no-floating-promises
-			this.wakeup(signal, done)
+			this.wakeup(done)
 		}
 
 		// setup channel
@@ -382,49 +386,24 @@ export class Select {
 			this.wakeupSet.add(i)
 		}
 	}
-	private async wakeup(
-		signal: Deferred<never>,
-		done: Deferred<number>,
-	): Promise<void> {
-		if (signal.isRejected) return
-
+	private async wakeup(done: Deferred<number | null>): Promise<void> {
 		if (this.backgroundRunning) return
 		this.backgroundRunning = true
-
-		while (this.wakeupSet.size > 0) {
-			const tasks = [...this.wakeupSet.values()] // copy tasks
-			this.wakeupSet.clear() // reset tasks
-			for (let i = 0, len = tasks.length; i < len; i++) {
-				const selection = this.selections[i]!
-				// @ts-expect-error
-				selection.chan.sync()
-				if (done.isResolved) break
-			}
-			await sleep(0)
-		}
-
-		this.backgroundRunning = false
-	}
-	private async wait(
-		signal: Deferred<never>,
-		done: Deferred<number>,
-	): Promise<number | null> {
 		try {
-			return await Promise.race([
-				signal.promise, // pending or rejected, never resolved
-				done.promise, // pending or resolved, never rejected
-			])
-		} catch (_) {
-			// aborted by signal, but the select is done
-			// XXX: is it possible?
-			if (done.isResolved) {
-				return await done.promise
+			while (this.wakeupSet.size > 0 && !done.isFulfilled) {
+				const tasks = [...this.wakeupSet.values()] // copy tasks
+				this.wakeupSet.clear() // reset tasks
+				for (let i = 0, len = tasks.length; i < len; i++) {
+					const selection = this.selections[i]!
+					// @ts-expect-error
+					selection.chan.sync()
+					// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+					if (done.isFulfilled) return
+				}
+				await sleep(0)
 			}
-			// aborted by signal
-			// else if (signal.isRejected) {
-			else {
-				return null
-			}
+		} finally {
+			this.backgroundRunning = false
 		}
 	}
 	private cleanup(): void {
@@ -443,5 +422,7 @@ export class Select {
 		}
 
 		this.wakeupSet.clear()
+
+		this.backgroundRunning = false
 	}
 }
