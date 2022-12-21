@@ -193,13 +193,9 @@ type Selection<T> =
 
 export class Select {
 	private running: boolean
-	private backgroundRunning: boolean
-	private wakeupSet: Set<number>
 	private selections: Selection<unknown>[]
 	constructor() {
 		this.running = false
-		this.backgroundRunning = false
-		this.wakeupSet = new Set()
 		this.selections = []
 	}
 	send<T>(
@@ -314,14 +310,17 @@ export class Select {
 		done: Deferred<number | null>,
 	): Promise<number | null> {
 		this.setup(done)
-		// eslint-disable-next-line @typescript-eslint/no-floating-promises
-		this.wakeup(done)
 		await done.promise
 		this.cleanup()
-
 		return done.promise
 	}
 	private setup(done: Deferred<number | null>): void {
+		// setup wakeupSet
+		const wakeupSet = new Set<number>()
+		for (let i = 0, len = this.selections.length; i < len; i++) {
+			wakeupSet.add(i)
+		}
+
 		// setup lock
 		let locked = false
 		const tryLock = (id: number) => () => {
@@ -330,7 +329,7 @@ export class Select {
 			}
 
 			if (locked) {
-				this.wakeupSet.add(id)
+				wakeupSet.add(id)
 				return false
 			} else {
 				locked = true
@@ -340,7 +339,7 @@ export class Select {
 		const unlock = () => {
 			locked = false
 			// eslint-disable-next-line @typescript-eslint/no-floating-promises
-			this.wakeup(done)
+			this.wakeup(done, wakeupSet)
 		}
 
 		// setup channel
@@ -381,29 +380,25 @@ export class Select {
 			if (done.isResolved) break
 		}
 
-		// setup wakeupSet
-		for (let i = 0, len = this.selections.length; i < len; i++) {
-			this.wakeupSet.add(i)
-		}
+		// eslint-disable-next-line @typescript-eslint/no-floating-promises
+		this.wakeup(done, wakeupSet)
 	}
-	private async wakeup(done: Deferred<number | null>): Promise<void> {
-		if (this.backgroundRunning) return
-		this.backgroundRunning = true
-		try {
-			while (this.wakeupSet.size > 0 && !done.isFulfilled) {
-				const tasks = [...this.wakeupSet.values()] // copy tasks
-				this.wakeupSet.clear() // reset tasks
-				for (let i = 0, len = tasks.length; i < len; i++) {
-					const selection = this.selections[i]!
-					// @ts-expect-error
-					selection.chan.sync()
-					// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-					if (done.isFulfilled) return
-				}
-				await sleep(0)
+	private async wakeup(
+		done: Deferred<number | null>,
+		wakeupSet: Set<number>,
+	): Promise<void> {
+		await sleep(0)
+		while (wakeupSet.size > 0 && !done.isFulfilled) {
+			const tasks = [...wakeupSet.values()] // copy tasks
+			wakeupSet.clear() // reset tasks
+			for (let i = 0, len = tasks.length; i < len; i++) {
+				const selection = this.selections[i]
+				// @ts-expect-error
+				selection?.chan.sync()
+				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+				if (done.isFulfilled) return
 			}
-		} finally {
-			this.backgroundRunning = false
+			await sleep(0)
 		}
 	}
 	private cleanup(): void {
@@ -420,9 +415,5 @@ export class Select {
 			// @ts-expect-error
 			selection.chan.sync()
 		}
-
-		this.wakeupSet.clear()
-
-		this.backgroundRunning = false
 	}
 }
