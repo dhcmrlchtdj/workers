@@ -2,7 +2,6 @@ import { assert } from "./assert.js"
 import { Deferred } from "./deferred.js"
 import { LinkedMap } from "./linked-map.js"
 import { Option, Some, None } from "./option.js"
-import { sleep } from "./sync.js"
 
 let currentId = 0
 const genId = () => currentId++
@@ -315,10 +314,12 @@ export class Select {
 		return done.promise
 	}
 	private setup(done: Deferred<number | null>): void {
-		// setup wakeupSet
-		const wakeupSet = new Set<number>()
+		// setup wakeupChan
+		const wakeupChan = new Channel<number>()
+		done.promise.finally(() => wakeupChan.close())
 		for (let i = 0, len = this.selections.length; i < len; i++) {
-			wakeupSet.add(i)
+			// eslint-disable-next-line @typescript-eslint/no-floating-promises
+			wakeupChan.send(i)
 		}
 
 		// setup lock
@@ -329,7 +330,8 @@ export class Select {
 			}
 
 			if (locked) {
-				wakeupSet.add(id)
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				wakeupChan.send(id)
 				return false
 			} else {
 				locked = true
@@ -338,8 +340,6 @@ export class Select {
 		}
 		const unlock = () => {
 			locked = false
-			// eslint-disable-next-line @typescript-eslint/no-floating-promises
-			this.wakeup(done, wakeupSet)
 		}
 
 		// setup channel
@@ -380,25 +380,18 @@ export class Select {
 			if (done.isResolved) break
 		}
 
+		// start background job
 		// eslint-disable-next-line @typescript-eslint/no-floating-promises
-		this.wakeup(done, wakeupSet)
+		this.wakeup(wakeupChan)
 	}
-	private async wakeup(
-		done: Deferred<number | null>,
-		wakeupSet: Set<number>,
-	): Promise<void> {
-		await sleep(0)
-		while (wakeupSet.size > 0 && !done.isFulfilled) {
-			const tasks = [...wakeupSet.values()] // copy tasks
-			wakeupSet.clear() // reset tasks
-			for (let i = 0, len = tasks.length; i < len; i++) {
-				const selection = this.selections[i]
-				// @ts-expect-error
-				selection?.chan.sync()
-				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-				if (done.isFulfilled) return
-			}
-			await sleep(0)
+	private async wakeup(wakeupSet: Channel<number>): Promise<void> {
+		while (!wakeupSet.isClosed()) {
+			const r = await wakeupSet.receive()
+			if (r.isNone) return
+			const idx = r.unwrap()
+			const selection = this.selections[idx]
+			// @ts-expect-error
+			selection?.chan.sync()
 		}
 	}
 	private cleanup(): void {
