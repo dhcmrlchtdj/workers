@@ -25,7 +25,7 @@ const worker = createWorker("backup", (req: Request, env: ENV) => {
 		return HttpUnsupportedMediaType()
 	}
 
-	const [user, pass] = getBA(req.headers.get("authorization"))
+	const { user, pass } = getBA(req.headers.get("authorization"))
 	if (user === "beancount" && pass === env.BACKUP_PASS_BEANCOUNT) {
 		return backupBeancount(req, env)
 	} else if (user === "feedbox" && pass === env.BACKUP_PASS_FEEDBOX) {

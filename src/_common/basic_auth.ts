@@ -3,7 +3,7 @@ import { HttpBadRequest, HttpUnauthorized } from "./http-response.js"
 
 // https://developers.cloudflare.com/workers/examples/basic-auth/
 
-export function getBA(auth: string | null): [string, string] {
+export function getBA(auth: string | null): { user: string; pass: string } {
 	if (!auth) {
 		// eslint-disable-next-line @typescript-eslint/no-throw-literal
 		throw HttpUnauthorized(["Basic"])
@@ -23,10 +23,13 @@ export function getBA(auth: string | null): [string, string] {
 		throw HttpBadRequest("invalid authorization value")
 	}
 
-	return [decoded.substring(0, index), decoded.substring(index + 1)]
+	return {
+		user: decoded.substring(0, index),
+		pass: decoded.substring(index + 1),
+	}
 }
 
-export function validate(req: Request, user: string, pass: string) {
-	const [u, p] = getBA(req.headers.get("authorization"))
-	if (u !== user || p !== pass) throw new Error("unauthorized")
+export function validate(req: Request, username: string, password: string) {
+	const { user, pass } = getBA(req.headers.get("authorization"))
+	if (username !== user || password !== pass) throw new Error("unauthorized")
 }

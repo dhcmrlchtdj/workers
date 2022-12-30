@@ -73,3 +73,11 @@ jobs:
                   CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
                   wrangler publish
+
+            - working-directory: src/proxy-list
+              env:
+                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+                  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+              run: |
+                  printf '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  wrangler publish

@@ -24,7 +24,7 @@ const worker = createWorker("current-ip", async (req: Request, env: ENV) => {
 		return HttpBadRequest("CF-Connecting-IP is missed")
 	}
 
-	const [user, pass] = getBA(req.headers.get("authorization"))
+	const { user, pass } = getBA(req.headers.get("authorization"))
 	if (user === "nuc" && pass === env.IP_PASS_NUC) {
 		await saveCurrentIp(env, "nuc", currIp)
 		return HttpOk()
