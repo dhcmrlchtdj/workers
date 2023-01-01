@@ -1,5 +1,5 @@
 import { assert } from "./assert.js"
-import { Deferred } from "./deferred.js"
+import { abortedBySignal, Deferred } from "./deferred.js"
 import { LinkedMap } from "./linked-map.js"
 import { Option, Some, None } from "./option.js"
 
@@ -243,41 +243,28 @@ export class Select {
 		this.selections.push(selection)
 		return id
 	}
-	async select(init?: { signal?: AbortSignal }): Promise<number | null> {
+	async select(opt?: { signal?: AbortSignal }): Promise<number | null> {
 		this.beforeSelect()
 
 		if (this.selections.length === 0) return null
 
-		const done = new Deferred<number | null>()
+		const done = new Deferred<number>()
 
-		this.setupAbortSignal(done, init?.signal)
-		if (done.isFulfilled) return done.promise
+		abortedBySignal(done, opt?.signal)
+		if (done.isFulfilled) return null
+
+		const fast = this.fastSelect()
+		if (fast !== null) return fast
 
 		this.running = true
-		const selected = this.fastSelect() ?? (await this.slowSelect(done))
+		const slow = await this.slowSelect(done)
 		this.running = false
-		return selected
+		return slow
 	}
 	trySelect(): number | null {
 		this.beforeSelect()
 		if (this.selections.length === 0) return null
 		return this.fastSelect()
-	}
-	private setupAbortSignal(
-		done: Deferred<number | null>,
-		signal: AbortSignal | undefined,
-	) {
-		if (signal) {
-			if (signal.aborted) {
-				done.resolve(null)
-			} else {
-				const cb = () => done.resolve(null)
-				signal.addEventListener("abort", cb)
-				done.promise.finally(() => {
-					signal.removeEventListener("abort", cb)
-				})
-			}
-		}
 	}
 	private beforeSelect(): void {
 		assert(!this.running, "[Select] not a idle selector")
@@ -305,21 +292,23 @@ export class Select {
 		}
 		return null
 	}
-	private async slowSelect(
-		done: Deferred<number | null>,
-	): Promise<number | null> {
+	private async slowSelect(done: Deferred<number>): Promise<number | null> {
 		this.setup(done)
-		await done.promise
-		this.cleanup()
-		return done.promise
+		try {
+			return await done.promise
+		} catch (e) {
+			return null
+		} finally {
+			this.cleanup()
+		}
 	}
-	private setup(done: Deferred<number | null>): void {
-		// setup wakeupChan
-		const wakeupChan = new Channel<number>()
-		done.promise.finally(() => wakeupChan.close())
+	private setup(done: Deferred<number>): void {
+		// setup waiting list
+		const waitings = new Channel<number>()
+		done.promise.finally(() => waitings.close()).catch(noop) // prevent `unhandledRejection`
 		for (let i = 0, len = this.selections.length; i < len; i++) {
 			// eslint-disable-next-line @typescript-eslint/no-floating-promises
-			wakeupChan.send(i)
+			waitings.send(i)
 		}
 
 		// setup lock
@@ -331,7 +320,7 @@ export class Select {
 
 			if (locked) {
 				// eslint-disable-next-line @typescript-eslint/no-floating-promises
-				wakeupChan.send(id)
+				waitings.send(id)
 				return false
 			} else {
 				locked = true
@@ -377,16 +366,16 @@ export class Select {
 				// @ts-expect-error
 				selection.chan.receiversAdd(receiver)
 			}
-			if (done.isResolved) break
+			if (done.isFulfilled) break
 		}
 
 		// start background job
 		// eslint-disable-next-line @typescript-eslint/no-floating-promises
-		this.wakeup(wakeupChan)
+		this.wakeup(waitings)
 	}
-	private async wakeup(wakeupSet: Channel<number>): Promise<void> {
-		while (!wakeupSet.isClosed()) {
-			const r = await wakeupSet.receive()
+	private async wakeup(waitings: Channel<number>): Promise<void> {
+		while (!waitings.isClosed()) {
+			const r = await waitings.receive()
 			if (r.isNone) return
 			const idx = r.unwrap()
 			const selection = this.selections[idx]
@@ -400,13 +389,15 @@ export class Select {
 				// @ts-expect-error
 				selection.chan.sendersRemove(selection.sender)
 				selection.sender = null
+				// @ts-expect-error
+				selection.chan.sync()
 			} else if (selection.op == "receive" && selection.receiver) {
 				// @ts-expect-error
 				selection.chan.receiversRemove(selection.receiver)
 				selection.receiver = null
+				// @ts-expect-error
+				selection.chan.sync()
 			}
-			// @ts-expect-error
-			selection.chan.sync()
 		}
 	}
 }

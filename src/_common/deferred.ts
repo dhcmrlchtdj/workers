@@ -28,3 +28,22 @@ export class Deferred<T = void> {
 		})
 	}
 }
+
+const noop = () => {}
+
+export function abortedBySignal<T>(
+	d: Deferred<T>,
+	signal?: AbortSignal | undefined,
+) {
+	if (signal) {
+		if (signal.aborted) {
+			d.reject(signal.reason)
+		} else {
+			const cb = () => d.reject(signal.reason)
+			signal.addEventListener("abort", cb, { once: true })
+			d.promise
+				.finally(() => signal.removeEventListener("abort", cb))
+				.catch(noop) // prevent `unhandledRejection`
+		}
+	}
+}

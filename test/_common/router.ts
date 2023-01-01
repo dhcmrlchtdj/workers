@@ -17,9 +17,9 @@ describe("Router", () => {
 		expect(router.route(new Request("https://localhost/a"))?.handler).toBe(
 			fn1,
 		)
-		expect(router.route(new Request("https://localhost/a/b"))?.handler).toBe(
-			fn2,
-		)
+		expect(
+			router.route(new Request("https://localhost/a/b"))?.handler,
+		).toBe(fn2)
 		expect(
 			router.route(new Request("https://localhost/a/b/c"))?.handler,
 		).toBe(fn3)
