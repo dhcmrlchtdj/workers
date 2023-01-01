@@ -14,11 +14,13 @@ export class Deferred<T = void> {
 		this.isRejected = false
 		this.promise = new Promise((resolve, reject) => {
 			this.resolve = (payload: T | PromiseLike<T>) => {
+				if (this.isFulfilled) return
 				this.isFulfilled = true
 				this.isResolved = true
 				resolve(payload)
 			}
 			this.reject = (err?: unknown) => {
+				if (this.isFulfilled) return
 				this.isFulfilled = true
 				this.isRejected = true
 				reject(err)
