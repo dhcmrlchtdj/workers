@@ -10,10 +10,10 @@ export const sleep = (ms: number) =>
 
 export class Mutex {
 	/*
-    Usage:
-    const lock = new Mutex();
-    await lock.withLock(async () => console.log('locked'));
-    */
+	Usage:
+	const lock = new Mutex();
+	await lock.withLock(async () => console.log('locked'));
+	*/
 	private locked: boolean
 	private queue: Deferred[]
 	constructor() {
@@ -59,10 +59,10 @@ export class Mutex {
 
 export class Semaphore {
 	/*
-    Usage:
-    const lock = new Semaphore(2);
-    await lock.withLock(async () => console.log('locked'));
-    */
+	Usage:
+	const lock = new Semaphore(2);
+	await lock.withLock(async () => console.log('locked'));
+	*/
 	private capacity: number
 	private used: number
 	private queue: Deferred[]
@@ -159,26 +159,26 @@ export class RWLock {
 
 export class Condition {
 	/*
-    Usage:
-    const lock = new Mutex()
-    const cond = new Condition();
-    let someTest = false
-    const thread1 = (async () => {
-        await lock.lock();
-        while (!someTest) {
-            await cond.wait(lock);
-        }
-        console.log("done")
-        lock.unlock();
-    })();
-    const thread2 = (async () => {
-        await sleep(1000);
-        await lock.lock();
-        someTest = true;
-        cond.signal();
-        lock.unlock();
-    })();
-    */
+	Usage:
+	const lock = new Mutex()
+	const cond = new Condition();
+	let someTest = false
+	const thread1 = (async () => {
+		await lock.lock();
+		while (!someTest) {
+			await cond.wait(lock);
+		}
+		console.log("done")
+		lock.unlock();
+	})();
+	const thread2 = (async () => {
+		await sleep(1000);
+		await lock.lock();
+		someTest = true;
+		cond.signal();
+		lock.unlock();
+	})();
+	*/
 	private queue: Deferred[]
 	constructor() {
 		this.queue = []
@@ -206,16 +206,16 @@ export class Condition {
 
 export class Barrier {
 	/*
-    Usage:
-    const barrier = new Barrier(5);
-    for (let i = 0; i < 10; i++) {
-        setTimeout(async () => {
-            console.log("before wait");
-            await barrier.wait();
-            console.log("after wait");
-        });
-    }
-    */
+	Usage:
+	const barrier = new Barrier(5);
+	for (let i = 0; i < 10; i++) {
+		setTimeout(async () => {
+			console.log("before wait");
+			await barrier.wait();
+			console.log("after wait");
+		});
+	}
+	*/
 	private next: number
 	private target: number
 	private queue: Deferred[]
@@ -241,11 +241,11 @@ export class Barrier {
 
 export class Once {
 	/*
-    Usage:
-    const once = new Once();
-    once.do(() => console.log("init"));
-    console.log(once.isCompleted());
-    */
+	Usage:
+	const once = new Once();
+	once.do(() => console.log("init"));
+	console.log(once.isCompleted());
+	*/
 	private completed: boolean
 	constructor() {
 		this.completed = false
