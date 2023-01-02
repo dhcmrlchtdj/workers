@@ -34,7 +34,7 @@ const worker = createWorker("current-ip", async (req: Request, env: ENV) => {
 	})
 	if (user && item?.password === pass) {
 		await saveCurrentIp(env, user, item, currIp)
-		return HttpOk()
+		return HttpOk(currIp)
 	} else {
 		console.log(`invalid user/pass: "${user}" "${pass}"`)
 		return HttpUnauthorized(["Basic"])

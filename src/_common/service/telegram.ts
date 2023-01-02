@@ -36,16 +36,14 @@ export class Telegram {
 			.filter((entity) => entity.type === "bot_command")
 			.map((entity) => {
 				const cmds = text
-					.substr(entity.offset, entity.length)
+					.slice(entity.offset, entity.offset + entity.length)
 					.split("@")
 				if (
 					cmds.length === 1 ||
 					(cmds.length === 2 && cmds[1] === this.username)
 				) {
 					const cmd = cmds[0]!
-					const arg = text
-						.substring(entity.offset + entity.length)
-						.trim()
+					const arg = text.slice(entity.offset + entity.length).trim()
 					return { cmd, arg }
 				} else {
 					return undefined

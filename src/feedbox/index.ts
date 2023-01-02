@@ -29,5 +29,5 @@ function appendIpToXForwardFor(
 ): string | null {
 	if (!ip) return xForwardFor
 	if (!xForwardFor) return ip
-	return xForwardFor + ", " + ip
+	return xForwardFor + "," + ip
 }

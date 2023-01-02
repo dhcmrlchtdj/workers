@@ -9,8 +9,8 @@ export function getBA(auth: string | null): { user: string; pass: string } {
 		throw HttpUnauthorized(["Basic"])
 	}
 
-	const [scheme, encoded] = auth.split(" ")
-	if (scheme !== "Basic" || !encoded) {
+	const encoded = auth.slice(6)
+	if (!(auth.startsWith("Basic ") && encoded)) {
 		// eslint-disable-next-line @typescript-eslint/no-throw-literal
 		throw HttpBadRequest("malformed authorization header")
 	}
@@ -24,8 +24,8 @@ export function getBA(auth: string | null): { user: string; pass: string } {
 	}
 
 	return {
-		user: decoded.substring(0, index),
-		pass: decoded.substring(index + 1),
+		user: decoded.slice(0, index),
+		pass: decoded.slice(index + 1),
 	}
 }
 

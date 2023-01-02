@@ -16,7 +16,9 @@ const handleMsg = async (env: Env, msg: Message) => {
 
 	const hashtags = msg.entities
 		.filter((x) => x.type === "hashtag")
-		.map((entity) => msg.text!.substr(entity.offset, entity.length))
+		.map((entity) =>
+			msg.text!.slice(entity.offset, entity.offset + entity.length),
+		)
 	if (hashtags.length > 0) {
 		const tags = Array.from(new Set(hashtags))
 		await execute(env, "/add", tags.join(" "), msg)
