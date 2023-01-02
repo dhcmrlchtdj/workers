@@ -13,7 +13,7 @@ type KVItem = { password: string; proxies: string }
 
 const worker = createWorker("proxy-list", async (req: Request, env: ENV) => {
 	const { user, pass } = getBA(req.headers.get("authorization"))
-	const item = await env.BA.get<KVItem>(`proxy:${user}`, {
+	const item = await env.BA.get<KVItem>("proxy:" + user, {
 		type: "json",
 		cacheTtl: 60 * 60 * 3, // 3h
 	})

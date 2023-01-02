@@ -28,7 +28,7 @@ const worker = createWorker("current-ip", async (req: Request, env: ENV) => {
 	}
 
 	const { user, pass } = getBA(req.headers.get("authorization"))
-	const item = await env.BA.get<KVItem>(`ip:${user}`, {
+	const item = await env.BA.get<KVItem>("ip:" + user, {
 		type: "json",
 		cacheTtl: 60 * 30, // 30min
 	})
@@ -53,7 +53,7 @@ async function saveCurrentIp(
 ) {
 	if (item.ip !== currIp) {
 		item.ip = currIp
-		await env.BA.put(machine, JSON.stringify(item))
+		await env.BA.put("ip:" + machine, JSON.stringify(item))
 		const telegram = new Telegram(env.ROLLBAR_TG_BOT_TOKEN)
 		await telegram.send("sendMessage", {
 			parse_mode: "HTML",

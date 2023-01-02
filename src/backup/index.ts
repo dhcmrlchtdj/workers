@@ -36,7 +36,7 @@ const worker = createWorker("backup", async (req: Request, env: ENV) => {
 	}
 
 	const { user, pass } = getBA(req.headers.get("authorization"))
-	const item = await env.BA.get<KVItem>(`backup:${user}`, {
+	const item = await env.BA.get<KVItem>("backup:" + user, {
 		type: "json",
 		cacheTtl: 60 * 60, // 1h
 	})
