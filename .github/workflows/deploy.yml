@@ -45,7 +45,6 @@ jobs:
                   printf '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
                   printf '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | wrangler secret put 'ROLLBAR_TG_BOT_TOKEN'
                   printf '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | wrangler secret put 'ROLLBAR_TG_CHAT_ID'
-                  printf '${{ secrets.IP_PASS_NUC }}' | wrangler secret put 'IP_PASS_NUC'
                   wrangler publish
 
             - working-directory: src/rollbar

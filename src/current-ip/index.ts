@@ -11,12 +11,15 @@ import {
 } from "../_common/http-response.js"
 
 type ENV = {
-	IP: KVNamespace
 	ROLLBAR_KEY: string
 	ROLLBAR_TG_BOT_TOKEN: string
 	ROLLBAR_TG_CHAT_ID: string
-	IP_PASS_NUC: string
+	BA: KVNamespace
 }
+
+type KVItem = { password: string; ip: string }
+
+///
 
 const worker = createWorker("current-ip", async (req: Request, env: ENV) => {
 	const currIp = req.headers.get("CF-Connecting-IP")
@@ -25,8 +28,12 @@ const worker = createWorker("current-ip", async (req: Request, env: ENV) => {
 	}
 
 	const { user, pass } = getBA(req.headers.get("authorization"))
-	if (user === "nuc" && pass === env.IP_PASS_NUC) {
-		await saveCurrentIp(env, "nuc", currIp)
+	const item = await env.BA.get<KVItem>(`ip:${user}`, {
+		type: "json",
+		cacheTtl: 1800, // 30min
+	})
+	if (user && item?.password === pass) {
+		await saveCurrentIp(env, user, item, currIp)
 		return HttpOk()
 	} else {
 		console.log(`invalid user/pass: "${user}" "${pass}"`)
@@ -36,10 +43,17 @@ const worker = createWorker("current-ip", async (req: Request, env: ENV) => {
 
 export default worker
 
-async function saveCurrentIp(env: ENV, machine: string, currIp: string) {
-	const prevIp = await env.IP.get(machine)
-	if (prevIp !== currIp) {
-		await env.IP.put(machine, currIp)
+///
+
+async function saveCurrentIp(
+	env: ENV,
+	machine: string,
+	item: KVItem,
+	currIp: string,
+) {
+	if (item.ip !== currIp) {
+		item.ip = currIp
+		await env.BA.put(machine, JSON.stringify(item))
 		const telegram = new Telegram(env.ROLLBAR_TG_BOT_TOKEN)
 		await telegram.send("sendMessage", {
 			parse_mode: "HTML",
