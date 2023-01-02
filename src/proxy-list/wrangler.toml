@@ -4,4 +4,4 @@ route = "worker.h11.io/proxy-list*"
 
 compatibility_date = "2022-11-22"
 
-kv_namespaces = [{ binding = "PROXY", id = "ba2758f0d6314cbca676450d5d338da3" }]
+kv_namespaces = [{ binding = "BA", id = "fb7f86b3d7fb42bc8bb5ed43907a6479" }]

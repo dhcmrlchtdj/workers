@@ -4,8 +4,8 @@ import { createWorker } from "../_common/listen.js"
 import {
 	HttpCreated,
 	HttpMethodNotAllowed,
-	HttpOk,
 	HttpUnauthorized,
+	HttpUnprocessableEntity,
 	HttpUnsupportedMediaType,
 } from "../_common/http-response.js"
 
@@ -35,25 +35,17 @@ const worker = createWorker("backup", async (req: Request, env: ENV) => {
 		return HttpUnsupportedMediaType()
 	}
 
-	const userList = await env.BA.get<KVItem[]>("backup", {
-		type: "json",
-		cacheTtl: 3600,
-	})
-	if (userList === null) {
-		return HttpUnauthorized(["Basic"])
-	}
-
 	const { user, pass } = getBA(req.headers.get("authorization"))
 	const item = await env.BA.get<KVItem>(`backup:${user}`, {
 		type: "json",
-		cacheTtl: 3600, // 60min
+		cacheTtl: 60 * 60, // 1h
 	})
 	if (user && item?.password === pass) {
 		const h = HANDERS[user]
 		if (h) {
 			return h(req, env)
 		} else {
-			return HttpOk()
+			return HttpUnprocessableEntity()
 		}
 	} else {
 		console.log(`invalid user/pass: "${user}" "${pass}"`)

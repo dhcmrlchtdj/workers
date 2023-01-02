@@ -55,6 +55,13 @@ export const HttpUnsupportedMediaType = (
 		status: 415,
 		statusText: "Unsupported Media Type",
 	})
+export const HttpUnprocessableEntity = (
+	body: BodyInit = "Unprocessable Entity",
+) =>
+	new Response(body, {
+		status: 422,
+		statusText: "Unprocessable Entity",
+	})
 
 /// Server error
 

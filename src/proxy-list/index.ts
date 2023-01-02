@@ -3,37 +3,31 @@ import { HttpUnauthorized } from "../_common/http-response.js"
 import { createWorker } from "../_common/listen.js"
 
 type ENV = {
-	PROXY: KVNamespace
 	ROLLBAR_KEY: string
+	BA: KVNamespace
 }
-type ProxyItem = {
-	username: string
-	password: string
-	proxies: string
-}
+
+type KVItem = { password: string; proxies: string }
+
+///
 
 const worker = createWorker("proxy-list", async (req: Request, env: ENV) => {
-	const proxyList = await env.PROXY.get<ProxyItem[]>("proxy", {
+	const { user, pass } = getBA(req.headers.get("authorization"))
+	const item = await env.BA.get<KVItem>(`proxy:${user}`, {
 		type: "json",
-		cacheTtl: 3600,
+		cacheTtl: 60 * 60 * 3, // 3h
 	})
-	if (proxyList === null) {
-		console.log(`proxy list is empty`)
+	if (user && item?.password === pass) {
+		return respAsYAML(item.proxies)
+	} else {
+		console.log(`invalid user/pass: "${user}" "${pass}"`)
 		return HttpUnauthorized(["Basic"])
 	}
-
-	const { user, pass } = getBA(req.headers.get("authorization"))
-	for (const { username, password, proxies } of proxyList) {
-		if (user === username && pass === password) {
-			return respAsYAML(proxies)
-		}
-	}
-
-	console.log(`invalid user/pass: "${user}" "${pass}"`)
-	return HttpUnauthorized(["Basic"])
 })
 
 export default worker
+
+///
 
 function respAsYAML(body: string) {
 	return new Response(body, {
