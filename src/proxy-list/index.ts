@@ -13,12 +13,14 @@ type ProxyItem = {
 }
 
 const worker = createWorker("proxy-list", async (req: Request, env: ENV) => {
-	const _proxyList = await env.PROXY.get("proxy")
-	if (_proxyList === null) {
+	const proxyList = await env.PROXY.get<ProxyItem[]>("proxy", {
+		type: "json",
+		cacheTtl: 3600,
+	})
+	if (proxyList === null) {
 		console.log(`proxy list is empty`)
 		return HttpUnauthorized(["Basic"])
 	}
-	const proxyList = JSON.parse(_proxyList) as ProxyItem[]
 
 	const { user, pass } = getBA(req.headers.get("authorization"))
 	for (const { username, password, proxies } of proxyList) {
