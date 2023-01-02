@@ -3,9 +3,9 @@ import { getBA } from "../_common/basic_auth.js"
 import { createWorker } from "../_common/listen.js"
 import {
 	HttpCreated,
+	HttpInternalServerError,
 	HttpMethodNotAllowed,
 	HttpUnauthorized,
-	HttpUnprocessableEntity,
 	HttpUnsupportedMediaType,
 } from "../_common/http-response.js"
 
@@ -45,7 +45,7 @@ const worker = createWorker("backup", async (req: Request, env: ENV) => {
 		if (h) {
 			return h(req, env)
 		} else {
-			return HttpUnprocessableEntity()
+			return HttpInternalServerError()
 		}
 	} else {
 		console.log(`invalid user/pass: "${user}" "${pass}"`)
