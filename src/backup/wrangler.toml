@@ -5,3 +5,4 @@ route = "worker.h11.io/backup*"
 compatibility_date = "2022-11-22"
 
 r2_buckets = [{ binding = "R2Backup", bucket_name = "backup" }]
+kv_namespaces = [{ binding = "BA", id = "fb7f86b3d7fb42bc8bb5ed43907a6479" }]

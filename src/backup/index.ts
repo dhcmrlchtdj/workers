@@ -10,12 +10,21 @@ import {
 
 type ENV = {
 	ROLLBAR_KEY: string
-	BACKUP_PASS_BEANCOUNT: string
-	BACKUP_PASS_FEEDBOX: string
 	R2Backup: R2Bucket
+	BA: KVNamespace
 }
 
-const worker = createWorker("backup", (req: Request, env: ENV) => {
+type KVItem = { username: string; password: string }
+
+type Handler = (req: Request, env: ENV) => Promise<Response>
+const HANDERS: Record<string, Handler> = {
+	beancount: createHandler("beancount"),
+	feedbox: createHandler("database/feedbox"),
+}
+
+///
+
+const worker = createWorker("backup", async (req: Request, env: ENV) => {
 	if (req.method.toUpperCase() !== "POST") {
 		return HttpMethodNotAllowed(["POST"])
 	}
@@ -25,56 +34,56 @@ const worker = createWorker("backup", (req: Request, env: ENV) => {
 		return HttpUnsupportedMediaType()
 	}
 
+	const userList = await env.BA.get<KVItem[]>("backup", {
+		type: "json",
+		cacheTtl: 3600,
+	})
+	if (userList === null) {
+		return HttpUnauthorized(["Basic"])
+	}
+
 	const { user, pass } = getBA(req.headers.get("authorization"))
-	if (user === "beancount" && pass === env.BACKUP_PASS_BEANCOUNT) {
-		return backupBeancount(req, env)
-	} else if (user === "feedbox" && pass === env.BACKUP_PASS_FEEDBOX) {
-		return backupFeedbox(req, env)
+	for (const { username, password } of userList) {
+		if (user === username && pass === password) {
+			const h = HANDERS[username]
+			if (h) return h(req, env)
+		}
 	}
 
 	console.log(`invalid user/pass: "${user}" "${pass}"`)
 	return HttpUnauthorized(["Basic"])
 })
 
-async function backupBeancount(req: Request, env: ENV): Promise<Response> {
-	const body = await req.formData()
-	const file = body.get("file")
-	if (!(file instanceof File)) {
-		throw new Error("`file` is not a file")
+export default worker
+
+///
+
+function createHandler(directoryName: string): Handler {
+	return async function (req: Request, env: ENV): Promise<Response> {
+		const body = await req.formData()
+		const file = body.get("file")
+		if (!(file instanceof File)) {
+			throw new Error("`file` is not a file")
+		}
+		const obj = await env.R2Backup.put(
+			generateFilename(directoryName, file.name),
+			file.stream(),
+			{
+				httpMetadata: { contentType: "application/octet-stream" },
+			},
+		)
+		return HttpCreated(obj.httpEtag)
 	}
-	const obj = await env.R2Backup.put(
-		`beancount/${generateFilename(file.name)}`,
-		file.stream(),
-		{
-			httpMetadata: { contentType: "application/octet-stream" },
-		},
-	)
-	return HttpCreated(obj.httpEtag)
 }
 
-async function backupFeedbox(req: Request, env: ENV): Promise<Response> {
-	const body = await req.formData()
-	const file = body.get("file")
-	if (!(file instanceof File)) {
-		throw new Error("`file` is not a file")
-	}
-	const obj = await env.R2Backup.put(
-		`database/feedbox/${generateFilename(file.name)}`,
-		file.stream(),
-		{
-			httpMetadata: { contentType: "application/octet-stream" },
-		},
-	)
-	return HttpCreated(obj.httpEtag)
-}
-
-function generateFilename(name: string | null | undefined): string {
+function generateFilename(
+	directoryName: string,
+	name: string | null | undefined,
+): string {
 	const date = format(new Date(), "YYYYMMDD_hhmmss")
 	if (name) {
-		return date + "-" + name
+		return directoryName + "/" + date + "-" + name
 	} else {
-		return date
+		return directoryName + "/" + date
 	}
 }
-
-export default worker
