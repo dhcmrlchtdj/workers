@@ -1,5 +1,5 @@
 import { getBA } from "../_common/basic_auth.js"
-import { HttpUnauthorized } from "../_common/http-response.js"
+import { HttpUnauthorized, ResponseBuilder } from "../_common/http-response.js"
 import { createWorker } from "../_common/listen.js"
 
 type ENV = {
@@ -18,7 +18,11 @@ const worker = createWorker("proxy-list", async (req: Request, env: ENV) => {
 		cacheTtl: 60 * 60 * 3, // 3h
 	})
 	if (user && item?.password === pass) {
-		return respAsYAML(item.proxies)
+		const resp = new ResponseBuilder()
+			.body(item.proxies)
+			.contentType("application/yaml;charset=UTF-8")
+			.build()
+		return resp
 	} else {
 		console.log(`invalid user/pass: "${user}" "${pass}"`)
 		return HttpUnauthorized(["Basic"])
@@ -26,15 +30,3 @@ const worker = createWorker("proxy-list", async (req: Request, env: ENV) => {
 })
 
 export default worker
-
-///
-
-function respAsYAML(body: string) {
-	return new Response(body, {
-		status: 200,
-		statusText: "OK",
-		headers: {
-			"content-type": "application/yaml;charset=UTF-8",
-		},
-	})
-}
