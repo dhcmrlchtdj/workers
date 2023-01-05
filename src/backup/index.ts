@@ -2,11 +2,11 @@ import { format } from "../_common/format-date.js"
 import { getBA } from "../_common/basic_auth.js"
 import { createWorker } from "../_common/listen.js"
 import {
-	HttpCreated,
 	HttpInternalServerError,
 	HttpMethodNotAllowed,
 	HttpUnauthorized,
 	HttpUnsupportedMediaType,
+	ResponseBuilder,
 } from "../_common/http-response.js"
 
 type ENV = {
@@ -38,7 +38,7 @@ const worker = createWorker("backup", async (req: Request, env: ENV) => {
 	const { user, pass } = getBA(req.headers.get("authorization"))
 	const item = await env.BA.get<KVItem>("backup:" + user, {
 		type: "json",
-		cacheTtl: 60 * 60, // 1h
+		cacheTtl: 60 * 60, // 60min
 	})
 	if (user && item?.password === pass) {
 		const h = HANDERS[user]
@@ -71,7 +71,10 @@ function createHandler(directoryName: string): Handler {
 				httpMetadata: { contentType: "application/octet-stream" },
 			},
 		)
-		return HttpCreated(obj.httpEtag)
+		return new ResponseBuilder()
+			.status(201)
+			.json({ key: obj.key, etag: obj.httpEtag })
+			.build()
 	}
 }
 

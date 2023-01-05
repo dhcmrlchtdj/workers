@@ -15,12 +15,12 @@ const worker = createWorker("proxy-list", async (req: Request, env: ENV) => {
 	const { user, pass } = getBA(req.headers.get("authorization"))
 	const item = await env.BA.get<KVItem>("proxy:" + user, {
 		type: "json",
-		cacheTtl: 60 * 60 * 3, // 3h
+		cacheTtl: 60 * 60, // 60min
 	})
 	if (user && item?.password === pass) {
 		const resp = new ResponseBuilder()
 			.body(item.proxies)
-			.contentType("application/yaml;charset=UTF-8")
+			.contentType("application/yaml; charset=utf-8")
 			.build()
 		return resp
 	} else {

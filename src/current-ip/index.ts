@@ -28,10 +28,7 @@ const worker = createWorker("current-ip", async (req: Request, env: ENV) => {
 	}
 
 	const { user, pass } = getBA(req.headers.get("authorization"))
-	const item = await env.BA.get<KVItem>("ip:" + user, {
-		type: "json",
-		cacheTtl: 60 * 30, // 30min
-	})
+	const item = await env.BA.get<KVItem>("ip:" + user, { type: "json" })
 	if (user && item?.password === pass) {
 		await saveCurrentIp(env, user, item, currIp)
 		return HttpOk(currIp)

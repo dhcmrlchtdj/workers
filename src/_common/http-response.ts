@@ -30,6 +30,11 @@ export class ResponseBuilder {
 		return this
 	}
 	///
+	json(data: unknown): this {
+		this.body(JSON.stringify(data))
+		this.contentType("application/json; charset=utf-8")
+		return this
+	}
 	contentType(contentType: string): this {
 		this.set("content-type", contentType)
 		return this
