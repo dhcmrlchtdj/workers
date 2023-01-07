@@ -1,4 +1,3 @@
-import { assert } from "./assert.js"
 import { Deferred } from "./deferred.js"
 import { Option, Some, None } from "./option.js"
 
@@ -14,16 +13,6 @@ export class Mutex {
 	Usage:
 	const lock = new Mutex();
 	await lock.withLock(async () => console.log('locked'));
-
-	await lock.lock()
-	console.log('before')
-	await lock.waitUntil(() => blah());
-	console.log('after')
-	lock.unlock();
-
-	await lock.lockWhen(() => blah());
-	console.log('locked')
-	lock.unlock();
 	*/
 	private locked: boolean
 	private queue: Deferred[]
@@ -66,18 +55,51 @@ export class Mutex {
 			this.unlock()
 		}
 	}
+}
+
+export class CondMutex {
+	/*
+	Usage:
+	const lock = new CondMutex();
+
+	await lock.withLock(async () => {
+		console.log('before')
+		await lock.waitUntil(() => blah());
+		console.log('after')
+	});
+
+	await lock.lockWhen(() => blah());
+	console.log('locked')
+	lock.unlock();
+	*/
+	private mutex: Mutex
+	private cond: Condition
+	constructor() {
+		this.mutex = new Mutex()
+		this.cond = new Condition()
+	}
+	async lock(): Promise<void> {
+		return this.mutex.lock()
+	}
+	tryLock(): boolean {
+		return this.mutex.tryLock()
+	}
+	unlock(): void {
+		this.mutex.unlock()
+		this.cond.signal()
+	}
+	async withLock<T>(f: () => T | Promise<T>): Promise<T> {
+		return this.mutex.withLock(f)
+	}
 	async waitUntil(cond: () => boolean): Promise<void> {
-		assert(this.locked)
 		while (!cond()) {
-			this.unlock()
-			await this.lock()
+			await this.cond.wait(this.mutex)
 		}
 	}
 	async lockWhen(cond: () => boolean): Promise<void> {
 		await this.lock()
 		while (!cond()) {
-			this.unlock()
-			await this.lock()
+			await this.cond.wait(this.mutex)
 		}
 	}
 }
