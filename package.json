@@ -4,7 +4,7 @@
 	"version": "0.0.0",
 	"repository": "git@github.com:dhcmrlchtdj/workers.git",
 	"author": "h11 <nirisix@gmail.com>",
-	"license": "MIT",
+	"license": "Apache-2.0",
 	"type": "module",
 	"packageManager": "pnpm@7.21.0",
 	"devDependencies": {
