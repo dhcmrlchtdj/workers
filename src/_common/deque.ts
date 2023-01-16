@@ -1,4 +1,4 @@
-import { Option, Some, None } from "./option.js"
+import { Option, some, none } from "./option.js"
 
 // credit
 // https://doc.rust-lang.org/std/collections/struct.VecDeque.html
@@ -89,14 +89,14 @@ export class Deque<T> {
 	}
 	popBack(): Option<T> {
 		if (this.isEmpty()) {
-			return None
+			return none
 		} else {
 			const idx = this.dec(this.tail)
 			const item = this.buf[idx]!
 			// @ts-expect-error
 			this.buf[idx] = undefined // cleanup
 			this.tail = idx
-			return Some(item)
+			return some(item)
 		}
 	}
 	peekBack(): Option<T> {
@@ -123,14 +123,14 @@ export class Deque<T> {
 	}
 	popFront(): Option<T> {
 		if (this.isEmpty()) {
-			return None
+			return none
 		} else {
 			const idx = this.head
 			const item = this.buf[idx]!
 			// @ts-expect-error
 			this.buf[idx] = undefined // cleanup
 			this.head = this.inc(idx)
-			return Some(item)
+			return some(item)
 		}
 	}
 	peekFront(): Option<T> {
@@ -144,7 +144,7 @@ export class Deque<T> {
 		if (index >= 0 && index < this.length) {
 			return this._peek(this.inc(this.head, index))
 		} else {
-			return None
+			return none
 		}
 	}
 	get(index: number): T {
@@ -156,8 +156,8 @@ export class Deque<T> {
 	}
 
 	private _peek(index: number): Option<T> {
-		if (this.isEmpty()) return None
-		return Some(this.buf[index]!)
+		if (this.isEmpty()) return none
+		return some(this.buf[index]!)
 	}
 	private _get(index: number): T {
 		if (this.isEmpty()) throw new Error("Deque.get")

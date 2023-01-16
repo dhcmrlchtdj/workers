@@ -1,4 +1,4 @@
-import { Option, Some, None } from "./option.js"
+import { Option, some, none } from "./option.js"
 
 class Entry<K, V> {
 	// children[i] <= keys[i]
@@ -62,15 +62,15 @@ export class BTree<K extends string | number, V> {
 			const idx = node.search(key)
 			if (node.isLeaf()) {
 				if (node.keys[idx] === key) {
-					return Some(node.values[idx]!)
+					return some(node.values[idx]!)
 				} else {
-					return None
+					return none
 				}
 			} else {
 				node = node.children[idx]
 			}
 		}
-		return None
+		return none
 	}
 	// set(key: K, value: V): Option<V> {
 	//     return None

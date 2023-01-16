@@ -1,4 +1,4 @@
-import { Option, Some, None } from "./option.js"
+import { Option, some, none } from "./option.js"
 
 // https://ticki.github.io/blog/skip-lists-done-right/
 // https://graphics.stanford.edu/~seander/bithacks.html
@@ -52,9 +52,9 @@ export class SkipList<K extends string | number, V> {
 		// so we move to curr.next[0]
 		const node = curr.next[0]
 		if (node && node.key === key) {
-			return Some(node.value)
+			return some(node.value)
 		} else {
-			return None
+			return none
 		}
 	}
 
@@ -73,7 +73,7 @@ export class SkipList<K extends string | number, V> {
 		if (node && node.key === key) {
 			const replaced = node.value
 			node.value = value
-			return Some(replaced)
+			return some(replaced)
 		} else {
 			const newLevel = randomLevel()
 
@@ -92,7 +92,7 @@ export class SkipList<K extends string | number, V> {
 			newNode.prev = update[0]
 			if (newNode.next[0]) newNode.next[0].prev = newNode
 
-			return None
+			return none
 		}
 	}
 
@@ -123,9 +123,9 @@ export class SkipList<K extends string | number, V> {
 			) {
 				this.level--
 			}
-			return Some(node.value)
+			return some(node.value)
 		} else {
-			return None
+			return none
 		}
 	}
 }

@@ -1,7 +1,7 @@
 import { assert } from "./assert.js"
 import { abortedBySignal, Deferred } from "./deferred.js"
 import { LinkedMap } from "./linked-map.js"
-import { Option, Some, None } from "./option.js"
+import { Option, some, none } from "./option.js"
 
 let currentId = 0
 const genId = () => currentId++
@@ -54,7 +54,7 @@ export class Channel<T = unknown> {
 				if (sender.tryLock()) {
 					this.receivers.removeFirst()
 					this.senders.removeFirst()
-					receiver.defer.resolve(Some(sender.data))
+					receiver.defer.resolve(some(sender.data))
 					sender.defer.resolve(true)
 				} else {
 					receiver.unlock()
@@ -69,7 +69,7 @@ export class Channel<T = unknown> {
 				for (const rid of this.receivers.keys()) {
 					const receiver = this.receivers.get(rid).unwrap()
 					if (receiver.tryLock()) {
-						receiver.defer.resolve(None)
+						receiver.defer.resolve(none)
 						this.receivers.remove(rid)
 					}
 				}
@@ -113,7 +113,7 @@ export class Channel<T = unknown> {
 				const receiver = this.receivers.getFirst().unwrap()
 				if (receiver.tryLock()) {
 					this.receivers.removeFirst()
-					receiver.defer.resolve(Some(data))
+					receiver.defer.resolve(some(data))
 					return true
 				} else {
 					return null
@@ -147,7 +147,7 @@ export class Channel<T = unknown> {
 	}
 	tryReceive(): Option<T> {
 		const r = this.fastReceive()
-		return r ?? None
+		return r ?? none
 	}
 	private fastReceive(): Option<T> | null {
 		if (this.receivers.size() > 0) {
@@ -157,13 +157,13 @@ export class Channel<T = unknown> {
 			if (sender.tryLock()) {
 				this.senders.removeFirst()
 				sender.defer.resolve(true)
-				return Some(sender.data)
+				return some(sender.data)
 			} else {
 				return null
 			}
 		} else {
 			if (this.closed) {
-				return None
+				return none
 			} else {
 				return null
 			}
@@ -376,7 +376,7 @@ export class Select {
 	private async wakeup(waitings: Channel<number>): Promise<void> {
 		while (!waitings.isClosed()) {
 			const r = await waitings.receive()
-			if (r.isNone) return
+			if (r.isNone()) return
 			const idx = r.unwrap()
 			const selection = this.selections[idx]
 			// @ts-expect-error

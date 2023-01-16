@@ -1,5 +1,5 @@
 import { Deferred } from "./deferred.js"
-import { Option, Some, None } from "./option.js"
+import { Option, some, none } from "./option.js"
 
 ///
 
@@ -325,7 +325,7 @@ export class Mailbox<T> {
 	}
 	close() {
 		this.closed = true
-		this.readers.forEach((r) => r.resolve(None))
+		this.readers.forEach((r) => r.resolve(none))
 		this.readers = []
 	}
 	isClosed(): boolean {
@@ -339,8 +339,8 @@ export class Mailbox<T> {
 	// None means the mailbox is closed
 	async read(): Promise<Option<T>> {
 		const r = this.tryRead()
-		if (r.isSome) return r
-		if (this.closed) return None
+		if (r.isSome()) return r
+		if (this.closed) return none
 		const defer = new Deferred<Option<T>>()
 		this.readers.push(defer)
 		return defer.promise
@@ -353,15 +353,15 @@ export class Mailbox<T> {
 				w.resolve(true)
 				this.buffer.push(data)
 			}
-			return Some(data)
+			return some(data)
 		}
 		if (this.writers.length > 0) {
 			const [w, data] = this.writers.shift()!
 			w.resolve(true)
-			return Some(data)
+			return some(data)
 		}
 		// if (this.closed) return None
-		return None
+		return none
 	}
 	// true means the message is sent to a reader or buffer
 	// false means the mailbox is closed and the data is discarded
@@ -377,7 +377,7 @@ export class Mailbox<T> {
 		if (this.closed) return false
 		if (this.readers.length > 0) {
 			const r = this.readers.shift()!
-			r.resolve(Some(data))
+			r.resolve(some(data))
 			return true
 		}
 		if (this.buffer.length < this.capacity) {

@@ -10,7 +10,7 @@ describe("Channel", () => {
 		expect(r1).toBe(false)
 
 		const r2 = ch.tryReceive()
-		expect(r2.isNone).toBe(true)
+		expect(r2.isNone()).toBe(true)
 	})
 
 	test("block", async () => {

@@ -1,6 +1,6 @@
 import { Entry } from "./linked-list.js"
 import { LinkedMap } from "./linked-map.js"
-import { Option, None } from "./option.js"
+import { Option, none } from "./option.js"
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export interface CachePolicy<K, V> {
@@ -34,7 +34,7 @@ export class LRU<K, V> implements CachePolicy<K, V> {
 	}
 	get(key: K): Option<V> {
 		const e = this.map.get(key)
-		if (e.isSome) {
+		if (e.isSome()) {
 			this.map.moveToFirst(key)
 		}
 		return e
@@ -77,12 +77,12 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 	}
 	peek(key: K): Option<V> {
 		const e = this.frequent.peek(key)
-		if (e.isSome) return e
+		if (e.isSome()) return e
 		return this.recent.get(key)
 	}
 	get(key: K): Option<V> {
 		const e = this.recent.remove(key)
-		if (e.isSome) {
+		if (e.isSome()) {
 			this.frequent.set(key, e.unwrap())
 			return e
 		} else {
@@ -109,7 +109,7 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 			this._replace(false)
 			this.recentEvicted.remove(key)
 			this.frequent.set(key, value)
-			return None
+			return none
 		} else if (this.frequentEvicted.has(key)) {
 			// case 3
 			const sizeF = this.frequentEvicted.size()
@@ -121,7 +121,7 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 			this._replace(true)
 			this.frequentEvicted.remove(key)
 			this.frequent.set(key, value)
-			return None
+			return none
 		} else {
 			// case 4
 			const recentSize = this.recent.size() + this.recentEvicted.size()
@@ -143,7 +143,7 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 				this._replace(false)
 			}
 			this.recent.addFirst(key, value)
-			return None
+			return none
 		}
 	}
 	private _replace(hitFrequentEvicted: boolean): void {
@@ -181,7 +181,7 @@ export class ARC<K, V> implements CachePolicy<K, V> {
 		const removeR = this.recent.remove(key)
 		this.frequentEvicted.remove(key)
 		this.recentEvicted.remove(key)
-		return removeF.isSome ? removeF : removeR
+		return removeF.isSome() ? removeF : removeR
 	}
 	*keys(): IterableIterator<K> {
 		yield* this.frequent.keys()
@@ -212,12 +212,12 @@ export class TwoQueue<K, V> implements CachePolicy<K, V> {
 	}
 	peek(key: K): Option<V> {
 		const e = this.frequent.peek(key)
-		if (e.isSome) return e
+		if (e.isSome()) return e
 		return this.recent.get(key)
 	}
 	get(key: K): Option<V> {
 		const e = this.frequent.get(key)
-		if (e.isSome) return e
+		if (e.isSome()) return e
 		return this.recent.get(key)
 	}
 	set(key: K, value: V): Option<V> {
@@ -227,7 +227,7 @@ export class TwoQueue<K, V> implements CachePolicy<K, V> {
 			return this.recent.update(key, value)
 		} else if (this.ghost.has(key)) {
 			this.ghost.remove(key)
-			return None
+			return none
 		} else {
 			this.recent.addFirst(key, value)
 			if (this.recent.size() > this.recentCapacity) {
@@ -237,14 +237,14 @@ export class TwoQueue<K, V> implements CachePolicy<K, V> {
 					this.ghost.removeLast()
 				}
 			}
-			return None
+			return none
 		}
 	}
 	remove(key: K): Option<V> {
 		const removeF = this.frequent.remove(key)
 		const removeR = this.recent.remove(key)
 		this.ghost.remove(key)
-		return removeF.isSome ? removeF : removeR
+		return removeF.isSome() ? removeF : removeR
 	}
 	*keys(): IterableIterator<K> {
 		yield* this.frequent.keys()
