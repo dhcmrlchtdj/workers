@@ -191,6 +191,33 @@ export function never<T>(): Op<T> {
 		}
 	})
 }
+export function fromPromise<T>(p: Promise<T>): Op<Promise<T>> {
+	return new Communication((performed, condition, idx) => {
+		let fulfilled = false
+		p.finally(() => {
+			fulfilled = true
+		})
+		return {
+			poll: () => {
+				if (fulfilled) {
+					performed.set(idx)
+					return true
+				} else {
+					return false
+				}
+			},
+			suspend: () => {
+				p.finally(() => {
+					if (performed.get() === -1) {
+						performed.set(idx)
+						condition.signal()
+					}
+				})
+			},
+			result: () => p,
+		}
+	})
+}
 
 ///
 
@@ -213,7 +240,7 @@ async function basicSync<T>(abortEnv: Abort[], genOp: GenOp<T>[]): Promise<T> {
 	if (!ready) {
 		ops.forEach((x) => x.suspend())
 		await cond.wait(masterlock)
-		while (performed.get() < 0) {
+		while (performed.get() === -1) {
 			await cond.wait(masterlock)
 		}
 	}
@@ -242,14 +269,14 @@ function basicPoll<T>(abortEnv: Abort[], genOp: GenOp<T>[]): Option<T> {
 	if (!locked) return none
 
 	const ready = pollOps(0)
+
+	masterlock.unlock()
+
 	if (ready) {
-		masterlock.unlock()
 		const result = ops[performed.get()]!.result()
 		doAborts(abortEnv, genOp, performed.get())
 		return some(result)
 	} else {
-		performed.set(0)
-		masterlock.unlock()
 		doAborts(abortEnv, genOp, -1)
 		return none
 	}
@@ -308,11 +335,11 @@ export class Channel<T> {
 
 	send(data: T): Op<boolean> {
 		if (this._closed) return always(false)
-		return new Communication((performed, cond, idx) => {
+		return new Communication((performed, condition, idx) => {
 			const sender: Sender<T> = {
-				performed: performed,
-				condition: cond,
-				idx: idx,
+				performed,
+				condition,
+				idx,
 				data: some(data),
 				sent: false,
 			}
@@ -343,11 +370,11 @@ export class Channel<T> {
 	}
 	receive(): Op<Option<T>> {
 		if (this._closed) return always(none)
-		return new Communication((performed, cond, idx) => {
+		return new Communication((performed, condition, idx) => {
 			const receiver: Receiver<T> = {
-				performed: performed,
-				condition: cond,
-				idx: idx,
+				performed,
+				condition,
+				idx,
 				data: none,
 			}
 			return {

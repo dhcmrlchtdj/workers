@@ -1,4 +1,15 @@
-import { Channel, select } from "../../src/_common/event.js"
+import { Deferred } from "../../src/_common/deferred.js"
+import { Channel, fromPromise, select } from "../../src/_common/event.js"
+
+describe("Op", () => {
+	test("fromPromise", async () => {
+		const d = new Deferred<number>()
+		const op = fromPromise(d.promise).sync()
+		d.resolve(10)
+		const r = await op
+		expect(r).toBe(10)
+	})
+})
 
 describe("Channel", () => {
 	test("simple", async () => {
@@ -14,7 +25,7 @@ describe("Channel", () => {
 			})(),
 		])
 	})
-	test("close read", async () => {
+	test("close", async () => {
 		const ch = new Channel<number>()
 		const op = ch.receive().wrap((v) => {
 			expect(v.isNone()).toBe(true)
