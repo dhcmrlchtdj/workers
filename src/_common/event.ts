@@ -8,7 +8,7 @@ type Ref<T> = {
 	val: T
 }
 
-type BasisEvent<T> = {
+type BasicEvent<T> = {
 	poll(): boolean
 	suspend(): void
 	result(): T
@@ -18,7 +18,7 @@ type Behavior<T> = (
 	performed: Ref<number>,
 	cond: Condition,
 	idx: number,
-) => BasisEvent<T>
+) => BasicEvent<T>
 
 type GenEv<T> = [Behavior<T>, number[]]
 type Abort = [number, () => void]
@@ -153,6 +153,18 @@ export function always<T>(data: T): Op<T> {
 		}
 	}
 	return new Communication(genEv)
+}
+export function never<T>(): Op<T> {
+	const genEv: Behavior<T> = (_performed, _condition, _evnum) => {
+		return {
+			poll: () => false,
+			suspend: () => {},
+			result: () => {
+				throw new Error("never")
+			},
+		}
+	}
+	return new Communication<T>(genEv)
 }
 
 ///
