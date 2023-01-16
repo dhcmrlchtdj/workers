@@ -1,15 +1,15 @@
-import { Channel, select, sync } from "../../src/_common/event.js"
+import { Channel, select } from "../../src/_common/event.js"
 
 describe("Channel", () => {
 	test("simple", async () => {
 		const ch = new Channel<number>()
 		await Promise.all([
 			(async () => {
-				const r = await sync(ch.send(10))
+				const r = await ch.send(10).sync()
 				expect(r).toBe(true)
 			})(),
 			(async () => {
-				const r = await sync(ch.receive())
+				const r = await ch.receive().sync()
 				expect(r).toBe(10)
 			})(),
 		])
@@ -22,7 +22,7 @@ describe("Select", () => {
 		const ch2 = new Channel<string>()
 
 		const background = (async () => {
-			const r = await sync(ch1.receive())
+			const r = await ch1.receive().sync()
 			expect(r).toBe(1)
 		})()
 
@@ -39,7 +39,7 @@ describe("Select", () => {
 		const ch1 = new Channel<number>()
 
 		const background = (async () => {
-			const r = await sync(ch1.send(10))
+			const r = await ch1.send(10).sync()
 			expect(r).toBe(true)
 		})()
 
@@ -58,10 +58,10 @@ describe("Select", () => {
 		const ch1 = new Channel<number>()
 
 		const background = (async () => {
-			const r1 = await sync(ch1.send(10))
+			const r1 = await ch1.send(10).sync()
 			expect(r1).toBe(true)
 
-			const r2 = await sync(ch1.send(20))
+			const r2 = await ch1.send(20).sync()
 			expect(r2).toBe(true)
 		})()
 

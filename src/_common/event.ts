@@ -4,24 +4,18 @@
 import { Option, none, some } from "./option.js"
 import { Condition, Mutex } from "./sync.js"
 
-type Ref<T> = {
-	val: T
+class Box<T> {
+	private inner: T
+	constructor(inner: T) {
+		this.inner = inner
+	}
+	get(): T {
+		return this.inner
+	}
+	set(inner: T) {
+		this.inner = inner
+	}
 }
-
-type BasicEvent<T> = {
-	poll(): boolean
-	suspend(): void
-	result(): T
-}
-
-type Behavior<T> = (
-	performed: Ref<number>,
-	cond: Condition,
-	idx: number,
-) => BasicEvent<T>
-
-type GenEv<T> = [Behavior<T>, number[]]
-type Abort = [number, () => void]
 
 const genSym = (() => {
 	let id = 0
@@ -30,42 +24,67 @@ const genSym = (() => {
 
 ///
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
-interface Op<T> {
-	wrap<R>(fn: (v: T) => R): Op<R>
-	flatten(
+type BasicEvent<T> = {
+	poll(): boolean
+	suspend(): void
+	result(): T
+}
+
+type Behavior<T> = (
+	performed: Box<number>,
+	cond: Condition,
+	idx: number,
+) => BasicEvent<T>
+
+type GenEv<T> = { gen: Behavior<T>; abortList: number[] }
+type Abort = { id: number; onAbort: () => void }
+
+///
+
+abstract class Op<T> {
+	sync(): Promise<T> {
+		const [ops, abortEnv] = this.flatten([], [], [])
+		return basicSync(abortEnv, scramble(ops))
+	}
+	poll(): Option<T> {
+		const [ops, abortEnv] = this.flatten([], [], [])
+		return basicPoll(abortEnv, scramble(ops))
+	}
+	abstract wrap<R>(fn: (v: T) => R): Op<R>
+	protected abstract flatten(
 		abortList: number[],
 		acc: GenEv<T>[],
 		accAbort: Abort[],
 	): [GenEv<T>[], Abort[]]
 }
-class Communication<T> implements Op<T> {
+class Communication<T> extends Op<T> {
 	private behavior: Behavior<T>
 	constructor(behavior: Behavior<T>) {
+		super()
 		this.behavior = behavior
 	}
 	wrap<R>(fn: (v: T) => R): Op<R> {
-		const genEv: Behavior<R> = (performed, condition, evnum) => {
+		return new Communication((performed, condition, evnum) => {
 			const bev = this.behavior(performed, condition, evnum)
 			return {
 				poll: () => bev.poll(),
 				suspend: () => bev.suspend(),
 				result: () => fn(bev.result()),
 			}
-		}
-		return new Communication(genEv)
+		})
 	}
 	flatten(
 		abortList: number[],
 		acc: GenEv<T>[],
 		accAbort: Abort[],
 	): [GenEv<T>[], Abort[]] {
-		return [[[this.behavior, abortList], ...acc], accAbort]
+		return [[{ gen: this.behavior, abortList }, ...acc], accAbort]
 	}
 }
-class Choose<T> implements Op<T> {
+class Choose<T> extends Op<T> {
 	private ops: Op<T>[]
 	constructor(ops: Op<T>[]) {
+		super()
 		this.ops = ops
 	}
 	wrap<R>(fn: (v: T) => R): Op<R> {
@@ -78,16 +97,18 @@ class Choose<T> implements Op<T> {
 	): [GenEv<T>[], Abort[]] {
 		return this.ops.reduce(
 			(prev: [GenEv<T>[], Abort[]], curr: Op<T>) => {
+				// @ts-expect-error
 				return curr.flatten(abortList, prev[0], prev[1])
 			},
 			[acc, accAbort],
 		)
 	}
 }
-class WrapAbort<T> implements Op<T> {
+class WrapAbort<T> extends Op<T> {
 	private op: Op<T>
 	private onAbort: () => void
 	constructor(op: Op<T>, onAbort: () => void) {
+		super()
 		this.op = op
 		this.onAbort = onAbort
 	}
@@ -100,15 +121,17 @@ class WrapAbort<T> implements Op<T> {
 		accAbort: Abort[],
 	): [GenEv<T>[], Abort[]] {
 		const id = genSym()
+		// @ts-expect-error
 		return this.op.flatten([id, ...abortList], acc, [
-			[id, this.onAbort],
+			{ id, onAbort: this.onAbort },
 			...accAbort,
 		])
 	}
 }
-class Guard<T> implements Op<T> {
+class Guard<T> extends Op<T> {
 	private g: () => Op<T>
 	constructor(g: () => Op<T>) {
+		super()
 		this.g = g
 	}
 	wrap<R>(fn: (v: T) => R): Op<R> {
@@ -119,6 +142,7 @@ class Guard<T> implements Op<T> {
 		acc: GenEv<T>[],
 		accAbort: Abort[],
 	): [GenEv<T>[], Abort[]] {
+		// @ts-expect-error
 		return this.g().flatten(abortList, acc, accAbort)
 	}
 }
@@ -126,9 +150,8 @@ class Guard<T> implements Op<T> {
 ///
 
 export function select<T>(...ops: Op<T>[]): Promise<T> {
-	return sync(new Choose(ops))
+	return new Choose(ops).sync()
 }
-
 export function choose<T>(...ops: Op<T>[]): Op<T> {
 	return new Choose(ops)
 }
@@ -145,7 +168,7 @@ export function always<T>(data: T): Op<T> {
 	const genEv: Behavior<T> = (performed, _condition, evnum) => {
 		return {
 			poll: () => {
-				performed.val = evnum
+				performed.set(evnum)
 				return true
 			},
 			suspend: () => {},
@@ -180,29 +203,24 @@ const masterlock = new Mutex()
 function doAborts<T>(abortEnv: Abort[], genEv: GenEv<T>[], performed: number) {
 	if (abortEnv.length === 0) return
 	if (performed >= 0) {
-		const idsDone = genEv[performed]![1]
-		abortEnv.forEach(([id, f]) => {
+		const idsDone = genEv[performed]!.abortList
+		abortEnv.forEach(({ id, onAbort }) => {
 			if (!idsDone.includes(id)) {
-				f()
+				onAbort()
 			}
 		})
 	} else {
-		abortEnv.forEach(([_, f]) => f())
+		abortEnv.forEach(({ onAbort }) => onAbort())
 	}
 }
 
 ///
 
-export function sync<T>(op: Op<T>): Promise<T> {
-	const [ops, abortEnv] = op.flatten([], [], [])
-	return basicSync(abortEnv, scramble(ops))
-}
-
 async function basicSync<T>(abortEnv: Abort[], genEv: GenEv<T>[]): Promise<T> {
-	const performed: Ref<number> = { val: -1 }
+	const performed = new Box(-1)
 	const cond = new Condition()
-	const bev = genEv.map(([f, _], idx) => {
-		return f(performed, cond, idx)
+	const bev = genEv.map(({ gen }, idx) => {
+		return gen(performed, cond, idx)
 	})
 	const pollEvents = (idx: number): boolean => {
 		if (idx >= bev.length) return false
@@ -215,32 +233,27 @@ async function basicSync<T>(abortEnv: Abort[], genEv: GenEv<T>[]): Promise<T> {
 	if (!ready) {
 		bev.forEach((x) => x.suspend())
 		await cond.wait(masterlock)
-		while (performed.val < 0) {
+		while (performed.get() < 0) {
 			await cond.wait(masterlock)
 		}
 	}
 
 	masterlock.unlock()
 
-	const result = bev[performed.val]!.result()
+	const result = bev[performed.get()]!.result()
 	if (abortEnv.length > 0) {
-		doAborts(abortEnv, genEv, performed.val)
+		doAborts(abortEnv, genEv, performed.get())
 	}
 	return result
 }
 
 ///
 
-export function poll<T>(op: Op<T>): Option<T> {
-	const [ops, abortEnv] = op.flatten([], [], [])
-	return basicPoll(abortEnv, scramble(ops))
-}
-
 function basicPoll<T>(abortEnv: Abort[], genEv: GenEv<T>[]): Option<T> {
-	const performed: Ref<number> = { val: -1 }
+	const performed = new Box(-1)
 	const cond = new Condition()
-	const bev = genEv.map(([f, _], idx) => {
-		return f(performed, cond, idx)
+	const bev = genEv.map(({ gen }, idx) => {
+		return gen(performed, cond, idx)
 	})
 	const pollEvents = (idx: number): boolean => {
 		if (idx >= bev.length) return false
@@ -253,11 +266,11 @@ function basicPoll<T>(abortEnv: Abort[], genEv: GenEv<T>[]): Option<T> {
 	const ready = pollEvents(0)
 	if (ready) {
 		masterlock.unlock()
-		const result = bev[performed.val]!.result()
-		doAborts(abortEnv, genEv, performed.val)
+		const result = bev[performed.get()]!.result()
+		doAborts(abortEnv, genEv, performed.get())
 		return some(result)
 	} else {
-		performed.val = 0
+		performed.set(0)
 		masterlock.unlock()
 		doAborts(abortEnv, genEv, -1)
 		return none
@@ -267,7 +280,7 @@ function basicPoll<T>(abortEnv: Abort[], genEv: GenEv<T>[]): Option<T> {
 ///
 
 type CommunicationC<T> = {
-	performed: Ref<number>
+	performed: Box<number>
 	condition: Condition
 	data: Option<T>
 	eventNumber: number
@@ -292,10 +305,10 @@ export class Channel<T> {
 				poll: () => {
 					while (this.readsPending.length > 0) {
 						const rcomm = this.readsPending.shift()!
-						if (rcomm.performed.val >= 0) continue
+						if (rcomm.performed.get() >= 0) continue
 						rcomm.data = wcomm.data
-						performed.val = evnum
-						rcomm.performed.val = rcomm.eventNumber
+						performed.set(evnum)
+						rcomm.performed.set(rcomm.eventNumber)
 						rcomm.condition.signal()
 						return true
 					}
@@ -303,7 +316,7 @@ export class Channel<T> {
 				},
 				suspend: () => {
 					const q = this.writesPending.filter(
-						(x) => x.performed.val === -1,
+						(x) => x.performed.get() === -1,
 					)
 					q.push(wcomm)
 					this.writesPending = q
@@ -325,10 +338,10 @@ export class Channel<T> {
 				poll: () => {
 					while (this.writesPending.length > 0) {
 						const wcomm = this.writesPending.shift()!
-						if (wcomm.performed.val >= 0) continue
+						if (wcomm.performed.get() >= 0) continue
 						rcomm.data = wcomm.data
-						performed.val = evnum
-						wcomm.performed.val = wcomm.eventNumber
+						performed.set(evnum)
+						wcomm.performed.set(wcomm.eventNumber)
 						wcomm.condition.signal()
 						return true
 					}
@@ -336,7 +349,7 @@ export class Channel<T> {
 				},
 				suspend: () => {
 					const q = this.readsPending.filter(
-						(x) => x.performed.val === -1,
+						(x) => x.performed.get() === -1,
 					)
 					q.push(rcomm)
 					this.readsPending = q
