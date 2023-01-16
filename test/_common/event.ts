@@ -10,9 +10,24 @@ describe("Channel", () => {
 			})(),
 			(async () => {
 				const r = await ch.receive().sync()
-				expect(r).toBe(10)
+				expect(r.unwrap()).toBe(10)
 			})(),
 		])
+	})
+	test("close read", async () => {
+		const ch = new Channel<number>()
+		const op = ch.receive().wrap((v) => {
+			expect(v.isNone()).toBe(true)
+		})
+		expect(op.poll().isNone()).toBe(true)
+
+		const r = op.sync()
+
+		expect(ch.isClosed()).toBe(false)
+		ch.close()
+		expect(ch.isClosed()).toBe(true)
+
+		await r
 	})
 })
 
@@ -23,7 +38,7 @@ describe("Select", () => {
 
 		const background = (async () => {
 			const r = await ch1.receive().sync()
-			expect(r).toBe(1)
+			expect(r.unwrap()).toBe(1)
 		})()
 
 		const r = await select<number>(
@@ -45,11 +60,11 @@ describe("Select", () => {
 
 		const r = await select(
 			ch1.receive().wrap((n) => {
-				expect(n).toBe(10)
+				expect(n.unwrap()).toBe(10)
 				return n
 			}),
 		)
-		expect(r).toBe(10)
+		expect(r.unwrap()).toBe(10)
 
 		await background
 	})
@@ -67,13 +82,13 @@ describe("Select", () => {
 
 		await select(
 			ch1.receive().wrap((data) => {
-				expect(data).toBe(10)
+				expect(data.unwrap()).toBe(10)
 			}),
 		)
 
 		await select(
 			ch1.receive().wrap((data) => {
-				expect(data).toBe(20)
+				expect(data.unwrap()).toBe(20)
 			}),
 		)
 

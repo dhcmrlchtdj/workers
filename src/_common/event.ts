@@ -54,6 +54,9 @@ abstract class Op<T> {
 		const [ops, abortEnv] = this.flatten([], [], [])
 		return basicPoll(abortEnv, randomize(ops))
 	}
+	wrapAbort(onAbort: () => void): Op<T> {
+		return new WrapAbort(this, onAbort)
+	}
 	abstract wrap<R>(fn: (v: T) => R): Op<R>
 	protected abstract flatten(
 		abortList: number[],
@@ -158,9 +161,6 @@ export function select<T>(...ops: Op<T>[]): Promise<T> {
 }
 export function choose<T>(...ops: Op<T>[]): Op<T> {
 	return new Choose(ops)
-}
-export function wrapAbort<T>(op: Op<T>, onAbort: () => void): Op<T> {
-	return new WrapAbort(op, onAbort)
 }
 export function guard<T>(fn: () => Op<T>): Op<T> {
 	return new Guard(fn)
@@ -271,81 +271,111 @@ function doAborts<T>(abortEnv: Abort[], genOp: GenOp<T>[], performed: number) {
 
 ///
 
-type CommunicationC<T> = {
+type Sender<T> = {
 	performed: Box<number>
 	condition: Condition
-	data: Option<T>
 	idx: number
+	data: Option<T>
+	sent: boolean
+}
+type Receiver<T> = {
+	performed: Box<number>
+	condition: Condition
+	idx: number
+	data: Option<T>
 }
 
 export class Channel<T> {
-	private writesPending: CommunicationC<T>[]
-	private readsPending: CommunicationC<T>[]
+	private _senders: Sender<T>[]
+	private _receivers: Receiver<T>[]
+	private _closed: boolean
 	constructor() {
-		this.writesPending = []
-		this.readsPending = []
+		this._senders = []
+		this._receivers = []
+		this._closed = false
 	}
+
+	close() {
+		if (this._closed) return
+		this._closed = true
+		if (this._receivers.length > 0 && this._senders.length === 0) {
+			this._receivers[0]!.condition.signal()
+		}
+	}
+	isClosed(): boolean {
+		return this._closed
+	}
+
 	send(data: T): Op<boolean> {
+		if (this._closed) return always(false)
 		return new Communication((performed, cond, idx) => {
-			const wcomm: CommunicationC<T> = {
+			const sender: Sender<T> = {
 				performed: performed,
 				condition: cond,
-				data: some(data),
 				idx: idx,
+				data: some(data),
+				sent: false,
 			}
 			return {
 				poll: () => {
-					while (this.readsPending.length > 0) {
-						const rcomm = this.readsPending.shift()!
-						if (rcomm.performed.get() >= 0) continue
-						rcomm.data = wcomm.data
+					while (this._receivers.length > 0) {
+						const receiver = this._receivers.shift()!
+						if (receiver.performed.get() >= 0) continue
+						receiver.data = sender.data
 						performed.set(idx)
-						rcomm.performed.set(rcomm.idx)
-						rcomm.condition.signal()
+						sender.sent = true
+						receiver.performed.set(receiver.idx)
+						receiver.condition.signal()
 						return true
 					}
 					return false
 				},
 				suspend: () => {
-					const q = this.writesPending.filter(
+					const senders = this._senders.filter(
 						(x) => x.performed.get() === -1,
 					)
-					q.push(wcomm)
-					this.writesPending = q
+					senders.push(sender)
+					this._senders = senders
 				},
-				result: () => true,
+				result: () => sender.sent,
 			}
 		})
 	}
-	receive(): Op<T> {
+	receive(): Op<Option<T>> {
+		if (this._closed) return always(none)
 		return new Communication((performed, cond, idx) => {
-			const rcomm: CommunicationC<T> = {
+			const receiver: Receiver<T> = {
 				performed: performed,
 				condition: cond,
-				data: none,
 				idx: idx,
+				data: none,
 			}
 			return {
 				poll: () => {
-					while (this.writesPending.length > 0) {
-						const wcomm = this.writesPending.shift()!
-						if (wcomm.performed.get() >= 0) continue
-						rcomm.data = wcomm.data
+					while (this._senders.length > 0) {
+						const sender = this._senders.shift()!
+						if (sender.performed.get() >= 0) continue
+						receiver.data = sender.data
 						performed.set(idx)
-						wcomm.performed.set(wcomm.idx)
-						wcomm.condition.signal()
+						sender.sent = true
+						sender.performed.set(sender.idx)
+						sender.condition.signal()
+						return true
+					}
+					if (this._closed) {
+						performed.set(idx)
 						return true
 					}
 					return false
 				},
 				suspend: () => {
-					const q = this.readsPending.filter(
+					const receivers = this._receivers.filter(
 						(x) => x.performed.get() === -1,
 					)
-					q.push(rcomm)
-					this.readsPending = q
+					receivers.push(receiver)
+					this._receivers = receivers
 				},
-				result: () => rcomm.data.unwrap(),
+				result: () => receiver.data,
 			}
 		})
 	}
