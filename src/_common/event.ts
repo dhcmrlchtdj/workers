@@ -1,21 +1,8 @@
 // based on https://github.com/ocaml/ocaml/blob/4.12.0/otherlibs/systhreads/event.ml
 // which is distributed with LGPL-2.1
 
+import { Deferred } from "./deferred.js"
 import { Option, none, some } from "./option.js"
-import { Condition, Mutex } from "./sync.js"
-
-class Box<T> {
-	private inner: T
-	constructor(inner: T) {
-		this.inner = inner
-	}
-	get(): T {
-		return this.inner
-	}
-	set(inner: T) {
-		this.inner = inner
-	}
-}
 
 const genSym = (() => {
 	let id = 0
@@ -34,11 +21,7 @@ type BasicOp<T> = {
 	result(): T
 }
 
-type Behavior<T> = (
-	performed: Box<number>,
-	cond: Condition,
-	idx: number,
-) => BasicOp<T>
+type Behavior<T> = (performed: Deferred<number>, idx: number) => BasicOp<T>
 
 type GenOp<T> = { gen: Behavior<T>; abortList: number[] }
 type Abort = { id: number; onAbort: () => void }
@@ -71,8 +54,8 @@ class Communication<T> extends Op<T> {
 		this.behavior = behavior
 	}
 	wrap<R>(fn: (v: T) => R): Op<R> {
-		return new Communication((performed, condition, idx) => {
-			const op = this.behavior(performed, condition, idx)
+		return new Communication((performed, idx) => {
+			const op = this.behavior(performed, idx)
 			return {
 				poll: () => op.poll(),
 				suspend: () => op.suspend(),
@@ -169,10 +152,10 @@ export function guard<T>(fn: () => Op<T>): Op<T> {
 ///
 
 export function always<T>(data: T): Op<T> {
-	return new Communication((performed, _condition, idx) => {
+	return new Communication((performed, idx) => {
 		return {
 			poll: () => {
-				performed.set(idx)
+				performed.resolve(idx)
 				return true
 			},
 			suspend: () => {},
@@ -181,7 +164,7 @@ export function always<T>(data: T): Op<T> {
 	})
 }
 export function never<T>(): Op<T> {
-	return new Communication((_performed, _condition, _idx) => {
+	return new Communication((_performed, _idx) => {
 		return {
 			poll: () => false,
 			suspend: () => {},
@@ -192,27 +175,20 @@ export function never<T>(): Op<T> {
 	})
 }
 export function fromPromise<T>(p: Promise<T>): Op<Promise<T>> {
-	return new Communication((performed, condition, idx) => {
+	return new Communication((performed, idx) => {
 		let fulfilled = false
-		p.finally(() => {
-			fulfilled = true
-		})
+		p.finally(() => (fulfilled = true))
 		return {
 			poll: () => {
 				if (fulfilled) {
-					performed.set(idx)
+					performed.resolve(idx)
 					return true
 				} else {
 					return false
 				}
 			},
 			suspend: () => {
-				p.finally(() => {
-					if (performed.get() === -1) {
-						performed.set(idx)
-						condition.signal()
-					}
-				})
+				p.finally(() => performed.resolve(idx))
 			},
 			result: () => p,
 		}
@@ -221,60 +197,46 @@ export function fromPromise<T>(p: Promise<T>): Op<Promise<T>> {
 
 ///
 
-const masterlock = new Mutex()
-
 async function basicSync<T>(abortEnv: Abort[], genOp: GenOp<T>[]): Promise<T> {
-	const performed = new Box(-1)
-	const cond = new Condition()
+	const performed = new Deferred<number>()
 	const ops = genOp.map(({ gen }, idx) => {
-		return gen(performed, cond, idx)
+		return gen(performed, idx)
 	})
-	const pollOps = (idx: number): boolean => {
+	const pollOps = (idx: number): false | number => {
 		if (idx >= ops.length) return false
-		return ops[idx]!.poll() || pollOps(idx + 1)
+		if (ops[idx]!.poll()) return idx
+		return pollOps(idx + 1)
 	}
-
-	await masterlock.lock()
 
 	const ready = pollOps(0)
-	if (!ready) {
+	if (ready === false) {
 		ops.forEach((x) => x.suspend())
-		await cond.wait(masterlock)
-		while (performed.get() === -1) {
-			await cond.wait(masterlock)
-		}
 	}
+	const idx = await performed.promise
 
-	masterlock.unlock()
-
-	const result = ops[performed.get()]!.result()
+	const result = ops[idx]!.result()
 	if (abortEnv.length > 0) {
-		doAborts(abortEnv, genOp, performed.get())
+		doAborts(abortEnv, genOp, idx)
 	}
 	return result
 }
 
 function basicPoll<T>(abortEnv: Abort[], genOp: GenOp<T>[]): Option<T> {
-	const performed = new Box(-1)
-	const cond = new Condition()
+	const performed = new Deferred<number>()
 	const ops = genOp.map(({ gen }, idx) => {
-		return gen(performed, cond, idx)
+		return gen(performed, idx)
 	})
-	const pollOps = (idx: number): boolean => {
+	const pollOps = (idx: number): false | number => {
 		if (idx >= ops.length) return false
-		return ops[idx]!.poll() || pollOps(idx + 1)
+		if (ops[idx]!.poll()) return idx
+		return pollOps(idx + 1)
 	}
-
-	const locked = masterlock.tryLock()
-	if (!locked) return none
 
 	const ready = pollOps(0)
 
-	masterlock.unlock()
-
-	if (ready) {
-		const result = ops[performed.get()]!.result()
-		doAborts(abortEnv, genOp, performed.get())
+	if (ready !== false) {
+		const result = ops[ready]!.result()
+		doAborts(abortEnv, genOp, ready)
 		return some(result)
 	} else {
 		doAborts(abortEnv, genOp, -1)
@@ -299,15 +261,13 @@ function doAborts<T>(abortEnv: Abort[], genOp: GenOp<T>[], performed: number) {
 ///
 
 type Sender<T> = {
-	performed: Box<number>
-	condition: Condition
+	performed: Deferred<number>
 	idx: number
 	data: Option<T>
 	sent: boolean
 }
 type Receiver<T> = {
-	performed: Box<number>
-	condition: Condition
+	performed: Deferred<number>
 	idx: number
 	data: Option<T>
 }
@@ -326,7 +286,9 @@ export class Channel<T> {
 		if (this._closed) return
 		this._closed = true
 		if (this._receivers.length > 0 && this._senders.length === 0) {
-			this._receivers[0]!.condition.signal()
+			this._receivers.forEach((r) => {
+				r.performed.resolve(r.idx)
+			})
 		}
 	}
 	isClosed(): boolean {
@@ -335,10 +297,9 @@ export class Channel<T> {
 
 	send(data: T): Op<boolean> {
 		if (this._closed) return always(false)
-		return new Communication((performed, condition, idx) => {
+		return new Communication((performed, idx) => {
 			const sender: Sender<T> = {
 				performed,
-				condition,
 				idx,
 				data: some(data),
 				sent: false,
@@ -347,19 +308,18 @@ export class Channel<T> {
 				poll: () => {
 					while (this._receivers.length > 0) {
 						const receiver = this._receivers.shift()!
-						if (receiver.performed.get() >= 0) continue
+						if (receiver.performed.isFulfilled) continue
 						receiver.data = sender.data
-						performed.set(idx)
+						performed.resolve(idx)
 						sender.sent = true
-						receiver.performed.set(receiver.idx)
-						receiver.condition.signal()
+						receiver.performed.resolve(receiver.idx)
 						return true
 					}
 					return false
 				},
 				suspend: () => {
 					const senders = this._senders.filter(
-						(x) => x.performed.get() === -1,
+						(x) => !x.performed.isFulfilled,
 					)
 					senders.push(sender)
 					this._senders = senders
@@ -370,10 +330,9 @@ export class Channel<T> {
 	}
 	receive(): Op<Option<T>> {
 		if (this._closed) return always(none)
-		return new Communication((performed, condition, idx) => {
+		return new Communication((performed, idx) => {
 			const receiver: Receiver<T> = {
 				performed,
-				condition,
 				idx,
 				data: none,
 			}
@@ -381,23 +340,22 @@ export class Channel<T> {
 				poll: () => {
 					while (this._senders.length > 0) {
 						const sender = this._senders.shift()!
-						if (sender.performed.get() >= 0) continue
+						if (sender.performed.isFulfilled) continue
 						receiver.data = sender.data
-						performed.set(idx)
+						performed.resolve(idx)
 						sender.sent = true
-						sender.performed.set(sender.idx)
-						sender.condition.signal()
+						sender.performed.resolve(sender.idx)
 						return true
 					}
 					if (this._closed) {
-						performed.set(idx)
+						performed.resolve(idx)
 						return true
 					}
 					return false
 				},
 				suspend: () => {
 					const receivers = this._receivers.filter(
-						(x) => x.performed.get() === -1,
+						(x) => !x.performed.isFulfilled,
 					)
 					receivers.push(receiver)
 					this._receivers = receivers
