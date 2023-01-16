@@ -20,69 +20,128 @@ type Behavior<T> = (
 	idx: number,
 ) => BasisEvent<T>
 
-type Event<T> =
-	| { tag: "Communication"; val: Behavior<T> }
-	| { tag: "Choose"; val: Event<T>[] }
-	| { tag: "WrapAbort"; val: [Event<T>, () => void] }
-	| { tag: "Guard"; val: () => Event<T> }
-
 type GenEv<T> = [Behavior<T>, number[]]
 type Abort = [number, () => void]
-
-///
 
 const genSym = (() => {
 	let id = 0
 	return () => id++
 })()
 
-export function select<T>(...events: Event<T>[]): Promise<T> {
-	return sync(choose(...events))
-}
+///
 
-export function wrap<T, R>(ev: Event<T>, fn: (v: T) => R): Event<R> {
-	switch (ev.tag) {
-		case "Communication": {
-			const genEv = ev.val
-			const genEv2: Behavior<R> = (performed, condition, evnum) => {
-				const bev = genEv(performed, condition, evnum)
-				return {
-					poll: () => bev.poll(),
-					suspend: () => bev.suspend(),
-					result: () => fn(bev.result()),
-				}
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+interface Op<T> {
+	wrap<R>(fn: (v: T) => R): Op<R>
+	flatten(
+		abortList: number[],
+		acc: GenEv<T>[],
+		accAbort: Abort[],
+	): [GenEv<T>[], Abort[]]
+}
+class Communication<T> implements Op<T> {
+	private behavior: Behavior<T>
+	constructor(behavior: Behavior<T>) {
+		this.behavior = behavior
+	}
+	wrap<R>(fn: (v: T) => R): Op<R> {
+		const genEv: Behavior<R> = (performed, condition, evnum) => {
+			const bev = this.behavior(performed, condition, evnum)
+			return {
+				poll: () => bev.poll(),
+				suspend: () => bev.suspend(),
+				result: () => fn(bev.result()),
 			}
-			return communication(genEv2)
 		}
-		case "Choose": {
-			const xx = ev.val.map((e) => wrap(e, fn))
-			return choose(...xx)
-		}
-		case "WrapAbort": {
-			const [e, f] = ev.val
-			return wrapAbort(wrap(e, fn), f)
-		}
-		case "Guard": {
-			const g = ev.val
-			return guard(() => wrap(g(), fn))
-		}
+		return new Communication(genEv)
+	}
+	flatten(
+		abortList: number[],
+		acc: GenEv<T>[],
+		accAbort: Abort[],
+	): [GenEv<T>[], Abort[]] {
+		return [[[this.behavior, abortList], ...acc], accAbort]
+	}
+}
+class Choose<T> implements Op<T> {
+	private ops: Op<T>[]
+	constructor(ops: Op<T>[]) {
+		this.ops = ops
+	}
+	wrap<R>(fn: (v: T) => R): Op<R> {
+		return new Choose(this.ops.map((e) => e.wrap(fn)))
+	}
+	flatten(
+		abortList: number[],
+		acc: GenEv<T>[],
+		accAbort: Abort[],
+	): [GenEv<T>[], Abort[]] {
+		return this.ops.reduce(
+			(prev: [GenEv<T>[], Abort[]], curr: Op<T>) => {
+				return curr.flatten(abortList, prev[0], prev[1])
+			},
+			[acc, accAbort],
+		)
+	}
+}
+class WrapAbort<T> implements Op<T> {
+	private op: Op<T>
+	private onAbort: () => void
+	constructor(op: Op<T>, onAbort: () => void) {
+		this.op = op
+		this.onAbort = onAbort
+	}
+	wrap<R>(fn: (v: T) => R): Op<R> {
+		return new WrapAbort(this.op.wrap(fn), this.onAbort)
+	}
+	flatten(
+		abortList: number[],
+		acc: GenEv<T>[],
+		accAbort: Abort[],
+	): [GenEv<T>[], Abort[]] {
+		const id = genSym()
+		return this.op.flatten([id, ...abortList], acc, [
+			[id, this.onAbort],
+			...accAbort,
+		])
+	}
+}
+class Guard<T> implements Op<T> {
+	private g: () => Op<T>
+	constructor(g: () => Op<T>) {
+		this.g = g
+	}
+	wrap<R>(fn: (v: T) => R): Op<R> {
+		return new Guard(() => this.g().wrap(fn))
+	}
+	flatten(
+		abortList: number[],
+		acc: GenEv<T>[],
+		accAbort: Abort[],
+	): [GenEv<T>[], Abort[]] {
+		return this.g().flatten(abortList, acc, accAbort)
 	}
 }
 
-export function choose<T>(...events: Event<T>[]): Event<T> {
-	return { tag: "Choose", val: events }
-}
-export function wrapAbort<T>(ev: Event<T>, fn: () => void): Event<T> {
-	return { tag: "WrapAbort", val: [ev, fn] }
-}
-export function guard<T>(fn: () => Event<T>): Event<T> {
-	return { tag: "Guard", val: fn }
-}
-export function communication<T>(genEv: Behavior<T>): Event<T> {
-	return { tag: "Communication", val: genEv }
+///
+
+export function select<T>(...ops: Op<T>[]): Promise<T> {
+	return sync(new Choose(ops))
 }
 
-export function always<T>(data: T): Event<T> {
+export function choose<T>(...ops: Op<T>[]): Op<T> {
+	return new Choose(ops)
+}
+export function wrapAbort<T>(ev: Op<T>, onAbort: () => void): Op<T> {
+	return new WrapAbort(ev, onAbort)
+}
+export function guard<T>(fn: () => Op<T>): Op<T> {
+	return new Guard(fn)
+}
+
+///
+
+export function always<T>(data: T): Op<T> {
 	const genEv: Behavior<T> = (performed, _condition, evnum) => {
 		return {
 			poll: () => {
@@ -93,44 +152,7 @@ export function always<T>(data: T): Event<T> {
 			result: () => data,
 		}
 	}
-	return communication(genEv)
-}
-
-export function flattenEvent<T>(
-	abortList: number[],
-	accu: GenEv<T>[],
-	accuAbort: Abort[],
-	ev: Event<T>,
-): [GenEv<T>[], Abort[]] {
-	switch (ev.tag) {
-		case "Communication": {
-			const bev = ev.val
-			return [[[bev, abortList], ...accu], accuAbort]
-		}
-		case "Choose": {
-			const events = ev.val
-			return events.reduce(
-				(prev: [GenEv<T>[], Abort[]], curr: Event<T>) => {
-					return flattenEvent(abortList, prev[0], prev[1], curr)
-				},
-				[accu, accuAbort],
-			)
-		}
-		case "WrapAbort": {
-			const [e, f] = ev.val
-			const id = genSym()
-			return flattenEvent(
-				[id, ...abortList],
-				accu,
-				[[id, f], ...accuAbort],
-				e,
-			)
-		}
-		case "Guard": {
-			const g = ev.val
-			return flattenEvent(abortList, accu, accuAbort, g())
-		}
-	}
+	return new Communication(genEv)
 }
 
 ///
@@ -159,9 +181,9 @@ function doAborts<T>(abortEnv: Abort[], genEv: GenEv<T>[], performed: number) {
 
 ///
 
-export function sync<T>(event: Event<T>): Promise<T> {
-	const [events, abortEnv] = flattenEvent([], [], [], event)
-	return basicSync(abortEnv, scramble(events))
+export function sync<T>(op: Op<T>): Promise<T> {
+	const [ops, abortEnv] = op.flatten([], [], [])
+	return basicSync(abortEnv, scramble(ops))
 }
 
 async function basicSync<T>(abortEnv: Abort[], genEv: GenEv<T>[]): Promise<T> {
@@ -197,9 +219,9 @@ async function basicSync<T>(abortEnv: Abort[], genEv: GenEv<T>[]): Promise<T> {
 
 ///
 
-export function poll<T>(ev: Event<T>): Option<T> {
-	const [events, abortEnv] = flattenEvent([], [], [], ev)
-	return basicPoll(abortEnv, scramble(events))
+export function poll<T>(op: Op<T>): Option<T> {
+	const [ops, abortEnv] = op.flatten([], [], [])
+	return basicPoll(abortEnv, scramble(ops))
 }
 
 function basicPoll<T>(abortEnv: Abort[], genEv: GenEv<T>[]): Option<T> {
@@ -232,7 +254,7 @@ function basicPoll<T>(abortEnv: Abort[], genEv: GenEv<T>[]): Option<T> {
 
 ///
 
-type Communication<T> = {
+type CommunicationC<T> = {
 	performed: Ref<number>
 	condition: Condition
 	data: Option<T>
@@ -240,15 +262,15 @@ type Communication<T> = {
 }
 
 export class Channel<T> {
-	private writesPending: Communication<T>[]
-	private readsPending: Communication<T>[]
+	private writesPending: CommunicationC<T>[]
+	private readsPending: CommunicationC<T>[]
 	constructor() {
 		this.writesPending = []
 		this.readsPending = []
 	}
-	send(data: T): Event<boolean> {
+	send(data: T): Op<boolean> {
 		const genEv: Behavior<boolean> = (performed, cond, evnum) => {
-			const wcomm: Communication<T> = {
+			const wcomm: CommunicationC<T> = {
 				performed: performed,
 				condition: cond,
 				data: some(data),
@@ -277,11 +299,11 @@ export class Channel<T> {
 				result: () => true,
 			}
 		}
-		return communication(genEv)
+		return new Communication(genEv)
 	}
-	receive(): Event<T> {
+	receive(): Op<T> {
 		const genEv: Behavior<T> = (performed, cond, evnum) => {
-			const rcomm: Communication<T> = {
+			const rcomm: CommunicationC<T> = {
 				performed: performed,
 				condition: cond,
 				data: none,
@@ -310,6 +332,6 @@ export class Channel<T> {
 				result: () => rcomm.data.unwrap(),
 			}
 		}
-		return communication(genEv)
+		return new Communication(genEv)
 	}
 }
