@@ -22,9 +22,13 @@ const genSym = (() => {
 	return () => id++
 })()
 
+function randomize<T>(arr: T[]): T[] {
+	return [...arr].sort(() => Math.random() - 0.5)
+}
+
 ///
 
-type BasicEvent<T> = {
+type BasicOp<T> = {
 	poll(): boolean
 	suspend(): void
 	result(): T
@@ -34,9 +38,9 @@ type Behavior<T> = (
 	performed: Box<number>,
 	cond: Condition,
 	idx: number,
-) => BasicEvent<T>
+) => BasicOp<T>
 
-type GenEv<T> = { gen: Behavior<T>; abortList: number[] }
+type GenOp<T> = { gen: Behavior<T>; abortList: number[] }
 type Abort = { id: number; onAbort: () => void }
 
 ///
@@ -44,18 +48,18 @@ type Abort = { id: number; onAbort: () => void }
 abstract class Op<T> {
 	sync(): Promise<T> {
 		const [ops, abortEnv] = this.flatten([], [], [])
-		return basicSync(abortEnv, scramble(ops))
+		return basicSync(abortEnv, randomize(ops))
 	}
 	poll(): Option<T> {
 		const [ops, abortEnv] = this.flatten([], [], [])
-		return basicPoll(abortEnv, scramble(ops))
+		return basicPoll(abortEnv, randomize(ops))
 	}
 	abstract wrap<R>(fn: (v: T) => R): Op<R>
 	protected abstract flatten(
 		abortList: number[],
-		acc: GenEv<T>[],
+		acc: GenOp<T>[],
 		accAbort: Abort[],
-	): [GenEv<T>[], Abort[]]
+	): [GenOp<T>[], Abort[]]
 }
 class Communication<T> extends Op<T> {
 	private behavior: Behavior<T>
@@ -64,20 +68,20 @@ class Communication<T> extends Op<T> {
 		this.behavior = behavior
 	}
 	wrap<R>(fn: (v: T) => R): Op<R> {
-		return new Communication((performed, condition, evnum) => {
-			const bev = this.behavior(performed, condition, evnum)
+		return new Communication((performed, condition, idx) => {
+			const op = this.behavior(performed, condition, idx)
 			return {
-				poll: () => bev.poll(),
-				suspend: () => bev.suspend(),
-				result: () => fn(bev.result()),
+				poll: () => op.poll(),
+				suspend: () => op.suspend(),
+				result: () => fn(op.result()),
 			}
 		})
 	}
 	flatten(
 		abortList: number[],
-		acc: GenEv<T>[],
+		acc: GenOp<T>[],
 		accAbort: Abort[],
-	): [GenEv<T>[], Abort[]] {
+	): [GenOp<T>[], Abort[]] {
 		return [[{ gen: this.behavior, abortList }, ...acc], accAbort]
 	}
 }
@@ -92,11 +96,11 @@ class Choose<T> extends Op<T> {
 	}
 	flatten(
 		abortList: number[],
-		acc: GenEv<T>[],
+		acc: GenOp<T>[],
 		accAbort: Abort[],
-	): [GenEv<T>[], Abort[]] {
+	): [GenOp<T>[], Abort[]] {
 		return this.ops.reduce(
-			(prev: [GenEv<T>[], Abort[]], curr: Op<T>) => {
+			(prev: [GenOp<T>[], Abort[]], curr: Op<T>) => {
 				// @ts-expect-error
 				return curr.flatten(abortList, prev[0], prev[1])
 			},
@@ -117,9 +121,9 @@ class WrapAbort<T> extends Op<T> {
 	}
 	flatten(
 		abortList: number[],
-		acc: GenEv<T>[],
+		acc: GenOp<T>[],
 		accAbort: Abort[],
-	): [GenEv<T>[], Abort[]] {
+	): [GenOp<T>[], Abort[]] {
 		const id = genSym()
 		// @ts-expect-error
 		return this.op.flatten([id, ...abortList], acc, [
@@ -139,9 +143,9 @@ class Guard<T> extends Op<T> {
 	}
 	flatten(
 		abortList: number[],
-		acc: GenEv<T>[],
+		acc: GenOp<T>[],
 		accAbort: Abort[],
-	): [GenEv<T>[], Abort[]] {
+	): [GenOp<T>[], Abort[]] {
 		// @ts-expect-error
 		return this.g().flatten(abortList, acc, accAbort)
 	}
@@ -155,8 +159,8 @@ export function select<T>(...ops: Op<T>[]): Promise<T> {
 export function choose<T>(...ops: Op<T>[]): Op<T> {
 	return new Choose(ops)
 }
-export function wrapAbort<T>(ev: Op<T>, onAbort: () => void): Op<T> {
-	return new WrapAbort(ev, onAbort)
+export function wrapAbort<T>(op: Op<T>, onAbort: () => void): Op<T> {
+	return new WrapAbort(op, onAbort)
 }
 export function guard<T>(fn: () => Op<T>): Op<T> {
 	return new Guard(fn)
@@ -165,20 +169,19 @@ export function guard<T>(fn: () => Op<T>): Op<T> {
 ///
 
 export function always<T>(data: T): Op<T> {
-	const genEv: Behavior<T> = (performed, _condition, evnum) => {
+	return new Communication((performed, _condition, idx) => {
 		return {
 			poll: () => {
-				performed.set(evnum)
+				performed.set(idx)
 				return true
 			},
 			suspend: () => {},
 			result: () => data,
 		}
-	}
-	return new Communication(genEv)
+	})
 }
 export function never<T>(): Op<T> {
-	const genEv: Behavior<T> = (_performed, _condition, _evnum) => {
+	return new Communication((_performed, _condition, _idx) => {
 		return {
 			poll: () => false,
 			suspend: () => {},
@@ -186,24 +189,76 @@ export function never<T>(): Op<T> {
 				throw new Error("never")
 			},
 		}
-	}
-	return new Communication<T>(genEv)
-}
-
-///
-
-function scramble<T>(arr: T[]): T[] {
-	return [...arr].sort(() => Math.random() - 0.5)
+	})
 }
 
 ///
 
 const masterlock = new Mutex()
 
-function doAborts<T>(abortEnv: Abort[], genEv: GenEv<T>[], performed: number) {
+async function basicSync<T>(abortEnv: Abort[], genOp: GenOp<T>[]): Promise<T> {
+	const performed = new Box(-1)
+	const cond = new Condition()
+	const ops = genOp.map(({ gen }, idx) => {
+		return gen(performed, cond, idx)
+	})
+	const pollOps = (idx: number): boolean => {
+		if (idx >= ops.length) return false
+		return ops[idx]!.poll() || pollOps(idx + 1)
+	}
+
+	await masterlock.lock()
+
+	const ready = pollOps(0)
+	if (!ready) {
+		ops.forEach((x) => x.suspend())
+		await cond.wait(masterlock)
+		while (performed.get() < 0) {
+			await cond.wait(masterlock)
+		}
+	}
+
+	masterlock.unlock()
+
+	const result = ops[performed.get()]!.result()
+	if (abortEnv.length > 0) {
+		doAborts(abortEnv, genOp, performed.get())
+	}
+	return result
+}
+
+function basicPoll<T>(abortEnv: Abort[], genOp: GenOp<T>[]): Option<T> {
+	const performed = new Box(-1)
+	const cond = new Condition()
+	const ops = genOp.map(({ gen }, idx) => {
+		return gen(performed, cond, idx)
+	})
+	const pollOps = (idx: number): boolean => {
+		if (idx >= ops.length) return false
+		return ops[idx]!.poll() || pollOps(idx + 1)
+	}
+
+	const locked = masterlock.tryLock()
+	if (!locked) return none
+
+	const ready = pollOps(0)
+	if (ready) {
+		masterlock.unlock()
+		const result = ops[performed.get()]!.result()
+		doAborts(abortEnv, genOp, performed.get())
+		return some(result)
+	} else {
+		performed.set(0)
+		masterlock.unlock()
+		doAborts(abortEnv, genOp, -1)
+		return none
+	}
+}
+
+function doAborts<T>(abortEnv: Abort[], genOp: GenOp<T>[], performed: number) {
 	if (abortEnv.length === 0) return
 	if (performed >= 0) {
-		const idsDone = genEv[performed]!.abortList
+		const idsDone = genOp[performed]!.abortList
 		abortEnv.forEach(({ id, onAbort }) => {
 			if (!idsDone.includes(id)) {
 				onAbort()
@@ -216,74 +271,11 @@ function doAborts<T>(abortEnv: Abort[], genEv: GenEv<T>[], performed: number) {
 
 ///
 
-async function basicSync<T>(abortEnv: Abort[], genEv: GenEv<T>[]): Promise<T> {
-	const performed = new Box(-1)
-	const cond = new Condition()
-	const bev = genEv.map(({ gen }, idx) => {
-		return gen(performed, cond, idx)
-	})
-	const pollEvents = (idx: number): boolean => {
-		if (idx >= bev.length) return false
-		return bev[idx]!.poll() || pollEvents(idx + 1)
-	}
-
-	await masterlock.lock()
-
-	const ready = pollEvents(0)
-	if (!ready) {
-		bev.forEach((x) => x.suspend())
-		await cond.wait(masterlock)
-		while (performed.get() < 0) {
-			await cond.wait(masterlock)
-		}
-	}
-
-	masterlock.unlock()
-
-	const result = bev[performed.get()]!.result()
-	if (abortEnv.length > 0) {
-		doAborts(abortEnv, genEv, performed.get())
-	}
-	return result
-}
-
-///
-
-function basicPoll<T>(abortEnv: Abort[], genEv: GenEv<T>[]): Option<T> {
-	const performed = new Box(-1)
-	const cond = new Condition()
-	const bev = genEv.map(({ gen }, idx) => {
-		return gen(performed, cond, idx)
-	})
-	const pollEvents = (idx: number): boolean => {
-		if (idx >= bev.length) return false
-		return bev[idx]!.poll() || pollEvents(idx + 1)
-	}
-
-	const locked = masterlock.tryLock()
-	if (!locked) return none
-
-	const ready = pollEvents(0)
-	if (ready) {
-		masterlock.unlock()
-		const result = bev[performed.get()]!.result()
-		doAborts(abortEnv, genEv, performed.get())
-		return some(result)
-	} else {
-		performed.set(0)
-		masterlock.unlock()
-		doAborts(abortEnv, genEv, -1)
-		return none
-	}
-}
-
-///
-
 type CommunicationC<T> = {
 	performed: Box<number>
 	condition: Condition
 	data: Option<T>
-	eventNumber: number
+	idx: number
 }
 
 export class Channel<T> {
@@ -294,12 +286,12 @@ export class Channel<T> {
 		this.readsPending = []
 	}
 	send(data: T): Op<boolean> {
-		const genEv: Behavior<boolean> = (performed, cond, evnum) => {
+		return new Communication((performed, cond, idx) => {
 			const wcomm: CommunicationC<T> = {
 				performed: performed,
 				condition: cond,
 				data: some(data),
-				eventNumber: evnum,
+				idx: idx,
 			}
 			return {
 				poll: () => {
@@ -307,8 +299,8 @@ export class Channel<T> {
 						const rcomm = this.readsPending.shift()!
 						if (rcomm.performed.get() >= 0) continue
 						rcomm.data = wcomm.data
-						performed.set(evnum)
-						rcomm.performed.set(rcomm.eventNumber)
+						performed.set(idx)
+						rcomm.performed.set(rcomm.idx)
 						rcomm.condition.signal()
 						return true
 					}
@@ -323,16 +315,15 @@ export class Channel<T> {
 				},
 				result: () => true,
 			}
-		}
-		return new Communication(genEv)
+		})
 	}
 	receive(): Op<T> {
-		const genEv: Behavior<T> = (performed, cond, evnum) => {
+		return new Communication((performed, cond, idx) => {
 			const rcomm: CommunicationC<T> = {
 				performed: performed,
 				condition: cond,
 				data: none,
-				eventNumber: evnum,
+				idx: idx,
 			}
 			return {
 				poll: () => {
@@ -340,8 +331,8 @@ export class Channel<T> {
 						const wcomm = this.writesPending.shift()!
 						if (wcomm.performed.get() >= 0) continue
 						rcomm.data = wcomm.data
-						performed.set(evnum)
-						wcomm.performed.set(wcomm.eventNumber)
+						performed.set(idx)
+						wcomm.performed.set(wcomm.idx)
 						wcomm.condition.signal()
 						return true
 					}
@@ -356,7 +347,6 @@ export class Channel<T> {
 				},
 				result: () => rcomm.data.unwrap(),
 			}
-		}
-		return new Communication(genEv)
+		})
 	}
 }
