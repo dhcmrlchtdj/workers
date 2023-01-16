@@ -10,11 +10,13 @@ type BasisEvent<T> = {
 	suspend(): void
 	result(): T
 }
+
 type Behavior<T> = (
 	performed: Ref<number>,
 	cond: Condition,
 	idx: number,
 ) => BasisEvent<T>
+
 type Event<T> =
 	| { tag: "Communication"; val: Behavior<T> }
 	| { tag: "Choose"; val: Event<T>[] }
@@ -141,9 +143,9 @@ const masterlock = new Mutex()
 function doAborts<T>(abortEnv: Abort[], genEv: GenEv<T>[], performed: number) {
 	if (abortEnv.length === 0) return
 	if (performed >= 0) {
-		const ids_done = genEv[performed]![1]
+		const idsDone = genEv[performed]![1]
 		abortEnv.forEach(([id, f]) => {
-			if (!ids_done.includes(id)) {
+			if (!idsDone.includes(id)) {
 				f()
 			}
 		})
@@ -227,85 +229,84 @@ function basicPoll<T>(abortEnv: Abort[], genEv: GenEv<T>[]): Option<T> {
 
 ///
 
-type Channel<T> = {
-	writes_pending: Communication<T>[]
-	reads_pending: Communication<T>[]
-}
 type Communication<T> = {
 	performed: Ref<number>
 	condition: Condition
 	data: Option<T>
-	event_number: number
+	eventNumber: number
 }
 
-export function new_channel<T>(): Channel<T> {
-	return { writes_pending: [], reads_pending: [] }
-}
-
-export function send<T>(chan: Channel<T>, data: T): Event<void> {
-	const genEv: Behavior<void> = (performed, cond, evnum) => {
-		const wcomm: Communication<T> = {
-			performed: performed,
-			condition: cond,
-			data: some(data),
-			event_number: evnum,
-		}
-		return {
-			poll: () => {
-				while (chan.reads_pending.length > 0) {
-					const rcomm = chan.reads_pending.shift()!
-					if (rcomm.performed.val >= 0) continue
-					rcomm.data = wcomm.data
-					performed.val = evnum
-					rcomm.performed.val = rcomm.event_number
-					rcomm.condition.signal()
-					return true
-				}
-				return false
-			},
-			suspend: () => {
-				const q = chan.writes_pending.filter(
-					(x) => x.performed.val === -1,
-				)
-				q.push(wcomm)
-				chan.writes_pending = q
-			},
-			result: () => {},
-		}
+export class Channel<T> {
+	private writesPending: Communication<T>[]
+	private readsPending: Communication<T>[]
+	constructor() {
+		this.writesPending = []
+		this.readsPending = []
 	}
-	return communication(genEv)
-}
-
-export function receive<T>(chan: Channel<T>): Event<T> {
-	const genEv: Behavior<T> = (performed, cond, evnum) => {
-		const rcomm: Communication<T> = {
-			performed: performed,
-			condition: cond,
-			data: none,
-			event_number: evnum,
+	send(data: T): Event<boolean> {
+		const genEv: Behavior<boolean> = (performed, cond, evnum) => {
+			const wcomm: Communication<T> = {
+				performed: performed,
+				condition: cond,
+				data: some(data),
+				eventNumber: evnum,
+			}
+			return {
+				poll: () => {
+					while (this.readsPending.length > 0) {
+						const rcomm = this.readsPending.shift()!
+						if (rcomm.performed.val >= 0) continue
+						rcomm.data = wcomm.data
+						performed.val = evnum
+						rcomm.performed.val = rcomm.eventNumber
+						rcomm.condition.signal()
+						return true
+					}
+					return false
+				},
+				suspend: () => {
+					const q = this.writesPending.filter(
+						(x) => x.performed.val === -1,
+					)
+					q.push(wcomm)
+					this.writesPending = q
+				},
+				result: () => true,
+			}
 		}
-		return {
-			poll: () => {
-				while (chan.writes_pending.length > 0) {
-					const wcomm = chan.writes_pending.shift()!
-					if (wcomm.performed.val >= 0) continue
-					rcomm.data = wcomm.data
-					performed.val = evnum
-					wcomm.performed.val = wcomm.event_number
-					wcomm.condition.signal()
-					return true
-				}
-				return false
-			},
-			suspend: () => {
-				const q = chan.reads_pending.filter(
-					(x) => x.performed.val === -1,
-				)
-				q.push(rcomm)
-				chan.reads_pending = q
-			},
-			result: () => rcomm.data.unwrap(),
-		}
+		return communication(genEv)
 	}
-	return communication(genEv)
+	receive(): Event<T> {
+		const genEv: Behavior<T> = (performed, cond, evnum) => {
+			const rcomm: Communication<T> = {
+				performed: performed,
+				condition: cond,
+				data: none,
+				eventNumber: evnum,
+			}
+			return {
+				poll: () => {
+					while (this.writesPending.length > 0) {
+						const wcomm = this.writesPending.shift()!
+						if (wcomm.performed.val >= 0) continue
+						rcomm.data = wcomm.data
+						performed.val = evnum
+						wcomm.performed.val = wcomm.eventNumber
+						wcomm.condition.signal()
+						return true
+					}
+					return false
+				},
+				suspend: () => {
+					const q = this.readsPending.filter(
+						(x) => x.performed.val === -1,
+					)
+					q.push(rcomm)
+					this.readsPending = q
+				},
+				result: () => rcomm.data.unwrap(),
+			}
+		}
+		return communication(genEv)
+	}
 }
