@@ -1,4 +1,7 @@
-import { none, Option, some } from "./option.js"
+// based on https://github.com/ocaml/ocaml/blob/4.12.0/otherlibs/systhreads/event.ml
+// which is distributed with LGPL-2.1
+
+import { Option, none, some } from "./option.js"
 import { Condition, Mutex } from "./sync.js"
 
 type Ref<T> = {
