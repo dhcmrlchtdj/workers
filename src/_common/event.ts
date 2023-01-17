@@ -175,9 +175,9 @@ export function never<T>(): Op<T> {
 	})
 }
 export function fromPromise<T>(p: Promise<T>): Op<Promise<T>> {
+	let fulfilled = false
+	p.finally(() => (fulfilled = true))
 	return new Communication((performed, idx) => {
-		let fulfilled = false
-		p.finally(() => (fulfilled = true))
 		return {
 			poll: () => {
 				if (fulfilled) {

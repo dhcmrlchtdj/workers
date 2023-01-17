@@ -4,10 +4,17 @@ import { Channel, fromPromise, select } from "../../src/_common/event.js"
 describe("Op", () => {
 	test("fromPromise", async () => {
 		const d = new Deferred<number>()
-		const op = fromPromise(d.promise).sync()
+		const op = fromPromise(d.promise)
+
+		expect(op.poll().isNone()).toBe(true)
+
 		d.resolve(10)
-		const r = await op
+
+		const r = await op.sync()
 		expect(r).toBe(10)
+
+		expect(op.poll().isSome()).toBe(true)
+		await expect(op.poll().unwrap()).resolves.toBe(10)
 	})
 })
 
