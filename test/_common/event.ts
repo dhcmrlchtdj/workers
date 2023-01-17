@@ -1,5 +1,10 @@
 import { Deferred } from "../../src/_common/deferred.js"
-import { Channel, fromPromise, select } from "../../src/_common/event.js"
+import {
+	Channel,
+	fromAbortSignal,
+	fromPromise,
+	select,
+} from "../../src/_common/event.js"
 
 describe("Op", () => {
 	test("fromPromise", async () => {
@@ -15,6 +20,14 @@ describe("Op", () => {
 
 		expect(op.poll().isSome()).toBe(true)
 		await expect(op.poll().unwrap()).resolves.toBe(10)
+	})
+
+	test("fromAbortSignal", async () => {
+		const op = fromAbortSignal(AbortSignal.timeout(1))
+		expect(op.poll().isNone()).toBe(true)
+
+		const r = await op.sync()
+		expect(r).toBeInstanceOf(DOMException)
 	})
 })
 

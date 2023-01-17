@@ -13,6 +13,8 @@ function randomize<T>(arr: T[]): T[] {
 	return [...arr].sort(() => Math.random() - 0.5)
 }
 
+const noop = () => {}
+
 ///
 
 type BasicOp<T> = {
@@ -163,7 +165,7 @@ export function always<T>(data: T): Op<T> {
 		}
 	})
 }
-export function never<T>(): Op<T> {
+export function never(): Op<never> {
 	return new Communication((_performed, _idx) => {
 		return {
 			poll: () => false,
@@ -193,6 +195,34 @@ export function fromPromise<T>(p: Promise<T>): Op<Promise<T>> {
 			result: () => p,
 		}
 	})
+}
+export function fromAbortSignal(signal: AbortSignal): Op<Promise<unknown>> {
+	const d = new Deferred<unknown>()
+	if (signal.aborted) {
+		d.resolve(signal.reason)
+	} else {
+		const cb = () => d.resolve(signal.reason)
+		signal.addEventListener("abort", cb, { once: true })
+	}
+	return new Communication((performed, idx) => {
+		return {
+			poll: () => {
+				if (d.isFulfilled) {
+					performed.resolve(idx)
+					return true
+				} else {
+					return false
+				}
+			},
+			suspend: () => {
+				d.promise.finally(() => performed.resolve(idx)).catch(noop)
+			},
+			result: () => d.promise,
+		}
+	})
+}
+export function fromTimeout(delay: number): Op<void> {
+	return guard(() => fromAbortSignal(AbortSignal.timeout(delay)).wrap(noop))
 }
 
 ///
