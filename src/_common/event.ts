@@ -25,19 +25,19 @@ type BasicOp<T> = {
 
 type Behavior<T> = (performed: Deferred<number>, idx: number) => BasicOp<T>
 
-type GenOp<T> = { gen: Behavior<T>; abortList: number[] }
-type Abort = { id: number; onAbort: () => void }
+type GenOp<T> = { gen: Behavior<T>; shouldNotAbort: number[] }
+type AbortEnv = Map<number, () => void> // map id to onAbort
 
 ///
 
 abstract class Op<T> {
 	sync(): Promise<T> {
-		const [ops, abortEnv] = this.flatten([], [], [])
-		return basicSync(abortEnv, randomize(ops))
+		const { genOps, abortEnv } = this.flatten([], [], new Map())
+		return basicSync(abortEnv, randomize(genOps))
 	}
 	poll(): Option<T> {
-		const [ops, abortEnv] = this.flatten([], [], [])
-		return basicPoll(abortEnv, randomize(ops))
+		const { genOps, abortEnv } = this.flatten([], [], new Map())
+		return basicPoll(abortEnv, randomize(genOps))
 	}
 	wrapAbort(onAbort: () => void): Op<T> {
 		return new WrapAbort(this, onAbort)
@@ -45,9 +45,9 @@ abstract class Op<T> {
 	abstract wrap<R>(fn: (v: T) => R): Op<R>
 	protected abstract flatten(
 		abortList: number[],
-		acc: GenOp<T>[],
-		accAbort: Abort[],
-	): [GenOp<T>[], Abort[]]
+		genOps: GenOp<T>[],
+		abortEnv: AbortEnv,
+	): { genOps: GenOp<T>[]; abortEnv: AbortEnv }
 }
 class Communication<T> extends Op<T> {
 	private behavior: Behavior<T>
@@ -66,11 +66,12 @@ class Communication<T> extends Op<T> {
 		})
 	}
 	flatten(
-		abortList: number[],
-		acc: GenOp<T>[],
-		accAbort: Abort[],
-	): [GenOp<T>[], Abort[]] {
-		return [[{ gen: this.behavior, abortList }, ...acc], accAbort]
+		shouldNotAbort: number[],
+		genOps: GenOp<T>[],
+		abortEnv: AbortEnv,
+	): { genOps: GenOp<T>[]; abortEnv: AbortEnv } {
+		genOps.push({ gen: this.behavior, shouldNotAbort })
+		return { genOps, abortEnv }
 	}
 }
 class Choose<T> extends Op<T> {
@@ -83,16 +84,16 @@ class Choose<T> extends Op<T> {
 		return new Choose(this.ops.map((e) => e.wrap(fn)))
 	}
 	flatten(
-		abortList: number[],
-		acc: GenOp<T>[],
-		accAbort: Abort[],
-	): [GenOp<T>[], Abort[]] {
+		shouldNotAbort: number[],
+		genOps: GenOp<T>[],
+		abortEnv: AbortEnv,
+	): { genOps: GenOp<T>[]; abortEnv: AbortEnv } {
 		return this.ops.reduce(
-			(prev: [GenOp<T>[], Abort[]], curr: Op<T>) => {
+			({ genOps, abortEnv }, curr: Op<T>) => {
 				// @ts-expect-error
-				return curr.flatten(abortList, prev[0], prev[1])
+				return curr.flatten(shouldNotAbort, genOps, abortEnv)
 			},
-			[acc, accAbort],
+			{ genOps, abortEnv },
 		)
 	}
 }
@@ -108,16 +109,15 @@ class WrapAbort<T> extends Op<T> {
 		return new WrapAbort(this.op.wrap(fn), this.onAbort)
 	}
 	flatten(
-		abortList: number[],
-		acc: GenOp<T>[],
-		accAbort: Abort[],
-	): [GenOp<T>[], Abort[]] {
+		shouldNotAbort: number[],
+		genOps: GenOp<T>[],
+		abortEnv: AbortEnv,
+	): { genOps: GenOp<T>[]; abortEnv: AbortEnv } {
 		const id = genSym()
+		abortEnv.set(id, this.onAbort)
+		const shouldNotAbort2 = [...shouldNotAbort, id]
 		// @ts-expect-error
-		return this.op.flatten([id, ...abortList], acc, [
-			{ id, onAbort: this.onAbort },
-			...accAbort,
-		])
+		return this.op.flatten(shouldNotAbort2, genOps, abortEnv)
 	}
 }
 class Guard<T> extends Op<T> {
@@ -130,12 +130,13 @@ class Guard<T> extends Op<T> {
 		return new Guard(() => this.g().wrap(fn))
 	}
 	flatten(
-		abortList: number[],
-		acc: GenOp<T>[],
-		accAbort: Abort[],
-	): [GenOp<T>[], Abort[]] {
+		shouldNotAbort: number[],
+		genOps: GenOp<T>[],
+		abortEnv: AbortEnv,
+	): { genOps: GenOp<T>[]; abortEnv: AbortEnv } {
+		const op = this.g()
 		// @ts-expect-error
-		return this.g().flatten(abortList, acc, accAbort)
+		return op.flatten(shouldNotAbort, genOps, abortEnv)
 	}
 }
 
@@ -227,9 +228,12 @@ export function fromTimeout(delay: number): Op<void> {
 
 ///
 
-async function basicSync<T>(abortEnv: Abort[], genOp: GenOp<T>[]): Promise<T> {
+async function basicSync<T>(
+	abortEnv: AbortEnv,
+	genOps: GenOp<T>[],
+): Promise<T> {
 	const performed = new Deferred<number>()
-	const ops = genOp.map(({ gen }, idx) => {
+	const ops = genOps.map(({ gen }, idx) => {
 		return gen(performed, idx)
 	})
 	const pollOps = (idx: number): false | number => {
@@ -245,15 +249,13 @@ async function basicSync<T>(abortEnv: Abort[], genOp: GenOp<T>[]): Promise<T> {
 	const idx = await performed.promise
 
 	const result = ops[idx]!.result()
-	if (abortEnv.length > 0) {
-		doAborts(abortEnv, genOp, idx)
-	}
+	doAborts(abortEnv, genOps[idx]!.shouldNotAbort)
 	return result
 }
 
-function basicPoll<T>(abortEnv: Abort[], genOp: GenOp<T>[]): Option<T> {
+function basicPoll<T>(abortEnv: AbortEnv, genOps: GenOp<T>[]): Option<T> {
 	const performed = new Deferred<number>()
-	const ops = genOp.map(({ gen }, idx) => {
+	const ops = genOps.map(({ gen }, idx) => {
 		return gen(performed, idx)
 	})
 	const pollOps = (idx: number): false | number => {
@@ -266,25 +268,19 @@ function basicPoll<T>(abortEnv: Abort[], genOp: GenOp<T>[]): Option<T> {
 
 	if (ready !== false) {
 		const result = ops[ready]!.result()
-		doAborts(abortEnv, genOp, ready)
+		doAborts(abortEnv, genOps[ready]!.shouldNotAbort)
 		return some(result)
 	} else {
-		doAborts(abortEnv, genOp, -1)
+		doAborts(abortEnv, [])
 		return none
 	}
 }
 
-function doAborts<T>(abortEnv: Abort[], genOp: GenOp<T>[], performed: number) {
-	if (abortEnv.length === 0) return
-	if (performed >= 0) {
-		const idsDone = genOp[performed]!.abortList
-		abortEnv.forEach(({ id, onAbort }) => {
-			if (!idsDone.includes(id)) {
-				onAbort()
-			}
-		})
-	} else {
-		abortEnv.forEach(({ onAbort }) => onAbort())
+function doAborts(abortEnv: AbortEnv, shouldNotAbort: number[]) {
+	for (const [id, onAbort] of abortEnv.entries()) {
+		if (!shouldNotAbort.includes(id)) {
+			onAbort()
+		}
 	}
 }
 
