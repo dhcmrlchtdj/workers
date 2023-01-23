@@ -1,7 +1,6 @@
 // based on https://github.com/ocaml/ocaml/blob/4.12.0/otherlibs/systhreads/event.ml
 // which is distributed with LGPL-2.1
 
-import { assert } from "./assert.js"
 import { Deferred } from "./deferred.js"
 import { Option, none, some } from "./option.js"
 
@@ -336,10 +335,6 @@ export class Channel<T> {
 					while (this._receivers.length > 0) {
 						const receiver = this._receivers.shift()!
 						if (receiver.performed.isFulfilled) continue
-						assert(
-							receiver.performed !== performed,
-							"not allowed to send and receive on the same channel",
-						)
 						receiver.data = sender.data
 						performed.resolve(idx)
 						sender.sent = true
@@ -372,10 +367,6 @@ export class Channel<T> {
 					while (this._senders.length > 0) {
 						const sender = this._senders.shift()!
 						if (sender.performed.isFulfilled) continue
-						assert(
-							sender.performed !== performed,
-							"not allowed to send and receive on the same channel",
-						)
 						receiver.data = sender.data
 						performed.resolve(idx)
 						sender.sent = true
