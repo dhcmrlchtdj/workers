@@ -222,8 +222,8 @@ export function fromAbortSignal(signal: AbortSignal): Op<Promise<unknown>> {
 		}
 	})
 }
-export function fromTimeout(delay: number): Op<void> {
-	return guard(() => fromAbortSignal(AbortSignal.timeout(delay)).wrap(noop))
+export function fromTimeout(delay: number): Op<unknown> {
+	return guard(() => fromAbortSignal(AbortSignal.timeout(delay)))
 }
 
 ///
