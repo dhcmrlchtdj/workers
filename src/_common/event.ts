@@ -13,8 +13,6 @@ function randomize<T>(arr: T[]): T[] {
 	return [...arr].sort(() => Math.random() - 0.5)
 }
 
-const noop = () => {}
-
 ///
 
 type BasicOp<T> = {
@@ -198,18 +196,13 @@ export function fromPromise<T>(p: Promise<T>): Op<Promise<T>> {
 		}
 	})
 }
-export function fromAbortSignal(signal: AbortSignal): Op<Promise<unknown>> {
-	const d = new Deferred<unknown>()
-	if (signal.aborted) {
-		d.resolve(signal.reason)
-	} else {
-		const cb = () => d.resolve(signal.reason)
-		signal.addEventListener("abort", cb, { once: true })
-	}
+export function fromAbortSignal(signal: AbortSignal): Op<unknown> {
+	let reason = null as unknown
 	return new Operation((performed, idx) => {
 		return {
 			poll: () => {
-				if (d.isFulfilled) {
+				if (signal.aborted) {
+					reason = signal.reason
 					performed.resolve(idx)
 					return true
 				} else {
@@ -217,9 +210,16 @@ export function fromAbortSignal(signal: AbortSignal): Op<Promise<unknown>> {
 				}
 			},
 			suspend: () => {
-				d.promise.finally(() => performed.resolve(idx)).catch(noop)
+				const cb = () => {
+					reason = signal.reason
+					performed.resolve(idx)
+				}
+				signal.addEventListener("abort", cb, { once: true })
+				performed.promise.finally(() =>
+					signal.removeEventListener("abort", cb),
+				)
 			},
-			result: () => d.promise,
+			result: () => reason,
 		}
 	})
 }
