@@ -237,17 +237,22 @@ async function basicSync<T>(
 	const ops = genOps.map(({ builder }, idx) => {
 		return builder(performed, idx)
 	})
-	const pollOps = (idx: number): false | number => {
-		if (idx >= ops.length) return false
-		if (ops[idx]!.poll()) return idx
-		return pollOps(idx + 1)
+
+	// poll ops
+	let idx: number | false = false
+	for (let i = 0; i < ops.length; i++) {
+		const op = ops[i]!
+		if (op.poll()) {
+			idx = i
+			break
+		}
 	}
 
-	const ready = pollOps(0)
-	if (ready === false) {
+	// suspend ops
+	if (idx === false) {
 		ops.forEach((x) => x.suspend())
+		idx = await performed.promise
 	}
-	const idx = await performed.promise
 
 	const result = ops[idx]!.result()
 	doAborts(abortMap, genOps[idx]!.shouldNotAbort)
@@ -259,17 +264,20 @@ function basicPoll<T>(abortMap: AbortMap, genOps: GenOp<T>[]): Option<T> {
 	const ops = genOps.map(({ builder }, idx) => {
 		return builder(performed, idx)
 	})
-	const pollOps = (idx: number): false | number => {
-		if (idx >= ops.length) return false
-		if (ops[idx]!.poll()) return idx
-		return pollOps(idx + 1)
+
+	// poll ops
+	let idx: number | false = false
+	for (let i = 0; i < ops.length; i++) {
+		const op = ops[i]!
+		if (op.poll()) {
+			idx = i
+			break
+		}
 	}
 
-	const ready = pollOps(0)
-
-	if (ready !== false) {
-		const result = ops[ready]!.result()
-		doAborts(abortMap, genOps[ready]!.shouldNotAbort)
+	if (idx !== false) {
+		const result = ops[idx]!.result()
+		doAborts(abortMap, genOps[idx]!.shouldNotAbort)
 		return some(result)
 	} else {
 		doAborts(abortMap, [])
