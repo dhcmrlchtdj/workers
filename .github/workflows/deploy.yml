@@ -11,13 +11,13 @@ jobs:
         runs-on: ubuntu-22.04
         steps:
             # https://github.com/marketplace/actions/checkout
-            - uses: actions/checkout@v3.2.0
+            - uses: actions/checkout@v3.5.0
             # https://github.com/marketplace/actions/setup-node-js-environment
-            - uses: actions/setup-node@v3.5.1
+            - uses: actions/setup-node@v3.6.0
               with:
                   node-version: 18
             # https://github.com/marketplace/actions/cache
-            - uses: actions/cache@v3.2.2
+            - uses: actions/cache@v3.3.1
               with:
                   path: ~/.local/share/pnpm/store
                   key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -27,7 +27,7 @@ jobs:
                   corepack enable pnpm
                   pnpm install
                   # https://www.npmjs.com/package/wrangler
-                  pnpm add -g wrangler@2.6.2
+                  pnpm add -g wrangler@2.13.0
                   pnpm store prune
               env:
                   PNPM_HOME: /home/runner/.local/bin

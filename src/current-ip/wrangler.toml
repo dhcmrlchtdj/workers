@@ -2,6 +2,6 @@ main = "index.js"
 name = "current-ip"
 route = "worker.h11.io/current-ip*"
 
-compatibility_date = "2023-01-02"
+compatibility_date = "2023-03-25"
 
 kv_namespaces = [{ binding = "BA", id = "fb7f86b3d7fb42bc8bb5ed43907a6479" }]
