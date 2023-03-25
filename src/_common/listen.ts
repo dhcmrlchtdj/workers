@@ -12,7 +12,11 @@ export function createSimpleWorker<Env>(
 	handler: ExportedHandlerFetchHandler<Env>,
 ): ExportedHandler<Env> {
 	return {
-		async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+		async fetch(
+			request: Request<unknown, IncomingRequestCfProperties>,
+			env: Env,
+			ctx: ExecutionContext,
+		) {
 			try {
 				return await handler(request, env, ctx)
 			} catch (err) {
@@ -32,7 +36,11 @@ export function createWorker<Env extends { ROLLBAR_KEY: string }>(
 	handler: ExportedHandlerFetchHandler<Env>,
 ): ExportedHandler<Env> {
 	return {
-		async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+		async fetch(
+			request: Request<unknown, IncomingRequestCfProperties>,
+			env: Env,
+			ctx: ExecutionContext,
+		) {
 			const monitor = new Rollbar(env.ROLLBAR_KEY, name)
 			try {
 				return await handler(request, env, ctx)
