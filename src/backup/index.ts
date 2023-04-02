@@ -8,16 +8,25 @@ import {
 	HttpUnsupportedMediaType,
 	ResponseBuilder,
 } from "../_common/http-response.js"
+import { BackBlaze } from "../_common/service/backblaze.js"
 
 type ENV = {
 	ROLLBAR_KEY: string
 	R2Backup: R2Bucket
 	BA: KVNamespace
+	B2_ID: string
+	B2_KEY: string
+	B2_REGION: string
+	B2_BUCKET: string
 }
 
 type KVItem = { password: string }
 
-type Handler = (req: Request, env: ENV) => Promise<Response>
+type Handler = (
+	req: Request,
+	env: ENV,
+	ctx: ExecutionContext,
+) => Promise<Response>
 const HANDERS: Record<string, Handler> = {
 	beancount: createHandler("beancount"),
 	feedbox: createHandler("database/feedbox"),
@@ -25,57 +34,89 @@ const HANDERS: Record<string, Handler> = {
 
 ///
 
-const worker = createWorker("backup", async (req: Request, env: ENV) => {
-	if (req.method.toUpperCase() !== "POST") {
-		return HttpMethodNotAllowed(["POST"])
-	}
-
-	const ct = req.headers.get("content-type")
-	if (!ct?.startsWith("multipart/form-data; boundary")) {
-		return HttpUnsupportedMediaType()
-	}
-
-	const { user, pass } = getBA(req.headers.get("authorization"))
-	const item = await env.BA.get<KVItem>("backup:" + user, {
-		type: "json",
-		cacheTtl: 60 * 60, // 60min
-	})
-	if (user && item?.password === pass) {
-		const h = HANDERS[user]
-		if (h) {
-			return h(req, env)
-		} else {
-			return HttpInternalServerError()
+const worker = createWorker(
+	"backup",
+	async (req: Request, env: ENV, ctx: ExecutionContext) => {
+		if (req.method.toUpperCase() !== "POST") {
+			return HttpMethodNotAllowed(["POST"])
 		}
-	} else {
-		console.log(`invalid user/pass: "${user}" "${pass}"`)
-		return HttpUnauthorized(["Basic"])
-	}
-})
+
+		const ct = req.headers.get("content-type")
+		if (!ct?.startsWith("multipart/form-data; boundary")) {
+			return HttpUnsupportedMediaType()
+		}
+
+		const { user, pass } = getBA(req.headers.get("authorization"))
+		const item = await env.BA.get<KVItem>("backup:" + user, {
+			type: "json",
+			cacheTtl: 60 * 60, // 60min
+		})
+		if (user && item?.password === pass) {
+			const h = HANDERS[user]
+			if (h) {
+				return h(req, env, ctx)
+			} else {
+				return HttpInternalServerError()
+			}
+		} else {
+			console.log(`invalid user/pass: "${user}" "${pass}"`)
+			return HttpUnauthorized(["Basic"])
+		}
+	},
+)
 
 export default worker
 
 ///
 
 function createHandler(directoryName: string): Handler {
-	return async function (req: Request, env: ENV): Promise<Response> {
+	return async function (
+		req: Request,
+		env: ENV,
+		ctx: ExecutionContext,
+	): Promise<Response> {
 		const body = await req.formData()
 		const file = body.get("file")
 		if (!(file instanceof File)) {
 			throw new Error("`file` is not a file")
 		}
-		const obj = await env.R2Backup.put(
-			generateFilename(directoryName, file.name),
-			file.stream(),
-			{
-				httpMetadata: { contentType: "application/octet-stream" },
-			},
-		)
+		const filename = generateFilename(directoryName, file.name)
+		const content = await file.arrayBuffer()
+
+		const b2 = uploadToBackBlaze(env, filename, content)
+		const r2 = uploadToCloudflare(env.R2Backup, filename, content)
+		ctx.waitUntil(Promise.allSettled([b2, r2]))
+		await Promise.any([b2, r2])
+
 		return new ResponseBuilder()
 			.status(201)
-			.json({ key: obj.key, etag: obj.httpEtag })
+			.json({ msg: "created" })
 			.build()
 	}
+}
+
+async function uploadToCloudflare(
+	bucket: R2Bucket,
+	filename: string,
+	file: ArrayBuffer,
+) {
+	const obj = bucket.put(filename, file, {
+		httpMetadata: { contentType: "application/octet-stream" },
+	})
+	return obj
+}
+async function uploadToBackBlaze(
+	env: ENV,
+	filename: string,
+	file: ArrayBuffer,
+) {
+	const b2 = new BackBlaze(env.B2_ID, env.B2_KEY, env.B2_REGION)
+	await b2.putObject(
+		env.B2_BUCKET,
+		filename,
+		file,
+		"application/octet-stream",
+	)
 }
 
 function generateFilename(
