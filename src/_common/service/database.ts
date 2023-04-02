@@ -1,5 +1,5 @@
 import { encode } from "../base64.js"
-import { POST } from "../feccan.js"
+import { POST } from "../http-client.js"
 
 export class Database {
 	private api: string

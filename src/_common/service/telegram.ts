@@ -3,7 +3,7 @@ import type {
 	Message,
 	ChatMember,
 } from "./telegram-typings.js"
-import { POST } from "../feccan.js"
+import { POST } from "../http-client.js"
 
 export const encodeHtmlEntities = (raw: string): string => {
 	const pairs: Record<string, string> = {

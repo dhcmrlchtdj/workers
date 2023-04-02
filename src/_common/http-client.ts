@@ -1,6 +1,9 @@
 type ReqInit = RequestInit<RequestInitCfProperties>
 
-async function feccan(input: RequestInfo, init?: ReqInit): Promise<Response> {
+async function sendRequest(
+	input: RequestInfo,
+	init?: ReqInit,
+): Promise<Response> {
 	const resp = await fetch(input, init)
 	if (resp.status < 200 || resp.status >= 300) {
 		const text = await resp.text()
@@ -16,7 +19,7 @@ export async function GET(
 ): Promise<Response> {
 	const opt: ReqInit = {}
 	if (headers) opt.headers = headers
-	return feccan(input, opt)
+	return sendRequest(input, opt)
 }
 
 export async function PUT(
@@ -26,7 +29,7 @@ export async function PUT(
 ): Promise<Response> {
 	const opt: ReqInit = { method: "PUT", body }
 	if (headers) opt.headers = headers
-	return feccan(input, opt)
+	return sendRequest(input, opt)
 }
 
 export async function POST(
@@ -36,5 +39,5 @@ export async function POST(
 ): Promise<Response> {
 	const opt: ReqInit = { method: "POST", body }
 	if (headers) opt.headers = headers
-	return feccan(input, opt)
+	return sendRequest(input, opt)
 }

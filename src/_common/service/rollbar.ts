@@ -3,7 +3,7 @@
 // https://github.com/rollbar/rollbar.js
 // https://github.com/stacktracejs/error-stack-parser
 
-import { POST } from "../feccan.js"
+import { POST } from "../http-client.js"
 
 type Level = "critical" | "error" | "warning" | "info" | "debug"
 

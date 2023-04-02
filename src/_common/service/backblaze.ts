@@ -3,7 +3,7 @@
 // https://github.com/mhart/aws4fetch/blob/master/src/main.js
 
 import { createHash, createHMAC } from "../crypto/index.js"
-import { PUT } from "../feccan.js"
+import { PUT } from "../http-client.js"
 import { format } from "../format-date.js"
 
 // https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L191
