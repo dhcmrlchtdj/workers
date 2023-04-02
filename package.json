@@ -6,7 +6,6 @@
 	"author": "h11 <nirisix@gmail.com>",
 	"license": "Apache-2.0",
 	"type": "module",
-	"packageManager": "pnpm@7.21.0",
 	"devDependencies": {
 		"@cloudflare/workers-types": "4.20230321.0",
 		"@types/jest": "29.5.0",

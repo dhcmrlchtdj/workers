@@ -24,6 +24,10 @@ jobs:
                   restore-keys: ${{ runner.os }}-pnpm-
             - run: echo "$PATH"
             - run: |
+                  corepack enable
+                  # https://www.npmjs.com/package/pnpm
+                  corepack prepare pnpm@8.1.0 --activate
+                  pnpm config set store-dir ~/.local/share/pnpm/store
                   corepack enable pnpm
                   pnpm install
                   # https://www.npmjs.com/package/wrangler
