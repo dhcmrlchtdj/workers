@@ -14,13 +14,15 @@ type ENV = {
 	ROLLBAR_KEY: string
 	R2Backup: R2Bucket
 	BA: KVNamespace
-	B2_ID: string
-	B2_KEY: string
-	B2_REGION: string
-	B2_BUCKET: string
 }
 
-type KVItem = { password: string }
+type KV_BA = { password: string }
+type KV_B2 = {
+	id: string
+	key: string
+	region: string
+	bucket: string
+}
 
 type Handler = (
 	req: Request,
@@ -47,7 +49,7 @@ const worker = createWorker(
 		}
 
 		const { user, pass } = getBA(req.headers.get("authorization"))
-		const item = await env.BA.get<KVItem>("backup:" + user, {
+		const item = await env.BA.get<KV_BA>("backup:" + user, {
 			type: "json",
 			cacheTtl: 60 * 60, // 60min
 		})
@@ -83,10 +85,12 @@ function createHandler(directoryName: string): Handler {
 		const filename = generateFilename(directoryName, file.name)
 		const content = await file.arrayBuffer()
 
-		const b2 = uploadToBackBlaze(env, filename, content)
-		const r2 = uploadToCloudflare(env.R2Backup, filename, content)
-		ctx.waitUntil(Promise.allSettled([b2, r2]))
-		await Promise.any([b2, r2])
+		const tasks = [
+			uploadToBackBlaze(env, filename, content),
+			uploadToCloudflare(env.R2Backup, filename, content),
+		]
+		ctx.waitUntil(Promise.allSettled(tasks))
+		await Promise.any(tasks)
 
 		return new ResponseBuilder()
 			.status(201)
@@ -100,23 +104,24 @@ async function uploadToCloudflare(
 	filename: string,
 	file: ArrayBuffer,
 ) {
-	const obj = bucket.put(filename, file, {
+	await bucket.put(filename, file, {
 		httpMetadata: { contentType: "application/octet-stream" },
 	})
-	return obj
 }
 async function uploadToBackBlaze(
 	env: ENV,
 	filename: string,
 	file: ArrayBuffer,
 ) {
-	const b2 = new BackBlaze(env.B2_ID, env.B2_KEY, env.B2_REGION)
-	await b2.putObject(
-		env.B2_BUCKET,
-		filename,
-		file,
-		"application/octet-stream",
-	)
+	const b = await env.BA.get<KV_B2>("b2:backup", {
+		type: "json",
+		cacheTtl: 60 * 60, // 60min
+	})
+	if (b === null) {
+		throw new Error("invalid b2 account")
+	}
+	const b2 = new BackBlaze(b.id, b.key, b.region)
+	await b2.putObject(b.bucket, filename, file, "application/octet-stream")
 }
 
 function generateFilename(
