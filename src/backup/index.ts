@@ -120,8 +120,8 @@ async function uploadToBackBlaze(
 	if (b === null) {
 		throw new Error("invalid b2 account")
 	}
-	const b2 = new BackBlaze(b.id, b.key, b.region)
-	await b2.putObject(b.bucket, filename, file, "application/octet-stream")
+	const b2 = new BackBlaze(b.id, b.key, b.region, b.bucket)
+	await b2.putObject(filename, file, "application/octet-stream")
 }
 
 function generateFilename(

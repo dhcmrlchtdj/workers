@@ -21,20 +21,22 @@ export class BackBlaze {
 	private accessKeyId: string
 	private secretAccessKey: string
 	private region: string
-	constructor(accessKeyId: string, secretAccessKey: string, region: string) {
+	private bucket: string
+	constructor(
+		accessKeyId: string,
+		secretAccessKey: string,
+		region: string,
+		bucket: string,
+	) {
 		this.accessKeyId = accessKeyId
 		this.secretAccessKey = secretAccessKey
 		this.region = region
+		this.bucket = bucket
 	}
 
 	// https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html
-	async putObject(
-		bucket: string,
-		filename: string,
-		file: ArrayBuffer,
-		contentType: string,
-	) {
-		const host = `${bucket}.s3.${this.region}.backblazeb2.com`
+	async putObject(filename: string, file: ArrayBuffer, contentType: string) {
+		const host = `${this.bucket}.s3.${this.region}.backblazeb2.com`
 		const url = `https://${host}/${filename}`
 
 		const headers = await this.signAWS4(
