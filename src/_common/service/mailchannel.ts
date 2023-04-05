@@ -9,20 +9,18 @@ type MailSendBody = {
 	subject: string
 	content: MailContent[]
 	from: MailAddress
-	personalizations: [
-		{
-			to: MailAddress[]
-			cc?: MailAddress[]
-			bcc?: MailAddress[]
-			dkim_domain?: string
-			dkim_private_key?: string
-			dkim_selector?: string
-			from?: MailAddress
-			headers?: Record<string, string>
-			reply_to?: MailAddress
-			subject?: string
-		},
-	]
+	personalizations: {
+		to: MailAddress[]
+		cc?: MailAddress[]
+		bcc?: MailAddress[]
+		dkim_domain?: string
+		dkim_private_key?: string
+		dkim_selector?: string
+		from?: MailAddress
+		headers?: Record<string, string>
+		reply_to?: MailAddress
+		subject?: string
+	}[]
 	headers?: Record<string, string>
 	reply_to?: MailAddress
 }
@@ -55,12 +53,10 @@ export class MailChannels {
 	) {
 		const mail: MailSendBody = {
 			from: this.from,
-			personalizations: [
-				{
-					...this.dkim,
-					to: to.map(buildMailAddress),
-				},
-			],
+			personalizations: to.map(buildMailAddress).map((addr) => ({
+				...this.dkim,
+				to: [addr],
+			})),
 			subject,
 			content: [
 				{
@@ -70,7 +66,7 @@ export class MailChannels {
 			],
 		}
 
-		const api = this.base + "/send?dry-run"
+		const api = this.base + "/send"
 		const body = JSON.stringify(mail)
 		const resp = await POST(api, body, {
 			accept: "application/json",
