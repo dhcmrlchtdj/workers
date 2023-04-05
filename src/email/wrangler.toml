@@ -1,0 +1,7 @@
+main = "index.js"
+name = "email"
+route = "worker.h11.io/email*"
+
+compatibility_date = "2023-03-25"
+
+kv_namespaces = [{ binding = "BA", id = "fb7f86b3d7fb42bc8bb5ed43907a6479" }]

@@ -4,65 +4,63 @@
 import { POST } from "../http-client.js"
 
 type MailAddress = { email: string; name?: string }
-type MailContent = { type: string; value: string }
+type MailContent = { type: "text/plain"; value: string }
 type MailSendBody = {
-	from: MailAddress
-	personalizations: {
-		to: MailAddress[]
-		cc?: MailAddress[]
-		bcc?: MailAddress[]
-		dkim_domain?: string
-		dkim_private_key?: string
-		dkim_selector?: string
-		from?: MailAddress
-		headers?: Record<string, string>
-		reply_to?: MailAddress
-		subject?: string
-	}
-	headers?: Record<string, string>
-	reply_to?: MailAddress
 	subject: string
 	content: MailContent[]
+	from: MailAddress
+	personalizations: [
+		{
+			to: MailAddress[]
+			cc?: MailAddress[]
+			bcc?: MailAddress[]
+			dkim_domain?: string
+			dkim_private_key?: string
+			dkim_selector?: string
+			from?: MailAddress
+			headers?: Record<string, string>
+			reply_to?: MailAddress
+			subject?: string
+		},
+	]
+	headers?: Record<string, string>
+	reply_to?: MailAddress
 }
 
 export class MailChannels {
 	private base: string
 	private from: MailAddress
-	private dkim: { domain: string; selector: string; privateKey: string }
+	private dkim: {
+		dkim_domain: string
+		dkim_selector: string
+		dkim_private_key: string
+	}
 	constructor(
 		from: MailAddress,
 		dkim: {
-			domain: string
-			selector: string
-			privateKey: string
+			dkim_domain: string
+			dkim_private_key: string
+			dkim_selector: string
 		},
 	) {
 		this.base = "https://api.mailchannels.net/tx/v1"
 		this.from = from
 		this.dkim = dkim
 	}
-	private async _send(mail: MailSendBody) {
-		mail.personalizations.dkim_domain ??= this.dkim.domain
-		mail.personalizations.dkim_selector ??= this.dkim.selector
-		mail.personalizations.dkim_private_key ??= this.dkim.privateKey
 
-		const api = this.base + "/send"
-		const body = JSON.stringify(mail)
-		const resp = await POST(api, body, {
-			"content-type": "application/json",
-		})
-		return resp
-	}
 	async sendEmail(
 		to: (MailAddress | string)[],
 		subject: string,
 		content: string,
 	) {
-		const mail = {
+		const mail: MailSendBody = {
 			from: this.from,
-			personalizations: {
-				to: to.map(buildMailAddress),
-			},
+			personalizations: [
+				{
+					...this.dkim,
+					to: to.map(buildMailAddress),
+				},
+			],
 			subject,
 			content: [
 				{
@@ -71,7 +69,14 @@ export class MailChannels {
 				},
 			],
 		}
-		return this._send(mail)
+
+		const api = this.base + "/send?dry-run"
+		const body = JSON.stringify(mail)
+		const resp = await POST(api, body, {
+			accept: "application/json",
+			"content-type": "application/json",
+		})
+		return resp
 	}
 }
 
