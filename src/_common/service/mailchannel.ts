@@ -54,6 +54,7 @@ export class MailChannels {
 		const resp = await POST(api, body, {
 			"content-type": "application/json",
 		})
+		if (!resp.ok) throw resp
 		return resp
 	}
 }

@@ -5,13 +5,11 @@ import { HttpBadRequest, HttpUnauthorized } from "./http-response.js"
 
 export function getBA(auth: string | null): { user: string; pass: string } {
 	if (!auth) {
-		// eslint-disable-next-line @typescript-eslint/no-throw-literal
 		throw HttpUnauthorized(["Basic"])
 	}
 
 	const encoded = auth.slice(6)
 	if (!(auth.startsWith("Basic ") && encoded)) {
-		// eslint-disable-next-line @typescript-eslint/no-throw-literal
 		throw HttpBadRequest("malformed authorization header")
 	}
 
@@ -19,7 +17,6 @@ export function getBA(auth: string | null): { user: string; pass: string } {
 	const index = decoded.indexOf(":")
 	// eslint-disable-next-line no-control-regex
 	if (index === -1 || /[\x00-\x1F\x7F]/.test(decoded)) {
-		// eslint-disable-next-line @typescript-eslint/no-throw-literal
 		throw HttpBadRequest("invalid authorization value")
 	}
 

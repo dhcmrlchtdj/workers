@@ -82,7 +82,6 @@ export function createWorkerByRouter<Env extends { ROLLBAR_KEY: string }>(
 				await addRoute({ router, req, env, ctx, monitor })
 
 				const found = router.route(req)
-				// eslint-disable-next-line @typescript-eslint/no-throw-literal
 				if (!found) throw HttpNotFound()
 
 				return await found.handler({

@@ -49,7 +49,8 @@ export class BackBlaze {
 			file,
 		)
 
-		return PUT(url, file, headers)
+		const resp = await PUT(url, file, headers)
+		if (!resp.ok) throw resp
 	}
 
 	private async signAWS4(
