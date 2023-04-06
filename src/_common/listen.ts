@@ -20,10 +20,10 @@ export function createSimpleWorker<Env>(
 			try {
 				return await handler(request, env, ctx)
 			} catch (err) {
+				console.log(err)
 				if (err instanceof Response) {
 					return err
 				} else {
-					console.log(err)
 					return HttpInternalServerError()
 				}
 			}
@@ -46,6 +46,7 @@ export function createWorker<Env extends { ROLLBAR_KEY: string }>(
 				return await handler(request, env, ctx)
 			} catch (err) {
 				if (err instanceof Response) {
+					ctx.waitUntil(monitor.errorResponse(err, request))
 					return err
 				} else {
 					ctx.waitUntil(monitor.error(err, request))
@@ -95,6 +96,7 @@ export function createWorkerByRouter<Env extends { ROLLBAR_KEY: string }>(
 				let resp: Response
 
 				if (err instanceof Response) {
+					ctx.waitUntil(monitor.errorResponse(err, req))
 					resp = err
 				} else {
 					ctx.waitUntil(monitor.error(err, req))

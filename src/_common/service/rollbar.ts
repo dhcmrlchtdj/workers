@@ -68,6 +68,23 @@ export class Rollbar {
 	async warn(err: unknown, req?: Request): Promise<void> {
 		await this.log("warning", err, req)
 	}
+
+	async errorResponse(resp: Response, req?: Request): Promise<void> {
+		let body: string = ""
+		try {
+			body = await resp.text()
+		} catch (e) {
+			body = String(e)
+		}
+		const err = new Error(
+			JSON.stringify({
+				url: resp.url,
+				status: resp.status,
+				body,
+			}),
+		)
+		await this.log("warning", err, req)
+	}
 }
 
 function parseRequest(req: Request | undefined) {
