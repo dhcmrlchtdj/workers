@@ -7,7 +7,7 @@ import {
 } from "../_common/http-response.js"
 import {
 	MailChannels,
-	MailChannelsSendBody,
+	type MailChannelsSendBody,
 } from "../_common/service/mailchannel.js"
 
 type ENV = {
