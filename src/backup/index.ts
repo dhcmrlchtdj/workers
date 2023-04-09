@@ -1,11 +1,9 @@
 import { format } from "../_common/format-date.js"
 import { getBA } from "../_common/basic_auth.js"
-import { createWorker } from "../_common/listen.js"
+import { allowMethod, contentType, createWorker } from "../_common/listen.js"
 import {
 	HttpInternalServerError,
-	HttpMethodNotAllowed,
 	HttpUnauthorized,
-	HttpUnsupportedMediaType,
 	ResponseBuilder,
 } from "../_common/http-response.js"
 import { BackBlaze } from "../_common/service/backblaze.js"
@@ -38,22 +36,15 @@ const HANDERS: Record<string, Handler> = {
 
 const worker = createWorker(
 	"backup",
+	allowMethod("POST"),
+	contentType("multipart/form-data; boundary"),
 	async (req: Request, env: ENV, ctx: ExecutionContext) => {
-		if (req.method.toUpperCase() !== "POST") {
-			return HttpMethodNotAllowed(["POST"])
-		}
-
-		const ct = req.headers.get("content-type")
-		if (!ct?.startsWith("multipart/form-data; boundary")) {
-			return HttpUnsupportedMediaType()
-		}
-
 		const { user, pass } = getBA(req.headers.get("authorization"))
 		const item = await env.BA.get<KV_BA>("backup:" + user, {
 			type: "json",
 			cacheTtl: 60 * 60, // 60min
 		})
-		if (user && item?.password === pass) {
+		if (item?.password === pass) {
 			const h = HANDERS[user]
 			if (h) {
 				return h(req, env, ctx)
@@ -61,8 +52,7 @@ const worker = createWorker(
 				return HttpInternalServerError()
 			}
 		} else {
-			console.log(`invalid user/pass: "${user}" "${pass}"`)
-			return HttpUnauthorized(["Basic"])
+			throw HttpUnauthorized(["Basic"])
 		}
 	},
 )

@@ -1,15 +1,22 @@
-import type { Params } from "./router.js"
-import { WorkerRouter } from "./router.js"
-import type { Monitor } from "./monitor.js"
+import { type Params, WorkerRouter } from "./router.js"
+import { type Monitor } from "./monitor.js"
 import { Rollbar } from "./service/rollbar.js"
 import {
 	HttpInternalServerError,
+	HttpMethodNotAllowed,
 	HttpNotFound,
 	HttpOk,
+	HttpUnsupportedMediaType,
 } from "./http-response.js"
 
+type VoidFetchHandler<Env = unknown> = (
+	request: Request<unknown, IncomingRequestCfProperties>,
+	env: Env,
+	ctx: ExecutionContext,
+) => void | Promise<void>
+
 export function createSimpleWorker<Env>(
-	handler: ExportedHandlerFetchHandler<Env>,
+	...handlers: [...VoidFetchHandler<Env>[], ExportedHandlerFetchHandler<Env>]
 ): ExportedHandler<Env> {
 	return {
 		async fetch(
@@ -18,7 +25,11 @@ export function createSimpleWorker<Env>(
 			ctx: ExecutionContext,
 		) {
 			try {
-				return await handler(request, env, ctx)
+				let resp = null
+				for (const handler of handlers) {
+					resp = await handler(request, env, ctx)
+				}
+				return resp ?? HttpInternalServerError()
 			} catch (err) {
 				console.log(err)
 				if (err instanceof Response) {
@@ -33,7 +44,7 @@ export function createSimpleWorker<Env>(
 
 export function createWorker<Env extends { ROLLBAR_KEY: string }>(
 	name: string,
-	handler: ExportedHandlerFetchHandler<Env>,
+	...handlers: [...VoidFetchHandler<Env>[], ExportedHandlerFetchHandler<Env>]
 ): ExportedHandler<Env> {
 	return {
 		async fetch(
@@ -43,7 +54,11 @@ export function createWorker<Env extends { ROLLBAR_KEY: string }>(
 		) {
 			const monitor = new Rollbar(env.ROLLBAR_KEY, name)
 			try {
-				return await handler(request, env, ctx)
+				let resp = null
+				for (const handler of handlers) {
+					resp = await handler(request, env, ctx)
+				}
+				return resp ?? HttpInternalServerError()
 			} catch (err) {
 				if (err instanceof Response) {
 					ctx.waitUntil(monitor.errorResponse(err, request))
@@ -54,6 +69,24 @@ export function createWorker<Env extends { ROLLBAR_KEY: string }>(
 				}
 			}
 		},
+	}
+}
+
+export function allowMethod(...methods: string[]): VoidFetchHandler {
+	methods = methods.map((x) => x.toUpperCase())
+	return (req: Request) => {
+		if (methods.includes(req.method.toUpperCase())) {
+			throw HttpMethodNotAllowed(methods)
+		}
+	}
+}
+
+export function contentType(type: string): VoidFetchHandler {
+	return (req: Request) => {
+		const ct = req.headers.get("content-type")
+		if (!ct?.startsWith(type)) {
+			throw HttpUnsupportedMediaType()
+		}
 	}
 }
 

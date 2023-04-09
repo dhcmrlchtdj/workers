@@ -109,7 +109,7 @@ export const HttpForbidden = (body: BodyInit = "Forbidden") =>
 export const HttpNotFound = (body: BodyInit = "Not Found") =>
 	new Response(body, { status: 404 })
 export const HttpMethodNotAllowed = (
-	allowedMethods: ("HEAD" | "GET" | "POST" | "PUT" | "DELETE" | "OPTION")[],
+	allowedMethods: string[],
 	body: BodyInit = "Method Not Allowed",
 ) =>
 	new Response(body, {

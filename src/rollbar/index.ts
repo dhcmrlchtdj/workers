@@ -1,9 +1,5 @@
-import {
-	HttpBadRequest,
-	HttpMethodNotAllowed,
-	HttpOk,
-} from "../_common/http-response.js"
-import { createSimpleWorker } from "../_common/listen.js"
+import { HttpBadRequest, HttpOk } from "../_common/http-response.js"
+import { allowMethod, createSimpleWorker } from "../_common/listen.js"
 import { encodeHtmlEntities, Telegram } from "../_common/service/telegram.js"
 
 // https://docs.rollbar.com/docs/webhooks
@@ -14,11 +10,8 @@ type Env = {
 }
 
 const worker = createSimpleWorker(
+	allowMethod("POST"),
 	async (req: Request, env: Env, ctx: ExecutionContext) => {
-		if (req.method.toUpperCase() !== "POST") {
-			return HttpMethodNotAllowed(["POST"])
-		}
-
 		const payload: RollbarPayload | undefined = await req.json()
 		if (payload?.event_name !== "occurrence") {
 			const msg = `unknown event: "${payload?.event_name}"`
