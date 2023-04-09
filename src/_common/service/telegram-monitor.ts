@@ -44,14 +44,7 @@ export class TelegramMonitor {
 			level,
 			service: this._serviceName,
 			request: parseRequest(req),
-			error:
-				error instanceof Error
-					? {
-							name: error.name,
-							message: error.message,
-							stack: error.stack,
-					  }
-					: error,
+			error: error instanceof Error ? error.stack?.split(/\n +/) : error,
 		}
 		return this._send(message)
 	}
@@ -71,20 +64,16 @@ export class TelegramMonitor {
 
 function parseRequest(req: Request | undefined) {
 	if (req === undefined) return undefined
-	const url = new URL(req.url)
-	const parsed = {
-		url: `${url.protocol}//${url.hostname}${url.pathname}`,
+	return {
+		url: req.url,
 		method: req.method,
 		headers: headerToRecord(req.headers),
-		query_string: url.search,
-		user_ip: req.headers.get("CF-Connecting-IP"),
 	}
-	return parsed
 }
 
-function headerToRecord(header: Headers): Record<string, string> {
+function headerToRecord(headers: Headers): Record<string, string> {
 	const h: Record<string, string> = {}
-	for (const [key, val] of header.entries()) {
+	for (const [key, val] of headers.entries()) {
 		h[key] = val
 	}
 	return h
