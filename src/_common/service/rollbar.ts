@@ -72,7 +72,7 @@ export class Rollbar {
 	async errorResponse(resp: Response, req?: Request): Promise<void> {
 		let body: string = ""
 		try {
-			body = await resp.text()
+			body = await resp.clone().text()
 		} catch (e) {
 			body = String(e)
 		}
