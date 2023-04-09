@@ -75,7 +75,7 @@ export function createWorker<Env extends { ROLLBAR_KEY: string }>(
 export function allowMethod(...methods: string[]): VoidFetchHandler {
 	methods = methods.map((x) => x.toUpperCase())
 	return (req: Request) => {
-		if (methods.includes(req.method.toUpperCase())) {
+		if (!methods.includes(req.method.toUpperCase())) {
 			throw HttpMethodNotAllowed(methods)
 		}
 	}

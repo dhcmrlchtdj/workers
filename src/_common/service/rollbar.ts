@@ -78,7 +78,6 @@ export class Rollbar {
 		}
 		const err = new Error(
 			JSON.stringify({
-				url: resp.url,
 				status: resp.status,
 				body,
 			}),
