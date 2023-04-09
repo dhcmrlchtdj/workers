@@ -7,8 +7,6 @@ import {
 } from "../_common/service/mailchannel.js"
 
 type ENV = {
-	ERR_TG_BOT_TOKEN: string
-	ERR_TG_CHAT_ID: string
 	BA: KVNamespace
 }
 

@@ -9,8 +9,6 @@ import {
 import { BackBlaze } from "../_common/service/backblaze.js"
 
 type ENV = {
-	ERR_TG_BOT_TOKEN: string
-	ERR_TG_CHAT_ID: string
 	R2Backup: R2Bucket
 	BA: KVNamespace
 }

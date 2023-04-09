@@ -2,12 +2,16 @@ import { encodeHtmlEntities, Telegram } from "./telegram.js"
 
 export class TelegramMonitor {
 	private _serviceName: string
-	private _chatId: string
-	private _telegram: Telegram
-	constructor(serviceName: string, token: string, chatId: string) {
+	private _chatId: number | undefined
+	private _telegram: Telegram | undefined
+	constructor(
+		serviceName: string,
+		token: string | undefined,
+		chatId: number | undefined,
+	) {
 		this._serviceName = serviceName
 		this._chatId = chatId
-		this._telegram = new Telegram(token)
+		this._telegram = token ? new Telegram(token) : undefined
 	}
 
 	error(err: unknown, req?: Request): Promise<void> {
@@ -52,7 +56,7 @@ export class TelegramMonitor {
 	private async _send(message: Record<string, unknown>): Promise<void> {
 		const msg = JSON.stringify(message, null, 4)
 		console.log(msg)
-		await this._telegram.send("sendMessage", {
+		await this._telegram?.send("sendMessage", {
 			chat_id: Number(this._chatId),
 			text: `<pre>${encodeHtmlEntities(msg)}</pre>`,
 			parse_mode: "HTML",

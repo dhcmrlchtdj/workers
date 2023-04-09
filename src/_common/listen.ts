@@ -1,6 +1,5 @@
 import { type Params, WorkerRouter } from "./router.js"
 import { type Monitor } from "./monitor.js"
-import { Rollbar } from "./service/rollbar.js"
 import {
 	HttpInternalServerError,
 	HttpMethodNotAllowed,
@@ -43,11 +42,7 @@ export function createSimpleWorker<Env>(
 	}
 }
 
-type ERR_TG = {
-	ERR_TG_BOT_TOKEN: string
-	ERR_TG_CHAT_ID: string
-}
-export function createWorker<Env extends ERR_TG>(
+export function createWorker<Env extends { BA: KVNamespace }>(
 	name: string,
 	...handlers: [...VoidFetchHandler<Env>[], ExportedHandlerFetchHandler<Env>]
 ): ExportedHandler<Env> {
@@ -57,11 +52,14 @@ export function createWorker<Env extends ERR_TG>(
 			env: Env,
 			ctx: ExecutionContext,
 		) {
-			const monitor = new TelegramMonitor(
-				name,
-				env.ERR_TG_BOT_TOKEN,
-				env.ERR_TG_CHAT_ID,
-			)
+			const item = await env.BA.get<{
+				token: string
+				chatId: number
+			}>("telegram:err", {
+				type: "json",
+				cacheTtl: 60 * 60, // 60min
+			})
+			const monitor = new TelegramMonitor(name, item?.token, item?.chatId)
 			try {
 				let resp = null
 				for (const handler of handlers) {
@@ -106,7 +104,7 @@ export type RouterContext<Env> = {
 	env: Env
 	ctx: ExecutionContext
 }
-export function createWorkerByRouter<Env extends { ROLLBAR_KEY: string }>(
+export function createWorkerByRouter<Env extends { BA: KVNamespace }>(
 	name: string,
 	addRoute: (ctx: {
 		router: WorkerRouter<RouterContext<Env>>
@@ -119,7 +117,14 @@ export function createWorkerByRouter<Env extends { ROLLBAR_KEY: string }>(
 ): ExportedHandler<Env> {
 	return {
 		async fetch(req: Request, env: Env, ctx: ExecutionContext) {
-			const monitor = new Rollbar(env.ROLLBAR_KEY, name)
+			const item = await env.BA.get<{
+				token: string
+				chatId: number
+			}>("telegram:err", {
+				type: "json",
+				cacheTtl: 60 * 60, // 60min
+			})
+			const monitor = new TelegramMonitor(name, item?.token, item?.chatId)
 			try {
 				const router = new WorkerRouter<RouterContext<Env>>()
 				await addRoute({ router, req, env, ctx, monitor })
@@ -138,7 +143,7 @@ export function createWorkerByRouter<Env extends { ROLLBAR_KEY: string }>(
 				let resp: Response
 
 				if (err instanceof Response) {
-					ctx.waitUntil(monitor.errorResponse(err, req))
+					ctx.waitUntil(monitor.logResponse(err, req))
 					resp = err
 				} else {
 					ctx.waitUntil(monitor.error(err, req))
@@ -155,7 +160,7 @@ export function createWorkerByRouter<Env extends { ROLLBAR_KEY: string }>(
 	}
 }
 
-export function createScheduler<Env extends { ROLLBAR_KEY: string }>(
+export function createScheduler<Env extends { BA: KVNamespace }>(
 	name: string,
 	handler: ExportedHandlerScheduledHandler<Env>,
 ): ExportedHandler<Env> {
@@ -165,7 +170,14 @@ export function createScheduler<Env extends { ROLLBAR_KEY: string }>(
 			env: Env,
 			ctx: ExecutionContext,
 		) {
-			const monitor = new Rollbar(env.ROLLBAR_KEY, name)
+			const item = await env.BA.get<{
+				token: string
+				chatId: number
+			}>("telegram:err", {
+				type: "json",
+				cacheTtl: 60 * 60, // 60min
+			})
+			const monitor = new TelegramMonitor(name, item?.token, item?.chatId)
 			try {
 				await handler(controller, env, ctx)
 			} catch (err) {
