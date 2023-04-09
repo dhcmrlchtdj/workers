@@ -1,6 +1,0 @@
-type = "javascript"
-
-name = "timeslayer"
-route = "worker.h11.io/telegram/timeslayer/*"
-
-compatibility_date = "2022-03-22"

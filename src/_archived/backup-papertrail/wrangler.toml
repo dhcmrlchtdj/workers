@@ -1,9 +1,0 @@
-main = "index.js"
-name = "backup-papertrail"
-
-compatibility_date = "2022-05-12"
-
-r2_buckets = [{ binding = "R2Backup", bucket_name = "backup" }]
-
-[triggers]
-crons = ["30 * * * *"]
