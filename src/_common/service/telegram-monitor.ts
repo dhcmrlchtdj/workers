@@ -1,0 +1,91 @@
+import { encodeHtmlEntities, Telegram } from "./telegram.js"
+
+export class TelegramMonitor {
+	private _serviceName: string
+	private _chatId: string
+	private _telegram: Telegram
+	constructor(serviceName: string, token: string, chatId: string) {
+		this._serviceName = serviceName
+		this._chatId = chatId
+		this._telegram = new Telegram(token)
+	}
+
+	error(err: unknown, req?: Request): Promise<void> {
+		return this._log("error", err, req)
+	}
+
+	warn(err: unknown, req?: Request): Promise<void> {
+		return this._log("warn", err, req)
+	}
+
+	async logResponse(resp: Response, req?: Request): Promise<void> {
+		let body: string = ""
+		try {
+			body = await resp.clone().text()
+		} catch (e) {
+			body = String(e)
+		}
+		const err = new Error(
+			JSON.stringify({
+				status: resp.status,
+				body,
+			}),
+		)
+		return this._log("warn", err, req)
+	}
+
+	private _log(
+		level: string,
+		error: unknown,
+		req: Request | undefined,
+	): Promise<void> {
+		const message: Record<string, unknown> = {
+			time: new Date().toISOString(),
+			level,
+			service: this._serviceName,
+			request: parseRequest(req),
+			error:
+				error instanceof Error
+					? {
+							name: error.name,
+							message: error.message,
+							stack: error.stack,
+					  }
+					: error,
+		}
+		return this._send(message)
+	}
+
+	private async _send(message: Record<string, unknown>): Promise<void> {
+		const msg = JSON.stringify(message, null, 4)
+		console.log(msg)
+		await this._telegram.send("sendMessage", {
+			chat_id: Number(this._chatId),
+			text: `<pre>${encodeHtmlEntities(msg)}</pre>`,
+			parse_mode: "HTML",
+			disable_web_page_preview: true,
+			disable_notification: true,
+		})
+	}
+}
+
+function parseRequest(req: Request | undefined) {
+	if (req === undefined) return undefined
+	const url = new URL(req.url)
+	const parsed = {
+		url: `${url.protocol}//${url.hostname}${url.pathname}`,
+		method: req.method,
+		headers: headerToRecord(req.headers),
+		query_string: url.search,
+		user_ip: req.headers.get("CF-Connecting-IP"),
+	}
+	return parsed
+}
+
+function headerToRecord(header: Headers): Record<string, string> {
+	const h: Record<string, string> = {}
+	for (const [key, val] of header.entries()) {
+		h[key] = val
+	}
+	return h
+}

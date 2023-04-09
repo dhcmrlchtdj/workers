@@ -1,5 +1,0 @@
-main = "index.js"
-name = "rollbar"
-route = "worker.h11.io/rollbar*"
-
-compatibility_date = "2023-03-25"

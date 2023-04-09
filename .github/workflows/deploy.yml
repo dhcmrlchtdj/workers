@@ -46,18 +46,8 @@ jobs:
                   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
-                  printf '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
-                  printf '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | wrangler secret put 'ROLLBAR_TG_BOT_TOKEN'
-                  printf '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | wrangler secret put 'ROLLBAR_TG_CHAT_ID'
-                  wrangler publish
-
-            - working-directory: src/rollbar
-              env:
-                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-                  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-              run: |
-                  printf '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | wrangler secret put 'ROLLBAR_TG_BOT_TOKEN'
-                  printf '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | wrangler secret put 'ROLLBAR_TG_CHAT_ID'
+                  printf '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | wrangler secret put 'ERR_TG_BOT_TOKEN'
+                  printf '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | wrangler secret put 'ERR_TG_CHAT_ID'
                   wrangler publish
 
             - working-directory: src/backup
@@ -65,7 +55,8 @@ jobs:
                   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
-                  printf '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  printf '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | wrangler secret put 'ERR_TG_BOT_TOKEN'
+                  printf '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | wrangler secret put 'ERR_TG_CHAT_ID'
                   wrangler publish
 
             - working-directory: src/feedbox
@@ -80,7 +71,8 @@ jobs:
                   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
-                  printf '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  printf '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | wrangler secret put 'ERR_TG_BOT_TOKEN'
+                  printf '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | wrangler secret put 'ERR_TG_CHAT_ID'
                   wrangler publish
 
             - working-directory: src/email
@@ -88,5 +80,6 @@ jobs:
                   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
                   CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
               run: |
-                  printf '${{ secrets.ROLLBAR_KEY }}' | wrangler secret put 'ROLLBAR_KEY'
+                  printf '${{ secrets.ROLLBAR_TG_BOT_TOKEN }}' | wrangler secret put 'ERR_TG_BOT_TOKEN'
+                  printf '${{ secrets.ROLLBAR_TG_CHAT_ID }}' | wrangler secret put 'ERR_TG_CHAT_ID'
                   wrangler publish

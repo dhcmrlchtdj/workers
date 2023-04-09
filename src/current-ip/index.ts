@@ -11,9 +11,8 @@ import {
 } from "../_common/http-response.js"
 
 type ENV = {
-	ROLLBAR_KEY: string
-	ROLLBAR_TG_BOT_TOKEN: string
-	ROLLBAR_TG_CHAT_ID: string
+	ERR_TG_BOT_TOKEN: string
+	ERR_TG_CHAT_ID: string
 	BA: KVNamespace
 }
 
@@ -51,10 +50,10 @@ async function saveCurrentIp(
 	if (item.ip !== currIp) {
 		item.ip = currIp
 		await env.BA.put("ip:" + machine, JSON.stringify(item))
-		const telegram = new Telegram(env.ROLLBAR_TG_BOT_TOKEN)
+		const telegram = new Telegram(env.ERR_TG_BOT_TOKEN)
 		await telegram.send("sendMessage", {
 			parse_mode: "HTML",
-			chat_id: Number(env.ROLLBAR_TG_CHAT_ID),
+			chat_id: Number(env.ERR_TG_CHAT_ID),
 			text: `IP changed: ${enc(machine)}\n<pre>HostName ${enc(
 				currIp,
 			)}</pre>`,

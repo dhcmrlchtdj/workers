@@ -3,7 +3,8 @@ import { HttpUnauthorized, ResponseBuilder } from "../_common/http-response.js"
 import { createWorker } from "../_common/listen.js"
 
 type ENV = {
-	ROLLBAR_KEY: string
+	ERR_TG_BOT_TOKEN: string
+	ERR_TG_CHAT_ID: string
 	BA: KVNamespace
 }
 

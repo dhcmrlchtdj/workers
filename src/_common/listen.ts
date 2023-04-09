@@ -8,6 +8,7 @@ import {
 	HttpOk,
 	HttpUnsupportedMediaType,
 } from "./http-response.js"
+import { TelegramMonitor } from "./service/telegram-monitor.js"
 
 type VoidFetchHandler<Env = unknown> = (
 	request: Request<unknown, IncomingRequestCfProperties>,
@@ -42,7 +43,11 @@ export function createSimpleWorker<Env>(
 	}
 }
 
-export function createWorker<Env extends { ROLLBAR_KEY: string }>(
+type ERR_TG = {
+	ERR_TG_BOT_TOKEN: string
+	ERR_TG_CHAT_ID: string
+}
+export function createWorker<Env extends ERR_TG>(
 	name: string,
 	...handlers: [...VoidFetchHandler<Env>[], ExportedHandlerFetchHandler<Env>]
 ): ExportedHandler<Env> {
@@ -52,7 +57,11 @@ export function createWorker<Env extends { ROLLBAR_KEY: string }>(
 			env: Env,
 			ctx: ExecutionContext,
 		) {
-			const monitor = new Rollbar(env.ROLLBAR_KEY, name)
+			const monitor = new TelegramMonitor(
+				name,
+				env.ERR_TG_BOT_TOKEN,
+				env.ERR_TG_CHAT_ID,
+			)
 			try {
 				let resp = null
 				for (const handler of handlers) {
@@ -61,7 +70,7 @@ export function createWorker<Env extends { ROLLBAR_KEY: string }>(
 				return resp ?? HttpInternalServerError()
 			} catch (err) {
 				if (err instanceof Response) {
-					ctx.waitUntil(monitor.errorResponse(err, request))
+					ctx.waitUntil(monitor.logResponse(err, request))
 					return err
 				} else {
 					ctx.waitUntil(monitor.error(err, request))
