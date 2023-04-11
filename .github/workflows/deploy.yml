@@ -22,7 +22,6 @@ jobs:
                   path: ~/.local/share/pnpm/store
                   key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
                   restore-keys: ${{ runner.os }}-pnpm-
-            - run: echo "$PATH"
             - run: |
                   corepack enable
                   # https://www.npmjs.com/package/pnpm
@@ -32,7 +31,7 @@ jobs:
                   pnpm install
                   # https://www.npmjs.com/package/wrangler
                   pnpm add -g wrangler@2.13.0
-                  pnpm store prune
+                  # pnpm store prune
               env:
                   PNPM_HOME: /home/runner/.local/bin
 
