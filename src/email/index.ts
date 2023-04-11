@@ -2,7 +2,7 @@ import { getBA } from "../_common/basic_auth.js"
 import { allowMethod, contentType, createWorker } from "../_common/listen.js"
 import { HttpUnauthorized } from "../_common/http-response.js"
 import {
-	MailChannels,
+	sendEmail,
 	type MailChannelsSendBody,
 } from "../_common/service/mailchannel.js"
 
@@ -16,6 +16,10 @@ type KVItem = {
 		dkim_domain: string
 		dkim_selector: string
 		dkim_private_key: string
+	}
+	from: {
+		email: string
+		name: string
 	}
 }
 
@@ -32,9 +36,12 @@ const worker = createWorker(
 			cacheTtl: 60 * 60, // 60min
 		})
 		if (item?.password === pass) {
-			const mc = new MailChannels(item.dkim)
 			const mailContent = await req.json<MailChannelsSendBody>()
-			const resp = await mc.sendEmail(mailContent)
+			mailContent.from = mailContent.from ?? item.from
+			mailContent.personalizations = mailContent.personalizations.map(
+				(t) => ({ ...item.dkim, ...t }),
+			)
+			const resp = await sendEmail(mailContent)
 			return resp
 		} else {
 			throw HttpUnauthorized(["Basic"])
