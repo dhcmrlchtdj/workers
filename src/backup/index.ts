@@ -1,10 +1,10 @@
 import { format } from "../_common/format-date.js"
 import { getBA } from "../_common/basic_auth.js"
+import * as R from "../_common/response-builder.js"
 import { allowMethod, contentType, createWorker } from "../_common/listen.js"
 import {
 	HttpInternalServerError,
 	HttpUnauthorized,
-	ResponseBuilder,
 } from "../_common/http-response.js"
 import { BackBlaze } from "../_common/service/backblaze.js"
 
@@ -81,10 +81,8 @@ function createHandler(directoryName: string): Handler {
 		ctx.waitUntil(Promise.allSettled(tasks))
 		await Promise.any(tasks)
 
-		return new ResponseBuilder()
-			.status(201)
-			.json({ msg: "created" })
-			.build()
+		const resp = R.build(R.status(201), R.json({ msg: "created" }))
+		return resp
 	}
 }
 
