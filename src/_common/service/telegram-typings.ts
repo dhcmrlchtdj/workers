@@ -94,3 +94,78 @@ export type InlineKeyboardButton = {
 	text: string
 	url?: string
 }
+
+///
+
+export type SendMessage = {
+	chat_id: number
+	text: string
+	parse_mode?: "MarkdownV2" | "HTML"
+	disable_web_page_preview?: boolean
+	disable_notification?: boolean
+	reply_to_message_id?: number
+	reply_markup?: InlineKeyboardMarkup
+}
+export type SendPhoto = {
+	chat_id: number
+	photo: string // file_id
+	caption?: string
+	parse_mode?: "MarkdownV2" | "HTML"
+	disable_notification?: boolean
+	reply_to_message_id?: number
+	reply_markup?: InlineKeyboardMarkup
+}
+export type SendAnimation = {
+	chat_id: number
+	animation: string // file_id
+	duration?: number
+	width?: number
+	height?: number
+	thumb?: string // file_id
+	caption?: string
+	parse_mode?: "MarkdownV2" | "HTML"
+	disable_notification?: boolean
+	reply_to_message_id?: number
+	reply_markup?: InlineKeyboardMarkup
+}
+export type SendVideo = {
+	chat_id: number
+	video: string // file_id
+	duration?: number
+	width?: number
+	height?: number
+	thumb?: string // file_id
+	caption?: string
+	parse_mode?: "MarkdownV2" | "HTML"
+	supports_streaming?: boolean
+	disable_notification?: boolean
+	reply_to_message_id?: number
+	reply_markup?: InlineKeyboardMarkup
+}
+export type EditMessageText =
+	| {
+			chat_id: number
+			message_id: number
+			text: string
+			parse_mode?: "MarkdownV2" | "HTML"
+			disable_web_page_preview?: boolean
+			reply_markup?: InlineKeyboardMarkup
+	  }
+	| {
+			inline_message_id: string
+			text: string
+			parse_mode?: "MarkdownV2" | "HTML"
+			disable_web_page_preview?: boolean
+			reply_markup?: InlineKeyboardMarkup
+	  }
+export type AnswerCallbackQuery = {
+	callback_query_id: string
+	text?: string
+	show_alert?: boolean
+	url?: string
+	cache_time?: number
+}
+export type GetChatMember = {
+	chat_id: number
+	user_id: number
+}

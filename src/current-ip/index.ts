@@ -1,6 +1,6 @@
 import {
-	Telegram,
 	encodeHtmlEntities as enc,
+	telegram,
 } from "../_common/service/telegram.js"
 import { getBA } from "../_common/basic_auth.js"
 import { createWorker } from "../_common/listen.js"
@@ -58,9 +58,8 @@ async function saveCurrentIp(
 		})
 		if (tg === null) return
 
-		const telegram = new Telegram(tg.token)
-
-		await telegram.send("sendMessage", {
+		const sendMessage = telegram(tg.token, "sendMessage")
+		await sendMessage({
 			parse_mode: "HTML",
 			chat_id: tg.chatId,
 			text: `IP changed: ${enc(machine)}\n<pre>HostName ${enc(
