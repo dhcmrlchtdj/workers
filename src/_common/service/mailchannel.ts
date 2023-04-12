@@ -1,7 +1,7 @@
 // https://api.mailchannels.net/tx/v1/documentation
 // https://developers.cloudflare.com/pages/platform/functions/plugins/mailchannels/
 
-import { POST } from "../http-client.js"
+import * as S from "../http/request.js"
 
 type MailAddress = { email: string; name?: string }
 type MailContent = { type: string; value: string }
@@ -30,10 +30,7 @@ export async function sendEmail(
 	mailContent: MailChannelsSendBody,
 	api = "https://api.mailchannels.net/tx/v1/send",
 ) {
-	const body = JSON.stringify(mailContent)
-	const resp = await POST(api, body, {
-		"content-type": "application/json",
-	})
+	const resp = await fetch(S.build(S.post(api), S.json(mailContent)))
 	if (!resp.ok) throw resp
 	return resp
 }

@@ -6,7 +6,7 @@ import {
 	HttpNotFound,
 	HttpOk,
 	HttpUnsupportedMediaType,
-} from "./http-response.js"
+} from "./http/status.js"
 import { TelegramMonitor } from "./service/telegram-monitor.js"
 
 type VoidFetchHandler<Env = unknown> = (

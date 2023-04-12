@@ -1,7 +1,7 @@
 import { getBA } from "../_common/basic_auth.js"
-import { HttpUnauthorized } from "../_common/http-response.js"
 import { createWorker } from "../_common/listen.js"
-import * as R from "../_common/response-builder.js"
+import * as R from "../_common/http/response.js"
+import { HttpUnauthorized } from "../_common/http/status.js"
 
 type ENV = {
 	BA: KVNamespace

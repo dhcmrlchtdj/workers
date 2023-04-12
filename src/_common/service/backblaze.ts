@@ -2,10 +2,10 @@
 // https://www.backblaze.com/b2/docs/s3_compatible_api.html
 // https://github.com/mhart/aws4fetch/blob/master/src/main.js
 
-import { PUT } from "../http-client.js"
 import { format } from "../format-date.js"
 import { createHMAC } from "../crypto/hmac.js"
 import { createHash } from "../crypto/hash.js"
+import * as S from "../http/request.js"
 
 // https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L191
 const UNSIGNABLE_HEADERS = new Set([
@@ -50,7 +50,13 @@ export class BackBlaze {
 			this.secretAccessKey,
 		)
 
-		const resp = await PUT(url, file, headers)
+		const resp = await fetch(
+			S.build(
+				S.put(url),
+				S.body(file),
+				S.headers(new Headers(headers))
+			),
+		)
 		if (!resp.ok) throw resp
 	}
 }

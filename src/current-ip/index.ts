@@ -8,7 +8,7 @@ import {
 	HttpBadRequest,
 	HttpOk,
 	HttpUnauthorized,
-} from "../_common/http-response.js"
+} from "../_common/http/status.js"
 
 type ENV = {
 	BA: KVNamespace

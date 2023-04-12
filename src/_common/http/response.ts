@@ -1,15 +1,9 @@
+import { compose } from "./compose.js"
+
 export function build(...builders: ResponseBuilder[]): Response {
 	const b = { body: null, status: 200, headers: new Headers() }
 	compose(...builders)(b)
 	return new Response(b.body, { status: b.status, headers: b.headers })
-}
-
-export function compose(...builders: ResponseBuilder[]): ResponseBuilder {
-	return (b) => {
-		for (const builder of builders) {
-			builder(b)
-		}
-	}
 }
 
 export function body(data: BodyInit): ResponseBuilder {
@@ -69,13 +63,19 @@ export function clearCookie(
 	return setCookie(key, "", option ? { ...option, maxAge: 0 } : { maxAge: 0 })
 }
 
-type ResponseLike = {
+export function any(fn: ResponseBuilder): ResponseBuilder {
+	return (r) => fn(r)
+}
+
+///
+
+type ResponseInner = {
 	body: null | BodyInit
 	status: number
 	headers: Headers
 }
 
-type ResponseBuilder = (b: ResponseLike) => void
+type ResponseBuilder = (b: ResponseInner) => void
 
 export type CookieOption = {
 	expires?: Date

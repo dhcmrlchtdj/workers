@@ -9,7 +9,7 @@ import type {
 	GetChatMember,
 	AnswerCallbackQuery,
 } from "./telegram-typings.js"
-import { POST } from "../http-client.js"
+import * as S from "../http/request.js"
 
 export const encodeHtmlEntities = (raw: string): string => {
 	const pairs: Record<string, string> = {
@@ -65,9 +65,10 @@ async function send(
 	type ResponseType =
 		| { ok: true; result: unknown; description?: string }
 		| { ok: false; error_code: number; description: string }
-	const body: ResponseType = await POST(url, JSON.stringify(data), {
-		"Content-Type": "application/json",
-	}).then((r) => r.json())
+
+	const body: ResponseType = await fetch(
+		S.build(S.post(url), S.json(data)),
+	).then((r) => r.json())
 
 	if (body.ok) {
 		return body.result
