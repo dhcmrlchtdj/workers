@@ -1,4 +1,4 @@
-import { fromStr } from "./uint8array.js"
+import { fromStr } from "../uint8array.js"
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export interface Filter {

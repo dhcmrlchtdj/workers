@@ -1,4 +1,4 @@
-import { ARC } from "../../src/_common/lru.js"
+import { ARC } from "../../src/_common/ds/lru.js"
 
 describe("ARC", () => {
 	// https://github.com/hashicorp/golang-lru/blob/v2.0.1/arc_test.go

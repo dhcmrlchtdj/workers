@@ -1,5 +1,5 @@
 import { fromStr } from "../../src/_common/uint8array.js"
-import { murmur, xxh32 } from "../../src/_common/bloom.js"
+import { murmur, xxh32 } from "../../src/_common/ds/bloom.js"
 
 describe("BloomFilter", () => {
 	test("xxh32", () => {

@@ -1,5 +1,5 @@
 import { format } from "../_common/format-date.js"
-import { getBA } from "../_common/basic_auth.js"
+import { getBA } from "../_common/http/basic_auth.js"
 import * as R from "../_common/http/response.js"
 import { allowMethod, contentType, createWorker } from "../_common/listen.js"
 import {

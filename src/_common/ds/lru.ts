@@ -1,6 +1,6 @@
 import { Entry } from "./linked-list.js"
 import { LinkedMap } from "./linked-map.js"
-import { type Option, none } from "./option.js"
+import { type Option, none } from "../option.js"
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export interface CachePolicy<K, V> {

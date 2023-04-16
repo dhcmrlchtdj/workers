@@ -1,4 +1,4 @@
-import { getBA } from "../_common/basic_auth.js"
+import { getBA } from "../_common/http/basic_auth.js"
 import { createWorker } from "../_common/listen.js"
 import * as R from "../_common/http/response.js"
 import { HttpUnauthorized } from "../_common/http/status.js"

@@ -1,4 +1,4 @@
-import { getBA } from "../_common/basic_auth.js"
+import { getBA } from "../_common/http/basic_auth.js"
 import { HttpUnauthorized } from "../_common/http/status.js"
 import { allowMethod, contentType, createWorker } from "../_common/listen.js"
 import {

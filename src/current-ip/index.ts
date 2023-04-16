@@ -2,7 +2,7 @@ import {
 	encodeHtmlEntities as enc,
 	telegram,
 } from "../_common/service/telegram.js"
-import { getBA } from "../_common/basic_auth.js"
+import { getBA } from "../_common/http/basic_auth.js"
 import { createWorker } from "../_common/listen.js"
 import {
 	HttpBadRequest,
