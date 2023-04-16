@@ -51,11 +51,7 @@ export class BackBlaze {
 		)
 
 		const resp = await fetch(
-			S.build(
-				S.put(url),
-				S.body(file),
-				S.headers(new Headers(headers))
-			),
+			S.build(S.put(url), S.body(file), S.headers(new Headers(headers))),
 		)
 		if (!resp.ok) throw resp
 	}
