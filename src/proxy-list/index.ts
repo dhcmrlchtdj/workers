@@ -5,6 +5,7 @@ import { HttpUnauthorized } from "../_common/http/status.js"
 
 type ENV = {
 	BA: KVNamespace
+	R2apac: R2Bucket
 }
 
 type KVItem = { password: string; proxies: string }
@@ -18,11 +19,22 @@ const worker = createWorker("proxy-list", async (req: Request, env: ENV) => {
 		cacheTtl: 60 * 60, // 60min
 	})
 	if (item?.password === pass) {
-		const resp = R.build(
-			R.body(item.proxies),
-			R.contentType("application/yaml; charset=utf-8"),
-		)
-		return resp
+		const start = Date.now()
+		const p = await env.R2apac.get("proxies.yaml")
+		console.log(Date.now() - start)
+		if (p !== null) {
+			const resp = R.build(
+				R.body(p.body),
+				R.contentType("application/yaml; charset=utf-8"),
+			)
+			return resp
+		} else {
+			const resp = R.build(
+				R.body(item.proxies),
+				R.contentType("application/yaml; charset=utf-8"),
+			)
+			return resp
+		}
 	} else {
 		throw HttpUnauthorized(["Basic"])
 	}
