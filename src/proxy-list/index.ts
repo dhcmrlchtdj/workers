@@ -22,7 +22,7 @@ const worker = createWorker("proxy-list", async (req: Request, env: ENV) => {
 		cacheTtl: 60 * 60, // 60min
 	})
 	if (item?.password === pass) {
-		const yaml = await env.R2apac.get("proxies.yaml")
+		const yaml = await env.R2apac.get("proxy.yaml")
 		if (yaml === null) throw HttpInternalServerError("[r2] 404")
 		const resp = R.build(
 			R.body(yaml.body),
