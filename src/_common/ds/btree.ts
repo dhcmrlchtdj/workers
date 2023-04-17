@@ -1,3 +1,5 @@
+import { assert } from "../assert.js"
+
 class Entry<T> {
 	// children[i].keys < keys[i] <= children[i+1].keys
 	keys: T[]
@@ -220,7 +222,8 @@ export class BTree<T> {
 	private root: Entry<T>
 	private minKeys: number
 	private maxKeys: number
-	constructor(degree: number) {
+	constructor(degree: number = 2) {
+		assert(degree >= 2)
 		this.root = new Entry()
 		this.minKeys = degree - 1
 		this.maxKeys = degree * 2 - 1
