@@ -1,7 +1,10 @@
 import { getBA } from "../_common/http/basic_auth.js"
 import { createWorker } from "../_common/listen.js"
 import * as R from "../_common/http/response.js"
-import { HttpUnauthorized } from "../_common/http/status.js"
+import {
+	HttpInternalServerError,
+	HttpUnauthorized,
+} from "../_common/http/status.js"
 
 type ENV = {
 	BA: KVNamespace
@@ -19,22 +22,13 @@ const worker = createWorker("proxy-list", async (req: Request, env: ENV) => {
 		cacheTtl: 60 * 60, // 60min
 	})
 	if (item?.password === pass) {
-		const start = Date.now()
-		const p = await env.R2apac.get("proxies.yaml")
-		console.log(Date.now() - start)
-		if (p !== null) {
-			const resp = R.build(
-				R.body(p.body),
-				R.contentType("application/yaml; charset=utf-8"),
-			)
-			return resp
-		} else {
-			const resp = R.build(
-				R.body(item.proxies),
-				R.contentType("application/yaml; charset=utf-8"),
-			)
-			return resp
-		}
+		const yaml = await env.R2apac.get("proxies.yaml")
+		if (yaml === null) throw HttpInternalServerError("[r2] 404")
+		const resp = R.build(
+			R.body(yaml.body),
+			R.contentType("application/yaml; charset=utf-8"),
+		)
+		return resp
 	} else {
 		throw HttpUnauthorized(["Basic"])
 	}
