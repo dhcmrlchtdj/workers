@@ -1,261 +1,368 @@
 import { assert } from "../assert.js"
+import { none, some, type Option } from "../option.js"
 
-class Entry<T> {
+export class BTree<K extends string | number, V> {
+	private root: Page<K, V>
+	private degree: number
+	constructor(degree: number = 2, root?: Page<K, V>) {
+		assert(degree >= 2)
+		this.root = root ?? new Page(degree)
+		this.degree = degree
+	}
+	toString() {
+		return this.root.toString()
+	}
+	has(key: K): boolean {
+		return this.root.has(key)
+	}
+	get(key: K): Option<V> {
+		return this.root.get(key)
+	}
+	set(key: K, value: V): BTree<K, V> {
+		const root = this.root.set(key, value)
+		if (root === null) return this
+		return new BTree<K, V>(this.degree, root)
+	}
+	delete(key: K): BTree<K, V> {
+		const root = this.root.delete(key)
+		if (root === null) return this
+		return new BTree<K, V>(this.degree, root)
+	}
+}
+
+class Page<K, V> {
+	degree: number
+	minKeys: number
+	maxKeys: number
 	// children[i].keys < keys[i] <= children[i+1].keys
-	keys: T[]
-	children: Entry<T>[] // non-leaf
-	constructor() {
+	keys: K[]
+	values: V[] // leaf
+	children: Page<K, V>[] // non-leaf
+	constructor(degree: number) {
+		this.degree = degree
+		this.minKeys = degree - 1
+		this.maxKeys = degree * 2 - 1
 		this.keys = []
+		this.values = []
 		this.children = []
 	}
 	valueOf(): unknown {
-		if (this.isLeaf()) {
-			return this.keys
-		} else {
+		if (this.isBranch()) {
 			return {
 				keys: this.keys,
 				children: this.children.map((c) => c.valueOf()),
 			}
+		} else {
+			return {
+				leaf: this.values.map((v, idx) => `${this.keys[idx]}=${v}`),
+			}
 		}
 	}
-	toString(): string {
+	toString() {
 		return JSON.stringify(this.valueOf(), null, 4)
 	}
-	isLeaf(): boolean {
-		return this.children.length === 0
+	///
+	has(key: K): boolean {
+		const c = new Cursor(this)
+		c.seek(key)
+		return c.getKey() === key
 	}
-	search(key: T): number {
-		let i = 0
-		const len = this.keys.length
-		while (i < len) {
-			if (key <= this.keys[i]!) {
-				return i
-			} else {
-				i++
-			}
-		}
-		return i
-	}
-	has(key: T): boolean {
-		const idx = this.search(key)
-		if (this.isLeaf()) {
-			return this.keys[idx] === key
+	get(key: K): Option<V> {
+		const c = new Cursor(this)
+		c.seek(key)
+		if (c.getKey() === key) {
+			return some(c.getValue())
 		} else {
-			if (this.children[idx]) {
-				return this.children[idx]!.has(key)
-			} else {
-				return false
-			}
+			return none
 		}
 	}
-	add(key: T, maxKeys: number): boolean {
-		const idx = this.search(key)
-		if (this.isLeaf()) {
-			if (this.keys[idx] === key) {
-				return false
+	set(key: K, value: V): Page<K, V> | null {
+		const c = new Cursor(this)
+		c.seek(key)
+		if (c.getKey() === key) {
+			if (c.getValue() === value) {
+				return null
 			} else {
-				this.keys.splice(idx, 0, key)
-				return true
-			}
-		} else {
-			if (this.maybeSplitChild(idx, maxKeys)) {
-				return this.add(key, maxKeys)
-			} else {
-				return this.children[idx]!.add(key, maxKeys)
+				return c.setValue(value)
 			}
 		}
+		return c.addItem(key, value)
 	}
-	remove(key: T, minKeys: number): boolean {
-		const idx = this.search(key)
-		if (this.isLeaf()) {
-			if (this.keys[idx] === key) {
-				this.keys.splice(idx, 1)
-				return true
-			} else {
-				return false
-			}
+	delete(key: K): Page<K, V> | null {
+		const c = new Cursor(this)
+		c.seek(key)
+		if (c.getKey() === key) {
+			return c.deleteItem()
 		} else {
-			if (this.maybeGrowChild(idx, minKeys)) {
-				return this.remove(key, minKeys)
-			} else {
-				return this.children[idx]!.remove(key, minKeys)
-			}
+			return null
 		}
 	}
 	///
-	split(idx: number): {
-		newKey: T
-		leftChild: Entry<T>
-		rightChild: Entry<T>
-	} {
-		const newKey = this.keys[idx]!
-		const leftChild = this as Entry<T>
-		const rightChild = new Entry<T>()
-
-		rightChild.keys = this.keys.slice(idx + 1)
-		rightChild.children = this.children.slice(idx + 1)
-		if (rightChild.isLeaf()) {
-			rightChild.keys.unshift(newKey)
+	clone(): Page<K, V> {
+		const node = new Page<K, V>(this.degree)
+		node.keys = [...this.keys]
+		node.values = [...this.values]
+		node.children = [...this.children]
+		return node
+	}
+	isBranch(): boolean {
+		return this.children.length > 0
+	}
+	findIndex(key: K): number {
+		if (this.isBranch()) {
+			for (let i = 0, len = this.keys.length; i < len; i++) {
+				if (key < this.keys[i]!) {
+					return i
+				}
+			}
+			return this.keys.length
+		} else {
+			for (let i = 0, len = this.keys.length; i < len; i++) {
+				if (key <= this.keys[i]!) {
+					return i
+				}
+			}
+			return this.keys.length
 		}
+	}
+	_split(): { newKey: K; leftChild: Page<K, V>; rightChild: Page<K, V> } {
+		const idx = Math.floor(this.maxKeys / 2)
+		const newKey = this.keys[idx]!
+		const leftChild = new Page<K, V>(this.degree)
+		const rightChild = new Page<K, V>(this.degree)
 
-		leftChild.keys = this.keys.slice(0, idx)
-		leftChild.children = this.children.slice(0, idx + 1)
+		if (this.isBranch()) {
+			leftChild.keys = this.keys.slice(0, idx)
+			leftChild.children = this.children.slice(0, idx + 1)
+
+			rightChild.keys = this.keys.slice(idx + 1)
+			rightChild.children = this.children.slice(idx + 1)
+		} else {
+			leftChild.keys = this.keys.slice(0, idx)
+			leftChild.values = this.values.slice(0, idx)
+
+			rightChild.keys = this.keys.slice(idx)
+			rightChild.values = this.values.slice(idx)
+		}
 
 		return { newKey, leftChild, rightChild }
 	}
-	// true, if splitted
-	private maybeSplitChild(idx: number, maxKeys: number): boolean {
-		if (this.children[idx]!.keys.length < maxKeys) {
-			return false
-		}
-		const node = this.children[idx]!
-		const { newKey, leftChild, rightChild } = node.split(
-			Math.floor(maxKeys / 2),
-		)
-		this.keys.splice(idx, 0, newKey)
-		this.children.splice(idx, 1, leftChild, rightChild)
-		return true
-	}
-	// true, if grew
-	private maybeGrowChild(idx: number, minKeys: number): boolean {
-		if (this.children[idx]!.keys.length > minKeys) {
-			return false
-		}
-		if (this.children[idx]!.isLeaf()) {
-			if (idx > 0 && this.children[idx - 1]!.keys.length > minKeys) {
-				// steal from left child
-				const left = this.children[idx - 1]!
-				const right = this.children[idx]!
-
-				const stolenKey = left.keys.pop()!
-				this.keys[idx] = stolenKey
-				right.keys.unshift(stolenKey)
-			} else if (
-				idx < this.keys.length &&
-				this.children[idx + 1]!.keys.length > minKeys
-			) {
-				// steal from right child
-				const left = this.children[idx]!
-				const right = this.children[idx + 1]!
-
-				const stolenKey = right.keys.shift()!
-				this.keys[idx] = right.keys[0]!
-				left.keys.push(stolenKey)
-			} else {
-				if (idx >= this.keys.length) {
-					// merge with left child
-					idx--
-				} else {
-					// merge with right child
-				}
-				const left = this.children[idx]!
-				const right = this.children[idx + 1]!
-
-				left.keys.push(...right.keys)
-				this.keys.splice(idx, 1)
-				this.children.splice(idx + 1, 1)
-			}
+	_mergeChildren(idx: number) {
+		const child = this.children[idx]!
+		if (child.isBranch()) {
+			this._mergeBranch(idx)
 		} else {
-			if (idx > 0 && this.children[idx - 1]!.keys.length > minKeys) {
-				// steal from left child
-				const left = this.children[idx - 1]!
-				const right = this.children[idx]!
-
-				// move to right
-				const currentKey = this.keys[idx]!
-				right.keys.unshift(currentKey)
-
-				// move to parent
-				const stolenKey = left.keys.pop()!
-				this.keys[idx] = stolenKey
-
-				// move to right
-				const stolenChild = left.children.pop()!
-				right.children.unshift(stolenChild)
-			} else if (
-				idx < this.keys.length &&
-				this.children[idx + 1]!.keys.length > minKeys
-			) {
+			this._mergeLeaf(idx)
+		}
+	}
+	private _mergeBranch(idx: number): void {
+		if (idx === 0) {
+			const left = this.children[0]!.clone()
+			const right = this.children[1]!.clone()
+			if (right.keys.length > this.minKeys) {
 				// steal from right child
-				const left = this.children[idx]!
-				const right = this.children[idx + 1]!
-
-				// move to left
+				// move parent key to left child
 				const currentKey = this.keys[idx]!
 				left.keys.push(currentKey)
-
-				// move to parent
+				// move right child key to parent
 				const stolenKey = right.keys.shift()!
 				this.keys[idx] = stolenKey
-
-				// move to left
+				// move right child to left
 				const stolenChild = right.children.shift()!
 				left.children.push(stolenChild)
+				// update children
+				this.children[0] = left
+				this.children[1] = right
 			} else {
-				if (idx >= this.keys.length) {
-					// merge with left child
-					idx--
-				} else {
-					// merge with right child
-				}
-				const left = this.children[idx]!
-				const right = this.children[idx + 1]!
-
-				// move to child
+				// merge with right child
+				// move parent key to left child
 				const currentKey = this.keys[idx]!
 				left.keys.push(currentKey)
-
 				// merge keys and children
 				left.keys.push(...right.keys)
 				left.children.push(...right.children)
-
 				// fix keys and chidlren
 				this.keys.splice(idx, 1)
-				this.children.splice(idx + 1, 1)
+				this.children.splice(idx, 2, left)
+			}
+		} else {
+			const left = this.children[idx - 1]!.clone()
+			const right = this.children[idx]!.clone()
+			if (left.keys.length > this.minKeys) {
+				// steal from left child
+				// move parent key to right child
+				const currentKey = this.keys[idx]!
+				right.keys.unshift(currentKey)
+				// move left child key to parent
+				const stolenKey = left.keys.pop()!
+				this.keys[idx] = stolenKey
+				// move left child to right
+				const stolenChild = left.children.pop()!
+				right.children.unshift(stolenChild)
+				// update children
+				this.children[idx - 1] = left
+				this.children[idx] = right
+			} else {
+				// merge with left child
+				// move parent key to left child
+				const currentKey = this.keys[idx - 1]!
+				left.keys.push(currentKey)
+				// merge keys and children
+				left.keys.push(...right.keys)
+				left.children.push(...right.children)
+				// fix keys and chidlren
+				this.keys.splice(idx - 1, 1)
+				this.children.splice(idx - 1, 2, left)
 			}
 		}
-		return true
+	}
+	private _mergeLeaf(idx: number): void {
+		if (idx === 0) {
+			const left = this.children[0]!.clone()
+			const right = this.children[1]!.clone()
+			if (right.keys.length > this.minKeys) {
+				// steal from right child
+				const stolenKey = right.keys.shift()!
+				this.keys[idx] = right.keys[0]!
+				left.keys.push(stolenKey)
+				const stolenValue = right.values.shift()!
+				left.values.push(stolenValue)
+				// update children
+				this.children[0] = left
+				this.children[1] = right
+			} else {
+				// merge with right child
+				left.keys.push(...right.keys)
+				left.values.push(...right.values)
+				this.keys.splice(idx, 1)
+				this.children.splice(idx, 2, left)
+			}
+		} else {
+			const left = this.children[idx - 1]!.clone()
+			const right = this.children[idx]!.clone()
+			if (left.keys.length > this.minKeys) {
+				// steal from left child
+				const stolenKey = left.keys.pop()!
+				this.keys[idx] = stolenKey
+				right.keys.unshift(stolenKey)
+				const stolenValue = left.values.pop()!
+				right.values.unshift(stolenValue)
+				// update children
+				this.children[idx - 1] = left
+				this.children[idx] = right
+			} else {
+				// merge with left child
+				left.keys.push(...right.keys)
+				left.values.push(...right.values)
+				this.keys.splice(idx - 1, 1)
+				this.children.splice(idx - 1, 2, left)
+			}
+		}
 	}
 }
 
-export class BTree<T> {
-	private root: Entry<T>
-	private minKeys: number
-	private maxKeys: number
-	constructor(degree: number = 2) {
-		assert(degree >= 2)
-		this.root = new Entry()
-		this.minKeys = degree - 1
-		this.maxKeys = degree * 2 - 1
+class Cursor<K, V> {
+	root: Page<K, V>
+	path: Page<K, V>[]
+	idx: number[]
+	constructor(root: Page<K, V>) {
+		this.root = root
+		this.path = []
+		this.idx = []
 	}
-	toString() {
-		return JSON.stringify(this.root.valueOf(), null, 4)
-	}
-	// true, if existed
-	has(key: T): boolean {
-		return this.root.has(key)
-	}
-	// true, if added
-	// false, if existed
-	add(key: T): boolean {
-		if (this.root.keys.length >= this.maxKeys) {
-			const { newKey, leftChild, rightChild } = this.root.split(
-				Math.floor(this.maxKeys / 2),
-			)
-			this.root = new Entry()
-			this.root.keys = [newKey]
-			this.root.children = [leftChild, rightChild]
+	seek(key: K): void {
+		let curr: Page<K, V> | undefined = this.root
+		while (curr) {
+			const idx = curr.findIndex(key)
+			this.path.push(curr)
+			this.idx.push(idx)
+			curr = curr.children[idx]
 		}
-		return this.root.add(key, this.maxKeys)
 	}
-	// true, if removed
-	// false, if not existed
-	remove(key: T): boolean {
-		if (this.root.keys.length === 0) return false
-		const removed = this.root.remove(key, this.minKeys)
-		if (this.root.keys.length === 0 && this.root.children.length > 0) {
-			this.root = this.root.children[0]!
+	getKey(): K {
+		const pos = this.path.length - 1
+		assert(pos >= 0)
+		const page = this.path[pos]!
+		const idx = this.idx[pos]!
+		return page.keys[idx]!
+	}
+	getValue(): V {
+		const pos = this.path.length - 1
+		assert(pos >= 0)
+		const page = this.path[pos]!
+		const idx = this.idx[pos]!
+		return page.values[idx]!
+	}
+	setValue(value: V): Page<K, V> {
+		// update value
+		const pos = this.path.length - 1
+		const page = this.path[pos]!.clone()
+		const idx = this.idx[pos]!
+		page.values[idx] = value
+		// copy all pages
+		let prev = page
+		for (let i = this.path.length - 2; i >= 0; i--) {
+			const page = this.path[i]!.clone()
+			const idx = this.idx[i]!
+			page.children[idx] = prev
+			prev = page
 		}
-		return removed
+		return prev
+	}
+	addItem(key: K, value: V): Page<K, V> {
+		// update value
+		const pos = this.path.length - 1
+		const page = this.path[pos]!.clone()
+		const idx = this.idx[pos]!
+		page.keys.splice(idx, 0, key)
+		page.values.splice(idx, 0, value)
+		// copy all pages
+		let prev = page
+		for (let i = this.path.length - 2; i >= 0; i--) {
+			const page = this.path[i]!.clone()
+			const idx = this.idx[i]!
+			page.children[idx] = prev
+			if (prev.keys.length > prev.maxKeys) {
+				const { newKey, leftChild, rightChild } = prev._split()
+				page.keys.splice(idx, 0, newKey)
+				page.children.splice(idx, 1, leftChild, rightChild)
+			}
+			prev = page
+		}
+		// split if root is full
+		if (prev.keys.length > prev.maxKeys) {
+			const { newKey, leftChild, rightChild } = prev._split()
+			const newRoot = new Page<K, V>(prev.degree)
+			newRoot.keys.push(newKey)
+			newRoot.children.push(leftChild, rightChild)
+			return newRoot
+		} else {
+			return prev
+		}
+	}
+	deleteItem(): Page<K, V> {
+		// update value
+		const pos = this.path.length - 1
+		const page = this.path[pos]!.clone()
+		const idx = this.idx[pos]!
+		page.keys.splice(idx, 1)
+		page.values.splice(idx, 1)
+		// copy all pages
+		let prev = page
+		for (let i = this.path.length - 2; i >= 0; i--) {
+			const page = this.path[i]!.clone()
+			const idx = this.idx[i]!
+			page.children[idx] = prev
+			if (prev.keys.length < prev.minKeys) {
+				page._mergeChildren(idx)
+			}
+			prev = page
+		}
+		// return child if root is empty
+		if (prev.keys.length === 0 && prev.children.length === 1) {
+			return prev.children[0]!
+		} else {
+			return prev
+		}
 	}
 }
