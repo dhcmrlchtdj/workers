@@ -28,6 +28,15 @@ export class BTree<K extends string | number, V> {
 		if (root === null) return this
 		return new BTree<K, V>(this.degree, root)
 	}
+	keys(): IterableIterator<K> {
+		return this.root.iterKeys()
+	}
+	values(): IterableIterator<V> {
+		return this.root.iterValues()
+	}
+	entries(): IterableIterator<[K, V]> {
+		return this.root.iterEntries()
+	}
 }
 
 class Page<K, V> {
@@ -60,6 +69,31 @@ class Page<K, V> {
 	}
 	toString() {
 		return JSON.stringify(this.valueOf(), null, 4)
+	}
+	///
+	*iterKeys(): IterableIterator<K> {
+		const c = new Cursor(this)
+		let found = c.first()
+		while (found) {
+			yield c.getKey()
+			found = c.next()
+		}
+	}
+	*iterValues(): IterableIterator<V> {
+		const c = new Cursor(this)
+		let found = c.first()
+		while (found) {
+			yield c.getValue()
+			found = c.next()
+		}
+	}
+	*iterEntries(): IterableIterator<[K, V]> {
+		const c = new Cursor(this)
+		let found = c.first()
+		while (found) {
+			yield [c.getKey(), c.getValue()]
+			found = c.next()
+		}
 	}
 	///
 	has(key: K): boolean {
@@ -270,7 +304,10 @@ class Cursor<K, V> {
 		this.path = []
 		this.idx = []
 	}
+	///
 	seek(key: K): void {
+		this.path = []
+		this.idx = []
 		let curr: Page<K, V> | undefined = this.root
 		while (curr) {
 			const idx = curr.findIndex(key)
@@ -279,6 +316,150 @@ class Cursor<K, V> {
 			curr = curr.children[idx]
 		}
 	}
+	first(): boolean {
+		this.path = []
+		this.idx = []
+		let curr: Page<K, V> = this.root
+		while (curr.isBranch()) {
+			this.path.push(curr)
+			this.idx.push(0)
+			curr = curr.children[0]!
+		}
+		this.path.push(curr)
+		this.idx.push(0)
+		return curr.values.length > 0
+	}
+	last(): boolean {
+		this.path = []
+		this.idx = []
+		let curr: Page<K, V> = this.root
+		while (curr.isBranch()) {
+			this.path.push(curr)
+			const idx = curr.children.length - 1
+			this.idx.push(idx)
+			curr = curr.children[idx]!
+		}
+		this.path.push(curr)
+		const idx = curr.values.length - 1
+		this.idx.push(idx)
+		return curr.values.length > 0
+	}
+	next(): boolean {
+		const pos = this.path.length - 1
+		assert(pos >= 0)
+
+		const hasNext = this._moveToNextLeaf()
+		if (hasNext) return true
+
+		let hasParent = this._moveToParent()
+		while (hasParent) {
+			const hasNext = this._moveToNextBranch()
+			if (hasNext) {
+				this._moveToFirstLeaf()
+				return true
+			} else {
+				hasParent = this._moveToParent()
+			}
+		}
+		return false
+	}
+	prev(): boolean {
+		const pos = this.path.length - 1
+		assert(pos >= 0)
+
+		const hasPrev = this._moveToPrevLeaf()
+		if (hasPrev) return true
+
+		let hasParent = this._moveToParent()
+		while (hasParent) {
+			const hasPrev = this._moveToPrevBranch()
+			if (hasPrev) {
+				this._moveToLastLeaf()
+				return true
+			} else {
+				hasParent = this._moveToParent()
+			}
+		}
+		return false
+	}
+	///
+	private _moveToParent(): boolean {
+		this.path.pop()
+		this.idx.pop()
+		return this.path.length > 0
+	}
+	private _moveToNextLeaf(): boolean {
+		const pos = this.path.length - 1
+		const page = this.path[pos]!
+		assert(!page.isBranch())
+		const idx = this.idx[pos]!
+		if (idx + 1 < page.values.length) {
+			this.idx[pos] = idx + 1
+			return true
+		} else {
+			return false
+		}
+	}
+	private _moveToPrevLeaf(): boolean {
+		const pos = this.path.length - 1
+		const page = this.path[pos]!
+		assert(!page.isBranch())
+		const idx = this.idx[pos]!
+		if (idx - 1 >= 0) {
+			this.idx[pos] = idx - 1
+			return true
+		} else {
+			return false
+		}
+	}
+	private _moveToNextBranch(): boolean {
+		const pos = this.path.length - 1
+		const page = this.path[pos]!
+		assert(page.isBranch())
+		const idx = this.idx[pos]!
+		if (idx + 1 < page.children.length) {
+			this.idx[pos] = idx + 1
+			return true
+		} else {
+			return false
+		}
+	}
+	private _moveToPrevBranch(): boolean {
+		const pos = this.path.length - 1
+		const page = this.path[pos]!
+		assert(page.isBranch())
+		const idx = this.idx[pos]!
+		if (idx - 1 >= 0) {
+			this.idx[pos] = idx - 1
+			return true
+		} else {
+			return false
+		}
+	}
+	private _moveToFirstLeaf(): void {
+		const pos = this.path.length - 1
+		const page = this.path[pos]!
+		const idx = this.idx[pos]!
+		let curr: Page<K, V> | undefined = page.children[idx]
+		while (curr) {
+			this.path.push(curr)
+			this.idx.push(0)
+			curr = curr.children[0]
+		}
+	}
+	private _moveToLastLeaf(): void {
+		const pos = this.path.length - 1
+		const page = this.path[pos]!
+		const idx = this.idx[pos]!
+		let curr: Page<K, V> | undefined = page.children[idx]
+		while (curr) {
+			this.path.push(curr)
+			const idx = curr.children.length - 1
+			this.idx.push(idx)
+			curr = curr.children[idx]
+		}
+	}
+	///
 	getKey(): K {
 		const pos = this.path.length - 1
 		assert(pos >= 0)
@@ -296,6 +477,7 @@ class Cursor<K, V> {
 	setValue(value: V): Page<K, V> {
 		// update value
 		const pos = this.path.length - 1
+		assert(pos >= 0)
 		const page = this.path[pos]!.clone()
 		const idx = this.idx[pos]!
 		page.values[idx] = value
@@ -312,6 +494,7 @@ class Cursor<K, V> {
 	addItem(key: K, value: V): Page<K, V> {
 		// update value
 		const pos = this.path.length - 1
+		assert(pos >= 0)
 		const page = this.path[pos]!.clone()
 		const idx = this.idx[pos]!
 		page.keys.splice(idx, 0, key)
@@ -343,6 +526,7 @@ class Cursor<K, V> {
 	deleteItem(): Page<K, V> {
 		// update value
 		const pos = this.path.length - 1
+		assert(pos >= 0)
 		const page = this.path[pos]!.clone()
 		const idx = this.idx[pos]!
 		page.keys.splice(idx, 1)

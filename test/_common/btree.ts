@@ -21,6 +21,10 @@ describe("BTree", () => {
 		b = b.set(5, 5)
 		expect(b.toString()).toMatchSnapshot()
 
+		expect([...b.keys()]).toMatchSnapshot()
+		expect([...b.values()]).toMatchSnapshot()
+		expect([...b.entries()]).toMatchSnapshot()
+
 		expect(b.has(8)).toBe(true)
 		b = b.delete(8)
 		expect(b.has(8)).toBe(false)
@@ -32,6 +36,8 @@ describe("BTree", () => {
 		expect(b.toString()).toMatchSnapshot()
 		b = b.delete(40)
 		expect(b.toString()).toMatchSnapshot()
+
+		expect([...b.entries()]).toMatchSnapshot()
 	})
 
 	test("cow", () => {

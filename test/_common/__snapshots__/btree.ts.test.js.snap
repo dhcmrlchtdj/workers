@@ -261,6 +261,75 @@ exports[`BTree degree 2 9`] = `
 `;
 
 exports[`BTree degree 2 10`] = `
+[
+  5,
+  8,
+  10,
+  15,
+  20,
+  21,
+  30,
+  33,
+  40,
+]
+`;
+
+exports[`BTree degree 2 11`] = `
+[
+  5,
+  8,
+  10,
+  15,
+  20,
+  21,
+  30,
+  33,
+  40,
+]
+`;
+
+exports[`BTree degree 2 12`] = `
+[
+  [
+    5,
+    5,
+  ],
+  [
+    8,
+    8,
+  ],
+  [
+    10,
+    10,
+  ],
+  [
+    15,
+    15,
+  ],
+  [
+    20,
+    20,
+  ],
+  [
+    21,
+    21,
+  ],
+  [
+    30,
+    30,
+  ],
+  [
+    33,
+    33,
+  ],
+  [
+    40,
+    40,
+  ],
+]
+`;
+
+exports[`BTree degree 2 13`] = `
 "{
     "keys": [
         20
@@ -313,7 +382,7 @@ exports[`BTree degree 2 10`] = `
 }"
 `;
 
-exports[`BTree degree 2 11`] = `
+exports[`BTree degree 2 14`] = `
 "{
     "keys": [
         20
@@ -360,7 +429,7 @@ exports[`BTree degree 2 11`] = `
 }"
 `;
 
-exports[`BTree degree 2 12`] = `
+exports[`BTree degree 2 15`] = `
 "{
     "keys": [
         20
@@ -405,7 +474,7 @@ exports[`BTree degree 2 12`] = `
 }"
 `;
 
-exports[`BTree degree 2 13`] = `
+exports[`BTree degree 2 16`] = `
 "{
     "keys": [
         8,
@@ -430,4 +499,25 @@ exports[`BTree degree 2 13`] = `
         }
     ]
 }"
+`;
+
+exports[`BTree degree 2 17`] = `
+[
+  [
+    5,
+    5,
+  ],
+  [
+    10,
+    10,
+  ],
+  [
+    15,
+    15,
+  ],
+  [
+    21,
+    21,
+  ],
+]
 `;
