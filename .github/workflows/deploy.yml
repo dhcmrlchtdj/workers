@@ -11,11 +11,11 @@ jobs:
         runs-on: ubuntu-22.04
         steps:
             # https://github.com/marketplace/actions/checkout
-            - uses: actions/checkout@v3.5.0
+            - uses: actions/checkout@v3.5.2
             # https://github.com/marketplace/actions/setup-node-js-environment
             - uses: actions/setup-node@v3.6.0
               with:
-                  node-version: 18
+                  node-version: "20"
             # https://github.com/marketplace/actions/cache
             - uses: actions/cache@v3.3.1
               with:
@@ -25,13 +25,11 @@ jobs:
             - run: |
                   corepack enable
                   # https://www.npmjs.com/package/pnpm
-                  corepack prepare pnpm@8.1.0 --activate
+                  corepack prepare pnpm@8.4.0 --activate
                   pnpm config set store-dir ~/.local/share/pnpm/store
-                  corepack enable pnpm
                   pnpm install
                   # https://www.npmjs.com/package/wrangler
-                  pnpm add -g wrangler@2.13.0
-                  # pnpm store prune
+                  pnpm add -g wrangler@2.19.0
               env:
                   PNPM_HOME: /home/runner/.local/bin
 
