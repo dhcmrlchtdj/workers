@@ -1,4 +1,5 @@
 import { getBA } from "../_common/http/basic_auth.js"
+import { MIME_JSON } from "../_common/http/mime.js"
 import { HttpUnauthorized } from "../_common/http/status.js"
 import { allowMethod, contentType, createWorker } from "../_common/listen.js"
 import {
@@ -28,7 +29,7 @@ type KVItem = {
 const worker = createWorker(
 	"email",
 	allowMethod("POST"),
-	contentType("application/json"),
+	contentType(MIME_JSON),
 	async (req: Request, env: ENV) => {
 		const { user, pass } = getBA(req.headers.get("authorization"))
 		const item = await env.BA.get<KVItem>("email:" + user, {

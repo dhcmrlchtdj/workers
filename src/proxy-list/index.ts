@@ -5,6 +5,8 @@ import {
 	HttpInternalServerError,
 	HttpUnauthorized,
 } from "../_common/http/status.js"
+import { MIME_TEXT } from "../_common/http/mime.js"
+import { toBase64 } from "../_common/base64.js"
 
 type ENV = {
 	BA: KVNamespace
@@ -22,12 +24,11 @@ const worker = createWorker("proxy-list", async (req: Request, env: ENV) => {
 		cacheTtl: 60 * 60, // 60min
 	})
 	if (item?.password === pass) {
-		const yaml = await env.R2apac.get("proxy.yaml")
-		if (yaml === null) throw HttpInternalServerError("[r2] 404")
-		const resp = R.build(
-			R.body(yaml.body),
-			R.contentType("application/yaml; charset=utf-8"),
-		)
+		const p = await env.R2apac.get("proxy.txt")
+		if (p === null) throw HttpInternalServerError("[r2] 404")
+		const text = await p.text()
+		const b64 = toBase64(text)
+		const resp = R.build(R.body(b64), R.contentType(MIME_TEXT))
 		return resp
 	} else {
 		throw HttpUnauthorized(["Basic"])

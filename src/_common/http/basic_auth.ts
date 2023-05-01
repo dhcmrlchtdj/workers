@@ -1,4 +1,4 @@
-import { decode } from "../base64.js"
+import { fromBase64 } from "../base64.js"
 import { HttpBadRequest, HttpUnauthorized } from "./status.js"
 
 // https://developers.cloudflare.com/workers/examples/basic-auth/
@@ -13,7 +13,7 @@ export function getBA(auth: string | null): { user: string; pass: string } {
 		throw HttpBadRequest("malformed authorization header")
 	}
 
-	const decoded = decode(encoded)
+	const decoded = fromBase64(encoded)
 	const index = decoded.indexOf(":")
 	// eslint-disable-next-line no-control-regex
 	if (index === -1 || /[\x00-\x1F\x7F]/.test(decoded)) {

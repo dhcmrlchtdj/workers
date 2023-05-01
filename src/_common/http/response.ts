@@ -1,4 +1,5 @@
 import { compose } from "./compose.js"
+import { MIME_JSON } from "./mime.js"
 
 export function build(...builders: ResponseBuilder[]): Response {
 	const b = { body: null, status: 200, headers: new Headers() }
@@ -23,10 +24,7 @@ export function contentType(type: string): ResponseBuilder {
 }
 
 export function json(data: unknown): ResponseBuilder {
-	return compose(
-		body(JSON.stringify(data)),
-		contentType("application/json; charset=utf-8"),
-	)
+	return compose(body(JSON.stringify(data)), contentType(MIME_JSON))
 }
 
 export function attachment(filename?: string): ResponseBuilder {

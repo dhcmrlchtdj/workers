@@ -1,4 +1,5 @@
 import { compose } from "./compose.js"
+import { MIME_JSON } from "./mime.js"
 
 export function build(...builders: RequestBuilder[]): Request {
 	const req = {
@@ -45,7 +46,7 @@ export function headers(h: Headers): RequestBuilder {
 export function json(data: unknown): RequestBuilder {
 	return compose(
 		body(JSON.stringify(data)),
-		header("content-type", "application/json; charset=utf-8"),
+		header("content-type", MIME_JSON),
 	)
 }
 
