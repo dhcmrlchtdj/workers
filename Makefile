@@ -30,9 +30,20 @@ outdated:
 upgrade:
 	pnpm update --latest # --interactive
 
+deploy: ci_only
+	cd ./src/backup && wrangler publish
+	cd ./src/current-ip && wrangler publish
+	cd ./src/feedbox && wrangler publish
+	cd ./src/proxy-list && wrangler publish
+
 ###
 
-.PHONY: check force $(targets) $(test_compiled) update_compatibility_date
+.PHONY: check force $(targets) $(test_compiled) update_compatibility_date ci_only
+
+ci_only:
+ifndef CI
+	$(error This command must be run in a CI environment)
+endif
 
 force: check build
 
