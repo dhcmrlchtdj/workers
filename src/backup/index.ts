@@ -9,8 +9,8 @@ import {
 import { BackBlaze } from "../_common/service/backblaze.js"
 
 type ENV = {
-	R2Backup: R2Bucket
 	BA: KVNamespace
+	R2apac: R2Bucket
 }
 
 type KV_BA = { password: string }
@@ -28,7 +28,7 @@ type Handler = (
 ) => Promise<Response>
 const HANDERS: Record<string, Handler> = {
 	beancount: createHandler("beancount"),
-	feedbox: createHandler("database/feedbox"),
+	feedbox: createHandler("feedbox"),
 }
 
 ///
@@ -76,7 +76,7 @@ function createHandler(directoryName: string): Handler {
 
 		const tasks = [
 			uploadToBackBlaze(env, filename, content),
-			uploadToCloudflare(env.R2Backup, filename, content),
+			uploadToCloudflare(env.R2apac, filename, content),
 		]
 		ctx.waitUntil(Promise.allSettled(tasks))
 		await Promise.any(tasks)

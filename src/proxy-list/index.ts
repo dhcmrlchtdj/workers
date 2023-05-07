@@ -7,7 +7,6 @@ import { toBase64 } from "../_common/base64.js"
 
 type ENV = {
 	BA: KVNamespace
-	R2apac: R2Bucket
 }
 
 type KVItem = { password: string; proxy: string[] }
