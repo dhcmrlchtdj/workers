@@ -3,6 +3,7 @@ import { getBA } from "../_common/http/basic_auth.js"
 import * as R from "../_common/http/response.js"
 import { allowMethod, contentType, createWorker } from "../_common/listen.js"
 import {
+	HttpBadRequest,
 	HttpInternalServerError,
 	HttpUnauthorized,
 } from "../_common/http/status.js"
@@ -69,7 +70,7 @@ function createHandler(directoryName: string): Handler {
 		const body = await req.formData()
 		const file = body.get("file")
 		if (!(file instanceof File)) {
-			throw new Error("`file` is not a file")
+			throw HttpBadRequest("`file` is not a File")
 		}
 		const filename = generateFilename(directoryName, file.name)
 		const content = await file.arrayBuffer()
@@ -117,7 +118,7 @@ function generateFilename(
 ): string {
 	const date = format(new Date(), "YYYYMMDD_hhmmss")
 	if (name) {
-		return directoryName + "/" + date + "-" + name
+		return directoryName + "/" + date + "_" + name
 	} else {
 		return directoryName + "/" + date
 	}
