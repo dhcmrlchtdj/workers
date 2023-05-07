@@ -30,7 +30,7 @@ outdated:
 upgrade:
 	pnpm update --latest # --interactive
 
-deploy: ci_only
+deploy: on_ci
 	cd ./src/backup && wrangler publish
 	cd ./src/current-ip && wrangler publish
 	cd ./src/feedbox && wrangler publish
@@ -38,11 +38,11 @@ deploy: ci_only
 
 ###
 
-.PHONY: check force $(targets) $(test_compiled) update_compatibility_date ci_only
+.PHONY: check force $(targets) $(test_compiled) update_compatibility_date on_ci
 
-ci_only:
+on_ci:
 ifndef CI
-	$(error This command must be run in a CI environment)
+	$(error This command can only be executed within a CI environment)
 endif
 
 force: check build
