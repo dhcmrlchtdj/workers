@@ -4,7 +4,7 @@ import { none, some, type Option } from "../option.js"
 export class BTree<K extends string | number, V> {
 	private root: Page<K, V>
 	private degree: number
-	constructor(degree: number = 2, root?: Page<K, V>) {
+	constructor(degree: number = 8, root?: Page<K, V>) {
 		assert(degree >= 2)
 		this.root = root ?? new Page(degree)
 		this.degree = degree
@@ -135,8 +135,11 @@ class Page<K, V> {
 	clone(): Page<K, V> {
 		const node = new Page<K, V>(this.degree)
 		node.keys = [...this.keys]
-		node.values = [...this.values]
-		node.children = [...this.children]
+		if (this.isBranch()) {
+			node.children = [...this.children]
+		} else {
+			node.values = [...this.values]
+		}
 		return node
 	}
 	isBranch(): boolean {
