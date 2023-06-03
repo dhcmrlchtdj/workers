@@ -39,8 +39,8 @@ export function header(key: string, value: string): RequestBuilder {
 	return (r) => r.headers.set(key, value)
 }
 
-export function headers(h: Headers): RequestBuilder {
-	return (r) => (r.headers = h)
+export function headers(h: HeadersInit): RequestBuilder {
+	return (r) => (r.headers = new Headers(h))
 }
 
 export function json(data: unknown): RequestBuilder {
