@@ -31,23 +31,32 @@ export function post(url: string): RequestBuilder {
 	}
 }
 
-export function body(data: BodyInit): RequestBuilder {
-	return (r) => (r.body = data)
+export function method(m: string): RequestBuilder {
+	return (r) => (r.method = m)
 }
 
-export function header(key: string, value: string): RequestBuilder {
-	return (r) => r.headers.set(key, value)
+export function url(u: string): RequestBuilder {
+	return (r) => (r.url = u)
+}
+
+export function body(data: BodyInit): RequestBuilder {
+	return (r) => (r.body = data)
 }
 
 export function headers(h: HeadersInit): RequestBuilder {
 	return (r) => (r.headers = new Headers(h))
 }
 
+export function header(key: string, value: string): RequestBuilder {
+	return (r) => r.headers.set(key, value)
+}
+
+export function contentType(value: string): RequestBuilder {
+	return header("content-type", value)
+}
+
 export function json(data: unknown): RequestBuilder {
-	return compose(
-		body(JSON.stringify(data)),
-		header("content-type", MIME_JSON),
-	)
+	return compose(body(JSON.stringify(data)), contentType(MIME_JSON))
 }
 
 export function redirect(m: "follow" | "error" | "manual"): RequestBuilder {
