@@ -34,10 +34,10 @@ upgrade:
 	pnpm update --latest # --interactive
 
 deploy: on_ci
-	cd ./src/backup && wrangler publish
-	cd ./src/current-ip && wrangler publish
-	cd ./src/feedbox && wrangler publish
-	cd ./src/proxy-list && wrangler publish
+	cd ./src/backup && wrangler deploy
+	cd ./src/current-ip && wrangler deploy
+	cd ./src/feedbox && wrangler deploy
+	cd ./src/proxy-list && wrangler deploy
 
 ###
 
