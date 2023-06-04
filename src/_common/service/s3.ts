@@ -23,17 +23,6 @@ export async function signAWS4(req: Request, aws: AWSConfig): Promise<Request> {
 	}
 }
 
-// https://github.com/aws/aws-sdk-js/blob/v2.1390.0/lib/signers/v4.js#L191
-const UNSIGNABLE_HEADERS = new Set([
-	"authorization",
-	"content-type",
-	"content-length",
-	"user-agent",
-	"presigned-expires",
-	"expect",
-	"x-amzn-trace-id",
-])
-
 export async function signAWS4Query(
 	req: Request,
 	aws: AWSConfig,
@@ -42,24 +31,25 @@ export async function signAWS4Query(
 	const date = format(d, "YYYYMMDD")
 	const datetime = format(d, "YYYYMMDDThhmmssZ")
 
+	const method = req.method.toUpperCase()
 	const url = new URL(req.url)
 	const query = url.searchParams
 
-	query.set("x-amz-algorithm", "AWS4-HMAC-SHA256")
-	query.set("x-amz-date", datetime)
-	if (!query.has("x-amz-expires")) {
-		query.set("x-amz-expires", "86400")
+	query.set("X-Amz-Algorithm", "AWS4-HMAC-SHA256")
+	query.set("X-Amz-Date", datetime)
+	if (!query.has("X-Amz-Expires")) {
+		query.set("X-Amz-Expires", "86400")
 	}
 
-	const signedHeaders = ["host"]
-	query.set("x-amz-signedHeaders", signedHeaders.join(";"))
+	const signedHeaders = getSignedHeaders(req.headers)
+	query.set("X-Amz-SignedHeaders", signedHeaders.join(";"))
 
 	const service = `${date}/${aws.region}/s3/aws4_request`
 	const credential = `${aws.accessKeyId}/${service}`
-	query.set("x-amz-credential", credential)
+	query.set("X-Amz-Credential", credential)
 
 	const signature = await getSignature(
-		req.method,
+		method,
 		url.pathname,
 		query,
 		req.headers,
@@ -70,10 +60,10 @@ export async function signAWS4Query(
 		service,
 		aws,
 	)
-	query.set("x-amz-signature", signature)
+	query.set("X-Amz-Signature", signature)
 
 	return S.build(
-		S.method(req.method),
+		S.method(method),
 		S.url(url.toString()),
 		S.headers(req.headers),
 	)
@@ -87,6 +77,7 @@ export async function signAWS4Header(
 	const date = format(d, "YYYYMMDD")
 	const datetime = format(d, "YYYYMMDDThhmmssZ")
 
+	const method = req.method.toUpperCase()
 	const url = new URL(req.url)
 	const header = req.headers
 
@@ -98,13 +89,10 @@ export async function signAWS4Header(
 
 	const service = `${date}/${aws.region}/s3/aws4_request`
 
-	const signedHeaders = Array.from(header.keys())
-		.map((h) => h.toLowerCase())
-		.filter((h) => !UNSIGNABLE_HEADERS.has(h))
-		.sort()
+	const signedHeaders = getSignedHeaders(req.headers)
 
 	const signature = await getSignature(
-		req.method,
+		method,
 		url.pathname,
 		url.searchParams,
 		header,
@@ -123,10 +111,10 @@ export async function signAWS4Header(
 	header.set("authorization", auth)
 
 	return S.build(
-		S.method(req.method),
+		S.method(method),
 		S.url(url.toString()),
 		S.headers(header),
-		S.body(body),
+		method === "GET" || method === "HEAD" ? S.noop() : S.body(body),
 	)
 }
 
@@ -197,38 +185,59 @@ function getCanonicalRequest(
 			query
 				.getAll(k)
 				.sort()
-				.map((v) => k + "=" + v),
+				.map(
+					(v) => encodeURIComponent(k) + "=" + encodeURIComponent(v),
+				),
 		)
 		.flat()
 		.join("&")
 
 	// https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L155
-	const canonicalHeaders =
-		headerKeys
-			.map((k) => `${k}:${header.get(k)!.trim().replace(/\s+/g, " ")}`)
-			.join("\n") + "\n"
+	const canonicalHeaders = headerKeys
+		.map((k) => `${k}:${header.get(k)!.trim().replace(/\s+/g, " ")}`)
+		.join("\n")
 
 	const signedHeaders = headerKeys.join(";")
 	const canonicalRequest = [
-		method.toUpperCase(),
+		method,
 		uriEncode(pathname),
 		canonicalQueryString,
 		canonicalHeaders,
+		"",
 		signedHeaders,
 		hashedPayload,
 	].join("\n")
+
 	return HASH_SHA256_HEX(canonicalRequest)
+}
+
+// https://github.com/aws/aws-sdk-js/blob/v2.1390.0/lib/signers/v4.js#L191
+const UNSIGNABLE_HEADERS = new Set([
+	"authorization",
+	"content-type",
+	"content-length",
+	"user-agent",
+	"presigned-expires",
+	"expect",
+	"x-amzn-trace-id",
+])
+
+function getSignedHeaders(header: Headers): string[] {
+	const signedHeaders = Array.from(header.keys())
+		.map((h) => h.toLowerCase())
+		.filter((h) => !UNSIGNABLE_HEADERS.has(h))
+		.sort()
+	return signedHeaders
 }
 
 ///
 
-// https://github.com/aws/aws-sdk-js/blob/v2.1390.0/lib/util.js#L39
+// https://github.com/aws/aws-sdk-js/blob/v2.1390.0/lib/util.js#L51
 const uriEncode = (input: string): string => {
-	const output = encodeURIComponent(input).replace(
-		/[*]/g,
-		(c) => "%" + c.charCodeAt(0).toString(16).toUpperCase(),
-	)
-	return output
+	return input
+		.split("/")
+		.map((x) => encodeURIComponent(x))
+		.join("/")
 }
 
 async function HMAC_SHA256(key: string | ArrayBuffer, data: string) {

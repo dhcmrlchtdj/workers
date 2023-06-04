@@ -67,6 +67,10 @@ export function any(fn: RequestBuilder): RequestBuilder {
 	return (r) => fn(r)
 }
 
+export function noop(): RequestBuilder {
+	return () => {}
+}
+
 ///
 
 type RequestInner = {
