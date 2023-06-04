@@ -1,4 +1,5 @@
 // https://github.com/mhart/aws4fetch/blob/master/src/main.js
+// https://github.com/aws/aws-sdk-js/blob/master/lib/signers/v4.js
 // https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
 // https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
 
@@ -22,7 +23,7 @@ export async function signAWS4(req: Request, aws: AWSConfig): Promise<Request> {
 	}
 }
 
-// https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L191
+// https://github.com/aws/aws-sdk-js/blob/v2.1390.0/lib/signers/v4.js#L191
 const UNSIGNABLE_HEADERS = new Set([
 	"authorization",
 	"content-type",
@@ -33,7 +34,10 @@ const UNSIGNABLE_HEADERS = new Set([
 	"x-amzn-trace-id",
 ])
 
-export async function signAWS4Query(req: Request, aws: AWSConfig): Promise<Request> {
+export async function signAWS4Query(
+	req: Request,
+	aws: AWSConfig,
+): Promise<Request> {
 	const d = new Date()
 	const date = format(d, "YYYYMMDD")
 	const datetime = format(d, "YYYYMMDDThhmmssZ")
@@ -56,9 +60,10 @@ export async function signAWS4Query(req: Request, aws: AWSConfig): Promise<Reque
 
 	const signature = await getSignature(
 		req.method,
-		url,
-		signedHeaders,
+		url.pathname,
+		query,
 		req.headers,
+		signedHeaders,
 		"UNSIGNED-PAYLOAD",
 		date,
 		datetime,
@@ -74,7 +79,10 @@ export async function signAWS4Query(req: Request, aws: AWSConfig): Promise<Reque
 	)
 }
 
-export async function signAWS4Header(req: Request, aws: AWSConfig): Promise<Request> {
+export async function signAWS4Header(
+	req: Request,
+	aws: AWSConfig,
+): Promise<Request> {
 	const d = new Date()
 	const date = format(d, "YYYYMMDD")
 	const datetime = format(d, "YYYYMMDDThhmmssZ")
@@ -97,9 +105,10 @@ export async function signAWS4Header(req: Request, aws: AWSConfig): Promise<Requ
 
 	const signature = await getSignature(
 		req.method,
-		url,
-		signedHeaders,
+		url.pathname,
+		url.searchParams,
 		header,
+		signedHeaders,
 		hashedPayload,
 		date,
 		datetime,
@@ -116,8 +125,8 @@ export async function signAWS4Header(req: Request, aws: AWSConfig): Promise<Requ
 	return S.build(
 		S.method(req.method),
 		S.url(url.toString()),
-		S.body(body),
 		S.headers(header),
+		S.body(body),
 	)
 }
 
@@ -125,9 +134,10 @@ export async function signAWS4Header(req: Request, aws: AWSConfig): Promise<Requ
 
 async function getSignature(
 	method: string,
-	url: URL,
-	signedHeaders: string[],
+	pathname: string,
+	query: URLSearchParams,
 	header: Headers,
+	signedHeaders: string[],
 	payload: string,
 	date: string,
 	datetime: string,
@@ -135,12 +145,12 @@ async function getSignature(
 	aws: AWSConfig,
 ) {
 	const canonicalRequest = await getCanonicalRequest(
-		method.toUpperCase(),
-		uriEncode(url.pathname),
-		signedHeaders,
+		method,
+		pathname,
+		query,
 		header,
+		signedHeaders,
 		payload,
-		// hashedPayload,
 	)
 
 	const stringToSign = [
@@ -175,21 +185,33 @@ async function getSigningKey(
 
 function getCanonicalRequest(
 	method: string,
-	uri: string,
-	headerKeys: string[],
+	pathname: string,
+	query: URLSearchParams,
 	header: Headers,
+	headerKeys: string[],
 	hashedPayload: string,
 ): Promise<string> {
-	const canonicalQueryString = ""
+	const canonicalQueryString = Array.from(query.keys())
+		.sort()
+		.map((k) =>
+			query
+				.getAll(k)
+				.sort()
+				.map((v) => k + "=" + v),
+		)
+		.flat()
+		.join("&")
+
 	// https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L155
 	const canonicalHeaders =
 		headerKeys
 			.map((k) => `${k}:${header.get(k)!.trim().replace(/\s+/g, " ")}`)
 			.join("\n") + "\n"
+
 	const signedHeaders = headerKeys.join(";")
 	const canonicalRequest = [
-		method,
-		uri,
+		method.toUpperCase(),
+		uriEncode(pathname),
 		canonicalQueryString,
 		canonicalHeaders,
 		signedHeaders,
@@ -200,15 +222,12 @@ function getCanonicalRequest(
 
 ///
 
-// https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/util.js#L51
-// https://github.com/mhart/aws4fetch/blob/v1.0.13/src/main.js#L367
+// https://github.com/aws/aws-sdk-js/blob/v2.1390.0/lib/util.js#L39
 const uriEncode = (input: string): string => {
-	const output = encodeURIComponent(input)
-		.replace(/%2f/gi, "/")
-		.replace(
-			/[!'()*]/g,
-			(c) => "%" + c.charCodeAt(0).toString(16).toUpperCase(),
-		)
+	const output = encodeURIComponent(input).replace(
+		/[*]/g,
+		(c) => "%" + c.charCodeAt(0).toString(16).toUpperCase(),
+	)
 	return output
 }
 
