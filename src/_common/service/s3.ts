@@ -185,9 +185,7 @@ function getCanonicalRequest(
 			query
 				.getAll(k)
 				.sort()
-				.map(
-					(v) => encodeURIComponent(k) + "=" + encodeURIComponent(v),
-				),
+				.map((v) => uriEncode(k) + "=" + uriEncode(v)),
 		)
 		.flat()
 		.join("&")
@@ -200,7 +198,7 @@ function getCanonicalRequest(
 	const signedHeaders = headerKeys.join(";")
 	const canonicalRequest = [
 		method,
-		uriEncode(pathname),
+		uriEncode(pathname).replace(/%2F/g, () => "/"),
 		canonicalQueryString,
 		canonicalHeaders,
 		"",
@@ -232,12 +230,11 @@ function getSignedHeaders(header: Headers): string[] {
 
 ///
 
-// https://github.com/aws/aws-sdk-js/blob/v2.1390.0/lib/util.js#L51
 const uriEncode = (input: string): string => {
-	return input
-		.split("/")
-		.map((x) => encodeURIComponent(x))
-		.join("/")
+	return encodeURIComponent(input).replace(
+		/[!*'()]/g,
+		(c) => "%" + c.charCodeAt(0).toString(16).toUpperCase(),
+	)
 }
 
 async function HMAC_SHA256(key: string | ArrayBuffer, data: string) {
