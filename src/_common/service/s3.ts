@@ -6,27 +6,18 @@
 import { createHash } from "../crypto/hash.js"
 import { createHMAC } from "../crypto/hmac.js"
 import { format } from "../format-date.js"
-import * as S from "../http/request.js"
 
 type AWSConfig = {
-	signQuery?: boolean
+	service: string // "s3"
 	region: string
 	accessKeyId: string
 	secretAccessKey: string
 }
 
-export async function signAWS4(req: Request, aws: AWSConfig): Promise<Request> {
-	if (aws.signQuery) {
-		return signAWS4Query(req, aws)
-	} else {
-		return signAWS4Header(req, aws)
-	}
-}
-
-export async function signAWS4Query(
+export async function createAws4SignedUrl(
 	req: Request,
 	aws: AWSConfig,
-): Promise<Request> {
+): Promise<URL> {
 	const d = new Date()
 	const date = format(d, "YYYYMMDD")
 	const datetime = format(d, "YYYYMMDDThhmmssZ")
@@ -34,42 +25,39 @@ export async function signAWS4Query(
 	const method = req.method.toUpperCase()
 	const url = new URL(req.url)
 	const query = url.searchParams
+	const header = req.headers
 
 	query.set("X-Amz-Algorithm", "AWS4-HMAC-SHA256")
 	query.set("X-Amz-Date", datetime)
-	if (!query.has("X-Amz-Expires")) {
+	if (aws.service === "s3" && !query.has("X-Amz-Expires")) {
 		query.set("X-Amz-Expires", "86400")
 	}
 
-	const signedHeaders = getSignedHeaders(req.headers)
+	const signedHeaders = getSignedHeaders(header)
 	query.set("X-Amz-SignedHeaders", signedHeaders.join(";"))
 
-	const service = `${date}/${aws.region}/s3/aws4_request`
-	const credential = `${aws.accessKeyId}/${service}`
+	const scope = `${date}/${aws.region}/${aws.service}/aws4_request`
+	const credential = `${aws.accessKeyId}/${scope}`
 	query.set("X-Amz-Credential", credential)
 
 	const signature = await getSignature(
 		method,
 		url.pathname,
 		query,
-		req.headers,
+		header,
 		signedHeaders,
 		"UNSIGNED-PAYLOAD",
 		date,
 		datetime,
-		service,
+		scope,
 		aws,
 	)
 	query.set("X-Amz-Signature", signature)
 
-	return S.build(
-		S.method(method),
-		S.url(url.toString()),
-		S.headers(req.headers),
-	)
+	return url
 }
 
-export async function signAWS4Header(
+export async function addAws4SignatureHeader(
 	req: Request,
 	aws: AWSConfig,
 ): Promise<Request> {
@@ -87,9 +75,9 @@ export async function signAWS4Header(
 	const hashedPayload = await HASH_SHA256_HEX(body)
 	header.set("x-amz-content-sha256", hashedPayload)
 
-	const service = `${date}/${aws.region}/s3/aws4_request`
+	const scope = `${date}/${aws.region}/${aws.service}/aws4_request`
 
-	const signedHeaders = getSignedHeaders(req.headers)
+	const signedHeaders = getSignedHeaders(header)
 
 	const signature = await getSignature(
 		method,
@@ -100,22 +88,17 @@ export async function signAWS4Header(
 		hashedPayload,
 		date,
 		datetime,
-		service,
+		scope,
 		aws,
 	)
 	const auth = [
-		`AWS4-HMAC-SHA256 Credential=${aws.accessKeyId}/${service}`,
+		`AWS4-HMAC-SHA256 Credential=${aws.accessKeyId}/${scope}`,
 		`SignedHeaders=${signedHeaders.join(";")}`,
 		`Signature=${signature}`,
 	].join(",")
 	header.set("authorization", auth)
 
-	return S.build(
-		S.method(method),
-		S.url(url.toString()),
-		S.headers(header),
-		method === "GET" || method === "HEAD" ? S.noop() : S.body(body),
-	)
+	return req
 }
 
 ///
@@ -129,7 +112,7 @@ async function getSignature(
 	payload: string,
 	date: string,
 	datetime: string,
-	service: string,
+	scope: string,
 	aws: AWSConfig,
 ) {
 	const canonicalRequest = await getCanonicalRequest(
@@ -144,29 +127,24 @@ async function getSignature(
 	const stringToSign = [
 		"AWS4-HMAC-SHA256",
 		datetime,
-		service,
+		scope,
 		canonicalRequest,
 	].join("\n")
 
-	const signingKey = await getSigningKey(
-		aws.secretAccessKey,
-		date,
-		aws.region,
-	)
+	const signingKey = await getSigningKey(date, aws)
 	const signature = await HMAC_SHA256_HEX(signingKey, stringToSign)
 
 	return signature
 }
 
 async function getSigningKey(
-	secretAccessKey: string,
 	date: string,
-	region: string,
+	aws: AWSConfig,
 ): Promise<ArrayBuffer> {
-	const key = `AWS4${secretAccessKey}`
+	const key = `AWS4${aws.secretAccessKey}`
 	const dateKey = await HMAC_SHA256(key, date)
-	const regionKey = await HMAC_SHA256(dateKey, region)
-	const serviceKey = await HMAC_SHA256(regionKey, "s3")
+	const regionKey = await HMAC_SHA256(dateKey, aws.region)
+	const serviceKey = await HMAC_SHA256(regionKey, aws.service)
 	const signingKey = await HMAC_SHA256(serviceKey, "aws4_request")
 	return signingKey
 }
@@ -198,7 +176,7 @@ function getCanonicalRequest(
 	const signedHeaders = headerKeys.join(";")
 	const canonicalRequest = [
 		method,
-		uriEncode(pathname).replace(/%2F/g, () => "/"),
+		uriEncode(pathname).replaceAll("%2F", "/"),
 		canonicalQueryString,
 		canonicalHeaders,
 		"",

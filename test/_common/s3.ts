@@ -1,22 +1,28 @@
 import * as S from "../../src/_common/http/request.js"
-import { signAWS4Header, signAWS4Query } from "../../src/_common/service/s3.js"
+import {
+	addAws4SignatureHeader,
+	createAws4SignedUrl,
+} from "../../src/_common/service/s3.js"
 
 describe("S3", () => {
+	const awsConfig = {
+		service: "s3",
+		region: "us-east-1",
+		accessKeyId: "AKIAIOSFODNN7EXAMPLE",
+		secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+	}
+
 	test("signAWS4Header | Get Object", async () => {
 		jest.useFakeTimers()
 		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
-		const r = await signAWS4Header(
+		const r = await addAws4SignatureHeader(
 			S.build(
 				S.get("https://examplebucket.s3.amazonaws.com/test.txt"),
 				S.header("host", "examplebucket.s3.amazonaws.com"),
 				S.header("range", "bytes=0-9"),
 			),
-			{
-				region: "us-east-1",
-				accessKeyId: "AKIAIOSFODNN7EXAMPLE",
-				secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-			},
+			awsConfig,
 		)
 
 		expect(r.headers.get("authorization")).toBe(
@@ -33,7 +39,7 @@ describe("S3", () => {
 		jest.useFakeTimers()
 		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
-		const r = await signAWS4Header(
+		const r = await addAws4SignatureHeader(
 			S.build(
 				S.put("https://examplebucket.s3.amazonaws.com/test$file.text"),
 				S.header("date", "Fri, 24 May 2013 00:00:00 GMT"),
@@ -41,11 +47,7 @@ describe("S3", () => {
 				S.header("x-amz-storage-class", "REDUCED_REDUNDANCY"),
 				S.body("Welcome to Amazon S3."),
 			),
-			{
-				region: "us-east-1",
-				accessKeyId: "AKIAIOSFODNN7EXAMPLE",
-				secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-			},
+			awsConfig,
 		)
 
 		expect(r.headers.get("authorization")).toBe(
@@ -62,16 +64,12 @@ describe("S3", () => {
 		jest.useFakeTimers()
 		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
-		const r = await signAWS4Header(
+		const r = await addAws4SignatureHeader(
 			S.build(
 				S.get("https://examplebucket.s3.amazonaws.com?lifecycle"),
 				S.header("host", "examplebucket.s3.amazonaws.com"),
 			),
-			{
-				region: "us-east-1",
-				accessKeyId: "AKIAIOSFODNN7EXAMPLE",
-				secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-			},
+			awsConfig,
 		)
 
 		expect(r.headers.get("authorization")).toBe(
@@ -88,18 +86,14 @@ describe("S3", () => {
 		jest.useFakeTimers()
 		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
-		const r = await signAWS4Header(
+		const r = await addAws4SignatureHeader(
 			S.build(
 				S.get(
 					"https://examplebucket.s3.amazonaws.com?max-keys=2&prefix=J",
 				),
 				S.header("host", "examplebucket.s3.amazonaws.com"),
 			),
-			{
-				region: "us-east-1",
-				accessKeyId: "AKIAIOSFODNN7EXAMPLE",
-				secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-			},
+			awsConfig,
 		)
 
 		expect(r.headers.get("authorization")).toBe(
@@ -116,27 +110,24 @@ describe("S3", () => {
 		jest.useFakeTimers()
 		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
-		const r = await signAWS4Query(
+		const url = await createAws4SignedUrl(
 			S.build(
 				S.get("https://examplebucket.s3.amazonaws.com/test.txt"),
 				S.header("host", "examplebucket.s3.amazonaws.com"),
+				S.query("X-Amz-Expires", "86400"),
 			),
-			{
-				region: "us-east-1",
-				accessKeyId: "AKIAIOSFODNN7EXAMPLE",
-				secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-			},
+			awsConfig,
 		)
 
-		expect(r.url).toBe(
+		expect(url.toString()).toBe(
 			[
-				"https://examplebucket.s3.amazonaws.com/test.txt",
-				"?X-Amz-Algorithm=AWS4-HMAC-SHA256",
-				"&X-Amz-Date=20130524T000000Z",
-				"&X-Amz-Expires=86400",
-				"&X-Amz-SignedHeaders=host",
-				"&X-Amz-Credential=AKIAIOSFODNN7EXAMPLE%2F20130524%2Fus-east-1%2Fs3%2Faws4_request",
-				"&X-Amz-Signature=aeeed9bbccd4d02ee5c0109b86d86835f995330da4c265957d157751f604d404",
+				"https://examplebucket.s3.amazonaws.com/test.txt?",
+				"X-Amz-Expires=86400&",
+				"X-Amz-Algorithm=AWS4-HMAC-SHA256&",
+				"X-Amz-Date=20130524T000000Z&",
+				"X-Amz-SignedHeaders=host&",
+				"X-Amz-Credential=AKIAIOSFODNN7EXAMPLE%2F20130524%2Fus-east-1%2Fs3%2Faws4_request&",
+				"X-Amz-Signature=aeeed9bbccd4d02ee5c0109b86d86835f995330da4c265957d157751f604d404",
 			].join(""),
 		)
 	})

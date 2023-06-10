@@ -2,32 +2,32 @@ import { compose } from "./compose.js"
 import { MIME_JSON } from "./mime.js"
 
 export function build(...builders: RequestBuilder[]): Request {
-	const req = {
-		url: "",
+	const req: RequestInner = {
+		url: null,
 		method: "GET",
 		headers: new Headers(),
 		body: null,
 	}
 	compose(...builders)(req)
-	return new Request(req.url, req)
+	return new Request(req.url!, req)
 }
 
 export function get(url: string): RequestBuilder {
 	return (r) => {
 		r.method = "GET"
-		r.url = url
+		r.url = new URL(url)
 	}
 }
 export function put(url: string): RequestBuilder {
 	return (r) => {
 		r.method = "PUT"
-		r.url = url
+		r.url = new URL(url)
 	}
 }
 export function post(url: string): RequestBuilder {
 	return (r) => {
 		r.method = "POST"
-		r.url = url
+		r.url = new URL(url)
 	}
 }
 
@@ -35,8 +35,12 @@ export function method(m: string): RequestBuilder {
 	return (r) => (r.method = m)
 }
 
-export function url(u: string): RequestBuilder {
+export function url(u: URL): RequestBuilder {
 	return (r) => (r.url = u)
+}
+
+export function query(key: string, value: string): RequestBuilder {
+	return (r) => r.url!.searchParams.set(key, value)
 }
 
 export function body(data: BodyInit): RequestBuilder {
@@ -59,10 +63,6 @@ export function json(data: unknown): RequestBuilder {
 	return compose(body(JSON.stringify(data)), contentType(MIME_JSON))
 }
 
-export function redirect(m: "follow" | "error" | "manual"): RequestBuilder {
-	return (r) => (r.redirect = m)
-}
-
 export function any(fn: RequestBuilder): RequestBuilder {
 	return (r) => fn(r)
 }
@@ -74,11 +74,10 @@ export function noop(): RequestBuilder {
 ///
 
 type RequestInner = {
-	url: string
+	url: URL | null
 	method: string
 	headers: Headers
 	body?: BodyInit | null
-	redirect?: "follow" | "error" | "manual"
 }
 
 type RequestBuilder = (b: RequestInner) => void

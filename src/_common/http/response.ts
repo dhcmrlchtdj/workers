@@ -4,7 +4,7 @@ import { MIME_JSON } from "./mime.js"
 export function build(...builders: ResponseBuilder[]): Response {
 	const b = { body: null, status: 200, headers: new Headers() }
 	compose(...builders)(b)
-	return new Response(b.body, { status: b.status, headers: b.headers })
+	return new Response(b.body, b)
 }
 
 export function body(data: BodyInit): ResponseBuilder {

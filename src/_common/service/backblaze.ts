@@ -1,7 +1,7 @@
 // https://www.backblaze.com/b2/docs/s3_compatible_api.html
 
 import * as S from "../http/request.js"
-import { signAWS4Header } from "./s3.js"
+import { addAws4SignatureHeader } from "./s3.js"
 
 export class BackBlaze {
 	private accessKeyId: string
@@ -25,7 +25,7 @@ export class BackBlaze {
 		const host = `${this.bucket}.s3.${this.region}.backblazeb2.com`
 		const url = `https://${host}/${filename}`
 
-		const req = await signAWS4Header(
+		const req = await addAws4SignatureHeader(
 			S.build(
 				S.put(url),
 				S.body(file),
@@ -33,6 +33,7 @@ export class BackBlaze {
 				S.contentType(contentType),
 			),
 			{
+				service: "s3",
 				region: this.region,
 				accessKeyId: this.accessKeyId,
 				secretAccessKey: this.secretAccessKey,
