@@ -22,7 +22,7 @@ jobs:
                   path: ~/.local/share/pnpm/store
                   key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
                   restore-keys: |
-                    ${{ runner.os }}-pnpm-
+                      ${{ runner.os }}-pnpm-
             - run: |
                   corepack enable
                   # https://www.npmjs.com/package/pnpm

@@ -1,13 +1,13 @@
+import * as M from "../_common/worker.middleware.js"
+import * as R from "../_common/http/response.js"
+import { BackBlaze } from "../_common/service/backblaze.js"
 import { format } from "../_common/format-date.js"
 import { getBA } from "../_common/http/basic_auth.js"
-import * as R from "../_common/http/response.js"
-import { allowMethod, contentType, createWorker } from "../_common/listen.js"
 import {
 	HttpBadRequest,
 	HttpInternalServerError,
 	HttpUnauthorized,
 } from "../_common/http/status.js"
-import { BackBlaze } from "../_common/service/backblaze.js"
 
 type ENV = {
 	BA: KVNamespace
@@ -34,30 +34,34 @@ const HANDERS: Record<string, Handler> = {
 
 ///
 
-const worker = createWorker(
-	"backup",
-	allowMethod("POST"),
-	contentType("multipart/form-data; boundary"),
-	async (req: Request, env: ENV, ctx: ExecutionContext) => {
-		const { user, pass } = getBA(req.headers.get("authorization"))
-		const item = await env.BA.get<KV_BA>("backup:" + user, {
-			type: "json",
-			cacheTtl: 60 * 60, // 60min
-		})
-		if (item?.password === pass) {
-			const h = HANDERS[user]
-			if (h) {
-				return h(req, env, ctx)
-			} else {
-				return HttpInternalServerError()
-			}
-		} else {
-			throw HttpUnauthorized(["Basic"])
-		}
+const exportedHandler: ExportedHandler<ENV> = {
+	async fetch(req, env, ctx) {
+		const fn = M.compose<ENV>(
+			M.sendErrorToTelegram("backup"),
+			M.checkMethod("POST"),
+			M.checkContentType("multipart/form-data; boundary"),
+			async ({ req, env, ctx }) => {
+				const { user, pass } = getBA(req.headers.get("authorization"))
+				const item = await env.BA.get<KV_BA>("backup:" + user, {
+					type: "json",
+					cacheTtl: 60 * 60, // 60min
+				})
+				if (item?.password === pass) {
+					const h = HANDERS[user]
+					if (h) {
+						return h(req, env, ctx)
+					} else {
+						return HttpInternalServerError()
+					}
+				} else {
+					throw HttpUnauthorized(["Basic"])
+				}
+			},
+		)
+		return fn({ req, env, ctx })
 	},
-)
-
-export default worker
+}
+export default exportedHandler
 
 ///
 

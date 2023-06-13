@@ -1,9 +1,9 @@
+import * as M from "../_common/worker.middleware.js"
+import { getBA } from "../_common/http/basic_auth.js"
 import {
 	encodeHtmlEntities as enc,
 	telegram,
 } from "../_common/service/telegram.js"
-import { getBA } from "../_common/http/basic_auth.js"
-import { createWorker } from "../_common/listen.js"
 import {
 	HttpBadRequest,
 	HttpOk,
@@ -18,24 +18,33 @@ type KVItem = { password: string; ip: string }
 
 ///
 
-const worker = createWorker("current-ip", async (req: Request, env: ENV) => {
-	const currIp = req.headers.get("CF-Connecting-IP")
-	if (currIp === null) {
-		return HttpBadRequest("CF-Connecting-IP is missed")
-	}
+const exportedHandler: ExportedHandler<ENV> = {
+	async fetch(req, env, ctx) {
+		const fn = M.compose<ENV>(
+			M.sendErrorToTelegram("current-ip"),
+			async ({ req, env }) => {
+				const currIp = req.headers.get("CF-Connecting-IP")
+				if (currIp === null) {
+					return HttpBadRequest("CF-Connecting-IP is missed")
+				}
 
-	const { user, pass } = getBA(req.headers.get("authorization"))
-	const item = await env.BA.get<KVItem>("ip:" + user, { type: "json" })
-	if (item?.password === pass) {
-		await saveCurrentIp(env, user, item, currIp)
-		return HttpOk(currIp)
-	} else {
-		console.log(`invalid user/pass: "${user}" "${pass}"`)
-		return HttpUnauthorized(["Basic"])
-	}
-})
-
-export default worker
+				const { user, pass } = getBA(req.headers.get("authorization"))
+				const item = await env.BA.get<KVItem>("ip:" + user, {
+					type: "json",
+				})
+				if (item?.password === pass) {
+					await saveCurrentIp(env, user, item, currIp)
+					return HttpOk(currIp)
+				} else {
+					console.log(`invalid user/pass: "${user}" "${pass}"`)
+					return HttpUnauthorized(["Basic"])
+				}
+			},
+		)
+		return fn({ req, env, ctx })
+	},
+}
+export default exportedHandler
 
 ///
 
