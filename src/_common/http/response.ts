@@ -23,6 +23,10 @@ export function contentType(type: string): ResponseBuilder {
 	return header("content-type", type)
 }
 
+export function cacheControl(directives: string): ResponseBuilder {
+	return header("cache-control", directives)
+}
+
 export function json(data: unknown): ResponseBuilder {
 	return compose(body(JSON.stringify(data)), contentType(MIME_JSON))
 }
