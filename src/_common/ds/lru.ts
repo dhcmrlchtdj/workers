@@ -1,6 +1,6 @@
 import { Entry } from "./linked-list.js"
 import { LinkedMap } from "./linked-map.js"
-import { type Option, none } from "../option.js"
+import { type Option, none, some } from "../option.js"
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export interface CachePolicy<K, V> {
@@ -249,5 +249,86 @@ export class TwoQueue<K, V> implements CachePolicy<K, V> {
 	*keys(): IterableIterator<K> {
 		yield* this.frequent.keys()
 		yield* this.recent.keys()
+	}
+}
+
+export class Random<K, V> implements CachePolicy<K, V> {
+	private capacity: number
+	private sample: number
+	private map: Map<K, [number, V]>
+	private id: number
+	constructor(capacity: number, sample = 5) {
+		this.capacity = capacity
+		this.sample = sample
+		this.map = new Map()
+		this.id = 0
+	}
+	private getNextId() {
+		this.id++
+		return this.id
+	}
+	size(): number {
+		return this.map.size
+	}
+	keys(): IterableIterator<K> {
+		return this.map.keys()
+	}
+	has(key: K): boolean {
+		return this.map.has(key)
+	}
+	peek(key: K): Option<V> {
+		if (this.map.has(key)) {
+			const [_, val] = this.map.get(key)!
+			return some(val)
+		} else {
+			return none
+		}
+	}
+	get(key: K): Option<V> {
+		if (this.map.has(key)) {
+			const [_, val] = this.map.get(key)!
+			this.map.set(key, [this.getNextId(), val])
+			return some(val)
+		} else {
+			return none
+		}
+	}
+	set(key: K, value: V): Option<V> {
+		if (this.map.has(key)) {
+			const [_, replaced] = this.map.get(key)!
+			this.map.set(key, [this.getNextId(), value])
+			return some(replaced)
+		}
+		if (this.map.size >= this.capacity) {
+			this.evict()
+		}
+		this.map.set(key, [this.getNextId(), value])
+		return none
+	}
+	remove(key: K): Option<V> {
+		if (this.map.has(key)) {
+			const [_, removed] = this.map.get(key)!
+			this.map.delete(key)
+			return some(removed)
+		} else {
+			return none
+		}
+	}
+	private evict() {
+		const map = this.map
+		const size = map.size
+		let keyToEvict: K = null!
+		let keyTime = Infinity
+		const keys = [...map.keys()]
+		for (let i = 0, len = this.sample; i < len; i++) {
+			const idx = (Math.random() * size) | 0
+			const key = keys[idx]!
+			const [t, _] = map.get(key)!
+			if (t < keyTime) {
+				keyTime = t
+				keyToEvict = key
+			}
+		}
+		map.delete(keyToEvict)
 	}
 }
