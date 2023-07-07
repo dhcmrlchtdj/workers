@@ -2,7 +2,7 @@ main = "index.js"
 name = "proxy-list"
 route = "worker.h11.io/proxy-list*"
 
-compatibility_date = "2023-03-25"
+compatibility_date = "2023-07-25"
 
 kv_namespaces = [{ binding = "BA", id = "fb7f86b3d7fb42bc8bb5ed43907a6479" }]
 

@@ -18,7 +18,7 @@ test_compiled := $(addsuffix .test.js, $(wildcard test/**/*.ts))
 build: $(targets)
 
 fmt:
-	prettier --write .
+	prettier --write "./**/*.{html,js,ts,json,css}" "./.github/**"
 
 lint:
 	eslint --ext=".ts" src test
