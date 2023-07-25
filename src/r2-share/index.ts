@@ -17,21 +17,16 @@ const exportedHandler: ExportedHandler<ENV> = {
 			async ({ req, env }) => {
 				const url = new URL(req.url)
 				const path = url.pathname
-				if (!path.startsWith("/share/")) {
-					return HttpBadRequest()
-				}
+				if (!path.startsWith("/share/")) return HttpBadRequest()
 
 				const filename = path.slice(7)
-				const object = await env.R2share.get(filename, {
-					onlyIf: req.headers,
-				} as R2GetOptions)
-				if (object === null || !object.body) {
-					return HttpNotFound()
-				}
+				const object = await env.R2share.get(filename)
+				if (object === null) return HttpNotFound()
 
 				const resp = R.build(
 					R.body(object.body),
 					R.header("etag", object.httpEtag),
+					R.cacheControl("must-revalidate, max-age=86400"), // 1d
 				)
 				object.writeHttpMetadata(resp.headers)
 
