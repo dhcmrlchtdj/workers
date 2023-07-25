@@ -25,7 +25,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 
 				const reqEtag = req.headers.get("If-None-Match")
 				const resp = R.build(
-					reqEtag === object.httpEtag
+					reqEtag?.includes(object.httpEtag)
 						? R.status(304)
 						: R.body(object.body),
 					R.header("etag", object.httpEtag),
