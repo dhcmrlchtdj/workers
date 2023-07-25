@@ -14,10 +14,14 @@ const exportedHandler: ExportedHandler<ENV> = {
 		const fn = M.compose<ENV>(
 			M.sendErrorToTelegram("r2-share"),
 			M.checkMethod("GET", "HEAD"),
-			async ({ req, env }) => {
+			async ({ req, env, ctx }) => {
 				const url = new URL(req.url)
 				const path = url.pathname
 				if (!path.startsWith("/share/")) return HttpBadRequest()
+
+				const cache = caches.default
+				const response = await cache.match(req)
+				if (response) return response
 
 				const filename = path.slice(7)
 				const object = await env.R2share.get(filename)
@@ -34,6 +38,9 @@ const exportedHandler: ExportedHandler<ENV> = {
 					R.cacheControl("must-revalidate, max-age=86400"), // 1d
 				)
 				object.writeHttpMetadata(resp.headers)
+
+				ctx.waitUntil(cache.put(req, resp.clone()))
+
 				return resp
 			},
 		)
