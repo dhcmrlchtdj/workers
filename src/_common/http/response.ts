@@ -15,6 +15,10 @@ export function status(status: number): ResponseBuilder {
 	return (b) => (b.status = status)
 }
 
+export function headers(headers: Headers): ResponseBuilder {
+	return (b) => (b.headers = headers)
+}
+
 export function header(key: string, value: string): ResponseBuilder {
 	return (b) => b.headers.set(key, value)
 }
