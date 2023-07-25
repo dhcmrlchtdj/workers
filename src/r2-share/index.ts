@@ -23,13 +23,15 @@ const exportedHandler: ExportedHandler<ENV> = {
 				const object = await env.R2share.get(filename)
 				if (object === null) return HttpNotFound()
 
+				const reqEtag = req.headers.get("If-None-Match")
 				const resp = R.build(
-					R.body(object.body),
+					reqEtag === object.httpEtag
+						? R.status(304)
+						: R.body(object.body),
 					R.header("etag", object.httpEtag),
 					R.cacheControl("must-revalidate, max-age=86400"), // 1d
 				)
 				object.writeHttpMetadata(resp.headers)
-
 				return resp
 			},
 		)
