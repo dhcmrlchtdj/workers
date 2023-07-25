@@ -13,7 +13,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 	async fetch(req, env, ctx) {
 		const fn = M.compose<ENV>(
 			M.sendErrorToTelegram("r2-share"),
-			M.checkMethod("GET"),
+			M.checkMethod("GET", "HEAD"),
 			async ({ req, env }) => {
 				const url = new URL(req.url)
 				const path = url.pathname
@@ -27,7 +27,9 @@ const exportedHandler: ExportedHandler<ENV> = {
 				const resp = R.build(
 					reqEtag?.includes(object.httpEtag)
 						? R.status(304)
-						: R.body(object.body),
+						: req.method.toUpperCase() === "GET"
+						? R.body(object.body)
+						: R.noop(),
 					R.header("etag", object.httpEtag),
 					R.cacheControl("must-revalidate, max-age=86400"), // 1d
 				)

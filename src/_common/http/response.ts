@@ -73,6 +73,10 @@ export function any(fn: ResponseBuilder): ResponseBuilder {
 	return (r) => fn(r)
 }
 
+export function noop(): ResponseBuilder {
+	return () => {}
+}
+
 ///
 
 type ResponseInner = {
