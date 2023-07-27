@@ -1,5 +1,6 @@
-import { compose } from "./compose.js"
-import { MIME_JSON } from "./mime.js"
+import { type Builder, compose, header } from "./compose.js"
+
+export * from "./compose.js"
 
 export function build(...builders: ResponseBuilder[]): Response {
 	const b = { body: null, status: 200, headers: new Headers() }
@@ -7,32 +8,8 @@ export function build(...builders: ResponseBuilder[]): Response {
 	return new Response(b.body, b)
 }
 
-export function body(data: BodyInit | null): ResponseBuilder {
-	return (b) => (b.body = data)
-}
-
 export function status(status: number): ResponseBuilder {
 	return (b) => (b.status = status)
-}
-
-export function headers(headers: HeadersInit): ResponseBuilder {
-	return (b) => (b.headers = new Headers(headers))
-}
-
-export function header(key: string, value: string): ResponseBuilder {
-	return (b) => b.headers.set(key, value)
-}
-
-export function contentType(type: string): ResponseBuilder {
-	return header("content-type", type)
-}
-
-export function cacheControl(directives: string): ResponseBuilder {
-	return header("cache-control", directives)
-}
-
-export function json(data: unknown): ResponseBuilder {
-	return compose(body(JSON.stringify(data)), contentType(MIME_JSON))
 }
 
 export function attachment(filename?: string): ResponseBuilder {
@@ -69,14 +46,6 @@ export function clearCookie(
 	return setCookie(key, "", option ? { ...option, maxAge: 0 } : { maxAge: 0 })
 }
 
-export function any(fn: ResponseBuilder): ResponseBuilder {
-	return (r) => fn(r)
-}
-
-export function noop(): ResponseBuilder {
-	return () => {}
-}
-
 ///
 
 type ResponseInner = {
@@ -85,7 +54,7 @@ type ResponseInner = {
 	headers: Headers
 }
 
-type ResponseBuilder = (b: ResponseInner) => void
+type ResponseBuilder = Builder<ResponseInner>
 
 export type CookieOption = {
 	expires?: Date
