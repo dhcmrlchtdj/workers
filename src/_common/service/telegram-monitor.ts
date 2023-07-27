@@ -70,12 +70,14 @@ export class TelegramMonitor {
 }
 
 function parseRequest(req: Request | undefined) {
-	if (req === undefined) return undefined
-	return {
-		url: req.url,
-		method: req.method,
-		headers: headerToRecord(req.headers),
+	if (req) {
+		return {
+			url: req.url,
+			method: req.method,
+			headers: headerToRecord(req.headers),
+		}
 	}
+	return undefined
 }
 
 function headerToRecord(headers: Headers): Record<string, string> {

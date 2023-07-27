@@ -6,57 +6,56 @@ import {
 	HttpUnsupportedMediaType,
 } from "./http/status.js"
 
-export type Context<ENV> = {
+export type RequestContext<ENV> = {
 	req: Request
 	env: ENV
 	ctx: ExecutionContext
 }
 
 export type Middleware<ENV> = (
-	ctx: Context<ENV>,
-	next: () => Promise<Response>,
+	rc: RequestContext<ENV>,
+	next: NextFn<ENV>,
 ) => Promise<Response>
+
+type NextFn<ENV> = (rc: RequestContext<ENV>) => Promise<Response>
 
 ///
 
-export function compose<ENV>(
-	...fns: Middleware<ENV>[]
-): (ctx: Context<ENV>) => Promise<Response> {
-	return (ctx) => {
-		const f = fns.reduceRight<() => Promise<Response>>(
-			(next, fn) => () => fn(ctx, next),
-			async () => HttpInternalServerError(),
-		)
-		return f()
-	}
+export function compose<ENV>(...fns: Middleware<ENV>[]): NextFn<ENV> {
+	const f = fns.reduceRight<NextFn<ENV>>(
+		(next, fn) => (rc) => fn(rc, next),
+		async () => HttpInternalServerError(),
+	)
+	return f
 }
 
 ///
 
 export function checkMethod<ENV>(...methods: string[]): Middleware<ENV> {
 	methods = methods.map((x) => x.toUpperCase())
-	return (ctx, next) => {
-		if (!methods.includes(ctx.req.method.toUpperCase())) {
+	return (rc, next) => {
+		if (!methods.includes(rc.req.method.toUpperCase())) {
 			throw HttpMethodNotAllowed(methods)
 		}
-		return next()
+		return next(rc)
 	}
 }
 
 export function checkContentType<ENV>(type: string): Middleware<ENV> {
-	return (ctx, next) => {
-		const ct = ctx.req.headers.get("content-type")
+	return (rc, next) => {
+		const ct = rc.req.headers.get("content-type")
 		if (!ct?.startsWith(type)) {
 			throw HttpUnsupportedMediaType(ct ?? "")
 		}
-		return next()
+		return next(rc)
 	}
 }
 
 export function cacheResponse<ENV>(): Middleware<ENV> {
-	return async ({ req, ctx }, next) => {
+	return async (rc, next) => {
+		const { req, ctx } = rc
 		if (req.method.toUpperCase() !== "GET") {
-			return next()
+			return next(rc)
 		}
 
 		// https://developers.cloudflare.com/workers/runtime-apis/cache/#match
@@ -69,7 +68,7 @@ export function cacheResponse<ENV>(): Middleware<ENV> {
 		const cachedResp = await cache.match(cacheKey)
 		if (cachedResp) return cachedResp
 
-		const resp = await next()
+		const resp = await next(rc)
 
 		// https://developers.cloudflare.com/workers/runtime-apis/cache/#invalid-parameters
 		if (resp.status === 200) {
@@ -84,8 +83,9 @@ export function cacheResponse<ENV>(): Middleware<ENV> {
 export function sendErrorToTelegram<ENV extends { BA: KVNamespace }>(
 	name: string,
 ): Middleware<ENV> {
-	return async (ctx, next) => {
-		const item = await ctx.env.BA.get<{
+	return async (rc, next) => {
+		const { req, env, ctx } = rc
+		const item = await env.BA.get<{
 			token: string
 			chatId: number
 		}>("telegram:err", {
@@ -95,14 +95,21 @@ export function sendErrorToTelegram<ENV extends { BA: KVNamespace }>(
 		const monitor = new TelegramMonitor(name, item?.token, item?.chatId)
 
 		try {
-			const resp = await next()
+			rc.ctx = {
+				...rc.ctx,
+				waitUntil: (promise: Promise<unknown>) => {
+					const p = promise.catch((err) => monitor.error(err, req))
+					ctx.waitUntil(p)
+				},
+			}
+			const resp = await next(rc)
 			return resp
 		} catch (err) {
 			if (err instanceof Response) {
-				ctx.ctx.waitUntil(monitor.logResponse(err, ctx.req))
+				ctx.waitUntil(monitor.logResponse(err, req))
 				return err
 			} else {
-				ctx.ctx.waitUntil(monitor.error(err, ctx.req))
+				ctx.waitUntil(monitor.error(err, req))
 				return HttpInternalServerError()
 			}
 		}
