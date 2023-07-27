@@ -76,6 +76,7 @@ export function cacheResponse<ENV>(): Middleware<ENV> {
 			ctx.waitUntil(cache.put(cacheKey, resp.clone()))
 		}
 
+		resp.headers.set("X-Worker-Cache-Status", "MISS")
 		return resp
 	}
 }

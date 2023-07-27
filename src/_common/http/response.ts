@@ -7,7 +7,7 @@ export function build(...builders: ResponseBuilder[]): Response {
 	return new Response(b.body, b)
 }
 
-export function body(data: BodyInit): ResponseBuilder {
+export function body(data: BodyInit | null): ResponseBuilder {
 	return (b) => (b.body = data)
 }
 
@@ -15,8 +15,8 @@ export function status(status: number): ResponseBuilder {
 	return (b) => (b.status = status)
 }
 
-export function headers(headers: Headers): ResponseBuilder {
-	return (b) => (b.headers = headers)
+export function headers(headers: HeadersInit): ResponseBuilder {
+	return (b) => (b.headers = new Headers(headers))
 }
 
 export function header(key: string, value: string): ResponseBuilder {
