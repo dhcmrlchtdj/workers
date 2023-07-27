@@ -1,6 +1,5 @@
 import * as M from "../_common/worker.middleware.js"
 import * as R from "../_common/http/response.js"
-import * as S from "../_common/http/request.js"
 import { HttpBadRequest, HttpNotFound } from "../_common/http/status.js"
 
 type ENV = {
@@ -15,23 +14,11 @@ const exportedHandler: ExportedHandler<ENV> = {
 		const fn = M.compose<ENV>(
 			M.sendErrorToTelegram("r2-share"),
 			M.checkMethod("GET", "HEAD"),
-			async ({ req, env, ctx }) => {
+			M.cacheResponse(),
+			async ({ req, env }) => {
 				const url = new URL(req.url)
 				const path = url.pathname
 				if (!path.startsWith("/share/")) return HttpBadRequest()
-
-				// https://developers.cloudflare.com/workers/runtime-apis/cache/#match
-				// Cloudflare Workers do not support the `ignoreSearch` or `ignoreVary` options on match()
-				url.search = "" // remove querystring
-
-				const cacheKey = S.build(
-					S.url(url),
-					S.method(req.method),
-					S.headers(req.headers),
-				)
-				const cache = caches.default
-				const cachedResp = await cache.match(cacheKey)
-				if (cachedResp) return cachedResp
 
 				const filename = path.slice(7)
 				const object = await env.R2share.get(filename)
@@ -48,11 +35,6 @@ const exportedHandler: ExportedHandler<ENV> = {
 					R.cacheControl("must-revalidate, max-age=86400"), // 1d
 				)
 				object.writeHttpMetadata(resp.headers)
-
-				// https://developers.cloudflare.com/workers/runtime-apis/cache/#invalid-parameters
-				if (cacheKey.method === "GET" && resp.status === 200) {
-					ctx.waitUntil(cache.put(cacheKey, resp.clone()))
-				}
 
 				return resp
 			},

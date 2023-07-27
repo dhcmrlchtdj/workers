@@ -12,19 +12,19 @@ export function build(...builders: RequestBuilder[]): Request {
 	return new Request(req.url!, req)
 }
 
-export function get(url: string): RequestBuilder {
+export function get(url: string | URL): RequestBuilder {
 	return (r) => {
 		r.method = "GET"
 		r.url = new URL(url)
 	}
 }
-export function put(url: string): RequestBuilder {
+export function put(url: string | URL): RequestBuilder {
 	return (r) => {
 		r.method = "PUT"
 		r.url = new URL(url)
 	}
 }
-export function post(url: string): RequestBuilder {
+export function post(url: string | URL): RequestBuilder {
 	return (r) => {
 		r.method = "POST"
 		r.url = new URL(url)

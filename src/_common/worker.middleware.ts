@@ -1,4 +1,5 @@
 import { TelegramMonitor } from "./service/telegram-monitor.js"
+import * as S from "../_common/http/request.js"
 import {
 	HttpInternalServerError,
 	HttpMethodNotAllowed,
@@ -49,6 +50,33 @@ export function checkContentType<ENV>(type: string): Middleware<ENV> {
 			throw HttpUnsupportedMediaType(ct ?? "")
 		}
 		return next()
+	}
+}
+
+export function cacheResponse<ENV>(): Middleware<ENV> {
+	return async ({ req, ctx }, next) => {
+		if (req.method.toUpperCase() !== "GET") {
+			return next()
+		}
+
+		// https://developers.cloudflare.com/workers/runtime-apis/cache/#match
+		// Cloudflare Workers do not support the `ignoreSearch` or `ignoreVary` options on match()
+		const url = new URL(req.url)
+		url.search = "" // remove querystring
+
+		const cacheKey = S.build(S.get(url), S.headers(req.headers))
+		const cache = caches.default
+		const cachedResp = await cache.match(cacheKey)
+		if (cachedResp) return cachedResp
+
+		const resp = await next()
+
+		// https://developers.cloudflare.com/workers/runtime-apis/cache/#invalid-parameters
+		if (resp.status === 200) {
+			ctx.waitUntil(cache.put(cacheKey, resp.clone()))
+		}
+
+		return resp
 	}
 }
 
