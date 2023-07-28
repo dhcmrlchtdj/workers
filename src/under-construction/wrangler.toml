@@ -1,8 +1,0 @@
-main = "index.js"
-name = "under-construction"
-route = "h11.io/*"
-
-compatibility_date = "2023-07-25"
-
-[placement]
-mode = "smart"

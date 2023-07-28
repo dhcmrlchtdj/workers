@@ -1,0 +1,11 @@
+{
+	"name": "under-construction",
+	"main": "index.js",
+	"compatibility_date": "2023-07-25",
+	"route": "h11.io/*",
+	"workers_dev": false,
+	"no_bundle": "true",
+	"placement": {
+		"mode": "smart"
+	}
+}
