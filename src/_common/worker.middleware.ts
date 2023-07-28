@@ -21,7 +21,9 @@ type NextFn<ENV> = (rc: RequestContext<ENV>) => Promise<Response>
 
 ///
 
-export function compose<ENV>(...fns: Middleware<ENV>[]): NextFn<ENV> {
+export function compose<ENV>(
+	...fns: [Middleware<ENV>, ...Middleware<ENV>[]]
+): NextFn<ENV> {
 	const f = fns.reduceRight<NextFn<ENV>>(
 		(next, fn) => (rc) => fn(rc, next),
 		async () => HttpInternalServerError(),
@@ -45,7 +47,7 @@ export function checkContentType<ENV>(type: string): Middleware<ENV> {
 	return (rc, next) => {
 		const ct = rc.req.headers.get("content-type")
 		if (!ct?.startsWith(type)) {
-			throw HttpUnsupportedMediaType(ct ?? "")
+			throw HttpUnsupportedMediaType(`expect "${type}"`)
 		}
 		return next(rc)
 	}
