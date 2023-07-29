@@ -49,7 +49,7 @@ export function clearCookie(
 ///
 
 type ResponseInner = {
-	body: null | BodyInit
+	body?: BodyInit | null
 	status: number
 	headers: Headers
 }

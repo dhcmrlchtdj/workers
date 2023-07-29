@@ -1,4 +1,4 @@
-import { MIME_JSON } from "./mime.js"
+import { MIME_JSON, MIME_SVG, MIME_TEXT } from "./mime.js"
 
 export type Builder<T> = (x: T) => void
 
@@ -18,11 +18,7 @@ export function noop<T>(): Builder<T> {
 	return () => {}
 }
 
-export function body<T extends { body?: BodyInit | null }>(
-	data: BodyInit | null,
-): Builder<T> {
-	return (b) => (b.body = data)
-}
+///
 
 export function headers<T extends { headers: Headers }>(
 	h: HeadersInit,
@@ -49,8 +45,28 @@ export function cacheControl<T extends { headers: Headers }>(
 	return header("cache-control", directives)
 }
 
+///
+
+export function body<T extends { body?: BodyInit | null }>(
+	data: BodyInit | null,
+): Builder<T> {
+	return (b) => (b.body = data)
+}
+
 export function json<T extends { body?: BodyInit | null; headers: Headers }>(
 	data: unknown,
 ): Builder<T> {
 	return compose(body(JSON.stringify(data)), contentType(MIME_JSON))
+}
+
+export function text<T extends { body?: BodyInit | null; headers: Headers }>(
+	data: string,
+): Builder<T> {
+	return compose(body(data), contentType(MIME_TEXT))
+}
+
+export function svg<T extends { body?: BodyInit | null; headers: Headers }>(
+	data: string,
+): Builder<T> {
+	return compose(body(data), contentType(MIME_SVG))
 }

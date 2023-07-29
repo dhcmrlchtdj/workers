@@ -53,7 +53,7 @@ export function checkContentType<ENV>(type: string): Middleware<ENV> {
 	}
 }
 
-export function cacheResponse<ENV>(): Middleware<ENV> {
+export function cacheResponse<ENV>(cfCacheControl?: string): Middleware<ENV> {
 	return async (rc, next) => {
 		const { req, ctx } = rc
 		if (req.method.toUpperCase() !== "GET") {
@@ -74,10 +74,15 @@ export function cacheResponse<ENV>(): Middleware<ENV> {
 
 		// https://developers.cloudflare.com/workers/runtime-apis/cache/#invalid-parameters
 		if (resp.status === 200) {
-			ctx.waitUntil(cache.put(cacheKey, resp.clone()))
+			const r = resp.clone()
+			r.headers.set("x-worker-cache-status", "HIT")
+			if (cfCacheControl) {
+				r.headers.set("cloudflare-cdn-cache-control", cfCacheControl)
+			}
+			ctx.waitUntil(cache.put(cacheKey, r))
 		}
 
-		resp.headers.set("X-Worker-Cache-Status", "MISS")
+		resp.headers.set("x-worker-cache-status", "MISS")
 		return resp
 	}
 }
