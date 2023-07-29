@@ -7,7 +7,7 @@ const exportedHandler: ExportedHandler = {
 	async fetch(req, env, ctx) {
 		const fn = M.compose(
 			M.checkMethod("GET", "HEAD"),
-			M.cacheResponse("public, must-revalidate, max-age=86400"), // 1d
+			M.cacheResponse(),
 			async ({ req }) => {
 				const url = new URL(req.url)
 				const isHEAD = req.method.toUpperCase() === "HEAD"
@@ -15,8 +15,8 @@ const exportedHandler: ExportedHandler = {
 					return R.build(
 						isHEAD ? R.noop : R.text("Under Construction"),
 						R.cacheControl(
-							"private, must-revalidate, max-age=604800",
-						), // 7d
+							"public, must-revalidate, s-maxage=86400, max-age=604800",
+						),
 					)
 				} else if (url.pathname === "/favicon.ico") {
 					const favicon =
@@ -24,8 +24,8 @@ const exportedHandler: ExportedHandler = {
 					return R.build(
 						isHEAD ? R.noop : R.svg(favicon),
 						R.cacheControl(
-							"private, must-revalidate, max-age=604800",
-						), // 7d
+							"public, must-revalidate, s-maxage=86400, max-age=604800",
+						),
 					)
 				} else {
 					return R.build(R.status(302), R.header("location", "/"))

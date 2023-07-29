@@ -53,7 +53,7 @@ export function checkContentType<ENV>(type: string): Middleware<ENV> {
 	}
 }
 
-export function cacheResponse<ENV>(cfCacheControl?: string): Middleware<ENV> {
+export function cacheResponse<ENV>(): Middleware<ENV> {
 	return async (rc, next) => {
 		const { req, ctx } = rc
 		if (req.method.toUpperCase() !== "GET") {
@@ -76,9 +76,6 @@ export function cacheResponse<ENV>(cfCacheControl?: string): Middleware<ENV> {
 		if (resp.status === 200) {
 			const r = resp.clone()
 			r.headers.set("x-worker-cache-status", "HIT")
-			if (cfCacheControl) {
-				r.headers.set("cloudflare-cdn-cache-control", cfCacheControl)
-			}
 			ctx.waitUntil(cache.put(cacheKey, r))
 		}
 

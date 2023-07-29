@@ -14,7 +14,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 		const fn = M.compose<ENV>(
 			M.sendErrorToTelegram("r2-share"),
 			M.checkMethod("GET", "HEAD"),
-			M.cacheResponse("public, must-revalidate, max-age=86400"), // 1d
+			M.cacheResponse(),
 			async ({ req, env }) => {
 				const url = new URL(req.url)
 				const path = url.pathname
@@ -32,7 +32,9 @@ const exportedHandler: ExportedHandler<ENV> = {
 						? R.body(object.body)
 						: R.noop(),
 					R.header("etag", object.httpEtag),
-					R.cacheControl("private, must-revalidate, max-age=604800"), // 7d
+					R.cacheControl(
+						"public, must-revalidate, s-maxage=86400, max-age=604800",
+					),
 				)
 				object.writeHttpMetadata(resp.headers)
 
