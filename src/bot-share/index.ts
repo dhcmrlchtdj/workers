@@ -124,7 +124,7 @@ async function uploadMessageFiles(ctx: BotContext) {
 	}
 	if (msg.photo) {
 		const tasks = msg.photo.map((p) =>
-			uploadFile(ctx, p.file_id, "photo", "image/jpeg"),
+			uploadFile(ctx, p.file_id, "photo.jpg", "image/jpeg"),
 		)
 		await Promise.allSettled(tasks)
 	}
@@ -165,8 +165,9 @@ async function uploadFile(
 	const fileUrl = `https://api.telegram.org/file/bot${bot.token}/${fileInfo.file_path}`
 	const resp = await fetch(fileUrl)
 
-	let objectKey = "telegram/" + fileInfo.file_unique_id
-	if (filename) objectKey += "/" + filename
+	let idWithName = fileInfo.file_unique_id
+	if (filename) idWithName += "." + filename
+	const objectKey = "telegram/" + encodeURIComponent(idWithName)
 	const uploaded = await env.R2share.put(objectKey, resp.body, {
 		httpMetadata: {
 			contentType: contentType ?? "application/octet-stream",
@@ -177,6 +178,7 @@ async function uploadFile(
 	await sendMessage({
 		parse_mode: "HTML",
 		chat_id: msg.chat.id,
+		reply_to_message_id: msg.message_id,
 		text: `https://worker.h11.io/share/${uploaded.key}`,
 		disable_web_page_preview: true,
 	})
