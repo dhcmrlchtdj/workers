@@ -2,6 +2,8 @@ export const HttpOk = (body: BodyInit = "200") =>
 	new Response(body, { status: 200 })
 export const HttpCreated = (body: BodyInit = "201") =>
 	new Response(body, { status: 201 })
+export const HttpAccepted = (body: BodyInit = "202") =>
+	new Response(body, { status: 202 })
 
 // client error
 

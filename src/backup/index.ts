@@ -1,9 +1,9 @@
 import * as M from "../_common/worker.middleware.js"
-import * as R from "../_common/http/response.js"
 import { BackBlaze } from "../_common/service/backblaze.js"
 import { format } from "../_common/format-date.js"
 import { getBA } from "../_common/http/basic_auth.js"
 import {
+	HttpAccepted,
 	HttpBadRequest,
 	HttpInternalServerError,
 	HttpUnauthorized,
@@ -84,10 +84,8 @@ function createHandler(directoryName: string): Handler {
 			uploadToCloudflare(env.R2apac, filename, content),
 		]
 		ec.waitUntil(Promise.allSettled(tasks))
-		await Promise.any(tasks)
 
-		const resp = R.build(R.status(201), R.json({ msg: "created" }))
-		return resp
+		return HttpAccepted()
 	}
 }
 
@@ -122,7 +120,7 @@ function generateFilename(
 ): string {
 	const date = format(new Date(), "YYYYMMDD_hhmmss")
 	if (name) {
-		return directoryName + "/" + date + "_" + name
+		return directoryName + "/" + date + "." + encodeURIComponent(name)
 	} else {
 		return directoryName + "/" + date
 	}
