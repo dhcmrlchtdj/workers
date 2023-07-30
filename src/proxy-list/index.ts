@@ -13,7 +13,7 @@ type KVItem = { password: string; proxy: string[] }
 ///
 
 const exportedHandler: ExportedHandler<ENV> = {
-	async fetch(req, env, ctx) {
+	async fetch(req, env, ec) {
 		const fn = M.compose<ENV>(
 			M.sendErrorToTelegram("proxy-list"),
 			async ({ req, env }) => {
@@ -32,7 +32,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				}
 			},
 		)
-		return fn({ req, env, ctx })
+		return fn({ req, env, ec })
 	},
 }
 export default exportedHandler

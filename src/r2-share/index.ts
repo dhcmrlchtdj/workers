@@ -10,7 +10,7 @@ type ENV = {
 ///
 
 const exportedHandler: ExportedHandler<ENV> = {
-	async fetch(req, env, ctx) {
+	async fetch(req, env, ec) {
 		const fn = M.compose<ENV>(
 			M.sendErrorToTelegram("r2-share"),
 			M.checkMethod("GET", "HEAD"),
@@ -41,7 +41,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				return resp
 			},
 		)
-		return fn({ req, env, ctx })
+		return fn({ req, env, ec })
 	},
 }
 export default exportedHandler

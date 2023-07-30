@@ -4,8 +4,8 @@ exports[`Router error 1`] = `""*" must be the last segment"`;
 
 exports[`Router match all 1`] = `
 {
-  "handler": [Function],
-  "params": Map {
+  "matched": [Function],
+  "param": Map {
     "*" => "",
   },
 }
@@ -13,8 +13,8 @@ exports[`Router match all 1`] = `
 
 exports[`Router match all 2`] = `
 {
-  "handler": [Function],
-  "params": Map {
+  "matched": [Function],
+  "param": Map {
     "*" => "a",
   },
 }
@@ -22,8 +22,8 @@ exports[`Router match all 2`] = `
 
 exports[`Router match all 3`] = `
 {
-  "handler": [Function],
-  "params": Map {
+  "matched": [Function],
+  "param": Map {
     "*" => "a/b",
   },
 }
@@ -31,8 +31,8 @@ exports[`Router match all 3`] = `
 
 exports[`Router match all 4`] = `
 {
-  "handler": [Function],
-  "params": Map {
+  "matched": [Function],
+  "param": Map {
     "*" => "c",
   },
 }
@@ -42,8 +42,8 @@ exports[`Router params 1`] = `null`;
 
 exports[`Router params 2`] = `
 {
-  "handler": [Function],
-  "params": Map {
+  "matched": [Function],
+  "param": Map {
     "p" => "a",
   },
 }
@@ -51,8 +51,8 @@ exports[`Router params 2`] = `
 
 exports[`Router params 3`] = `
 {
-  "handler": [Function],
-  "params": Map {
+  "matched": [Function],
+  "param": Map {
     "p2" => "b",
   },
 }
@@ -62,8 +62,8 @@ exports[`Router params 4`] = `null`;
 
 exports[`Router params 5`] = `
 {
-  "handler": [Function],
-  "params": Map {
+  "matched": [Function],
+  "param": Map {
     "p1" => "x",
   },
 }
@@ -71,8 +71,8 @@ exports[`Router params 5`] = `
 
 exports[`Router params 6`] = `
 {
-  "handler": [Function],
-  "params": Map {
+  "matched": [Function],
+  "param": Map {
     "p2" => "y",
   },
 }
@@ -80,8 +80,8 @@ exports[`Router params 6`] = `
 
 exports[`Router params 7`] = `
 {
-  "handler": [Function],
-  "params": Map {
+  "matched": [Function],
+  "param": Map {
     "p2" => "y",
     "p1" => "x",
   },

@@ -1,80 +1,51 @@
-import { WorkerRouter } from "../../src/_common/router.js"
+import { Tree } from "../../src/_common/router.js"
 
 describe("Router", () => {
 	test("static", () => {
-		const router = new WorkerRouter()
+		const router = new Tree()
 		const fn0 = () => new Response("ok")
 		const fn1 = () => new Response("ok")
 		const fn2 = () => new Response("ok")
 		const fn3 = () => new Response("ok")
-		router.get("/", fn0)
-		router.get("/a", fn1)
-		router.get("/a/b", fn2)
-		router.get("/a/b/c", fn3)
-		expect(router.route(new Request("https://localhost/"))?.handler).toBe(
-			fn0,
-		)
-		expect(router.route(new Request("https://localhost/a"))?.handler).toBe(
-			fn1,
-		)
-		expect(
-			router.route(new Request("https://localhost/a/b"))?.handler,
-		).toBe(fn2)
-		expect(
-			router.route(new Request("https://localhost/a/b/c"))?.handler,
-		).toBe(fn3)
+		router.set("/".split("/"), fn0)
+		router.set("/a".split("/"), fn1)
+		router.set("/a/b".split("/"), fn2)
+		router.set("/a/b/c".split("/"), fn3)
+		expect(router.get("/".split("/"))?.matched).toBe(fn0)
+		expect(router.get("/a".split("/"))?.matched).toBe(fn1)
+		expect(router.get("/a/b".split("/"))?.matched).toBe(fn2)
+		expect(router.get("/a/b/c".split("/"))?.matched).toBe(fn3)
 	})
 	test("match all", () => {
-		const router = new WorkerRouter()
+		const router = new Tree()
 		const fn = () => new Response("ok")
-		router.get("/*", fn)
-		router.get("/a/b/*", fn)
-		expect(
-			router.route(new Request("https://localhost/")),
-		).toMatchSnapshot()
-		expect(
-			router.route(new Request("https://localhost/a")),
-		).toMatchSnapshot()
-		expect(
-			router.route(new Request("https://localhost/a/b")),
-		).toMatchSnapshot()
-		expect(
-			router.route(new Request("https://localhost/a/b/c")),
-		).toMatchSnapshot()
+		router.set("/*".split("/"), fn)
+		router.set("/a/b/*".split("/"), fn)
+		expect(router.get("/".split("/"))).toMatchSnapshot()
+		expect(router.get("/a".split("/"))).toMatchSnapshot()
+		expect(router.get("/a/b".split("/"))).toMatchSnapshot()
+		expect(router.get("/a/b/c".split("/"))).toMatchSnapshot()
 	})
 	test("params", () => {
-		const router = new WorkerRouter()
+		const router = new Tree()
 		const fn = () => new Response("ok")
-		router.get("/:p", fn)
-		router.get("/:p1/:p2", fn)
-		router.get("/a/:p2", fn)
-		router.get("/:p1/b", fn)
-		expect(
-			router.route(new Request("https://localhost/")),
-		).toMatchSnapshot()
-		expect(
-			router.route(new Request("https://localhost/a")),
-		).toMatchSnapshot()
-		expect(
-			router.route(new Request("https://localhost/a/b")),
-		).toMatchSnapshot()
-		expect(
-			router.route(new Request("https://localhost/a/b/c")),
-		).toMatchSnapshot()
-
-		expect(
-			router.route(new Request("https://localhost/x/b")),
-		).toMatchSnapshot()
-		expect(
-			router.route(new Request("https://localhost/a/y")),
-		).toMatchSnapshot()
-		expect(
-			router.route(new Request("https://localhost/x/y")),
-		).toMatchSnapshot()
+		router.set("/:p".split("/"), fn)
+		router.set("/:p1/:p2".split("/"), fn)
+		router.set("/a/:p2".split("/"), fn)
+		router.set("/:p1/b".split("/"), fn)
+		expect(router.get("/".split("/"))).toMatchSnapshot()
+		expect(router.get("/a".split("/"))).toMatchSnapshot()
+		expect(router.get("/a/b".split("/"))).toMatchSnapshot()
+		expect(router.get("/a/b/c".split("/"))).toMatchSnapshot()
+		expect(router.get("/x/b".split("/"))).toMatchSnapshot()
+		expect(router.get("/a/y".split("/"))).toMatchSnapshot()
+		expect(router.get("/x/y".split("/"))).toMatchSnapshot()
 	})
 	test("error", () => {
-		const router = new WorkerRouter()
+		const router = new Tree()
 		const fn = () => new Response("ok")
-		expect(() => router.get("/*/b", fn)).toThrowErrorMatchingSnapshot()
+		expect(() =>
+			router.set("/*/b".split("/"), fn),
+		).toThrowErrorMatchingSnapshot()
 	})
 })

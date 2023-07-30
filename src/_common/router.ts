@@ -13,7 +13,7 @@ class Node<T> {
 	}
 }
 
-class Tree<T> {
+export class Tree<T> {
 	private _root: Node<T>
 	constructor() {
 		this._root = new Node()
@@ -52,102 +52,37 @@ class Tree<T> {
 	private _get(
 		segments: string[],
 		idx: number,
-		params: Map<string, string>,
+		param: Map<string, string>,
 		node: Node<T>,
-	): { matched: T; params: Map<string, string> } | null {
+	): { matched: T; param: Map<string, string> } | null {
 		if (idx === segments.length) {
 			if (node.matched !== null) {
-				return { matched: node.matched, params }
+				return { matched: node.matched, param }
 			}
 		} else {
 			const seg = segments[idx]!
 
 			const staticNode = node.static.get(seg)
 			if (staticNode !== undefined) {
-				const found = this._get(segments, idx + 1, params, staticNode)
+				const found = this._get(segments, idx + 1, param, staticNode)
 				if (found !== null) return found
 			}
 
 			if (seg !== "") {
-				for (const [param, paramNode] of node.parameter) {
-					const found = this._get(
-						segments,
-						idx + 1,
-						params,
-						paramNode,
-					)
+				for (const [paramName, paramNode] of node.parameter) {
+					const found = this._get(segments, idx + 1, param, paramNode)
 					if (found) {
-						found.params.set(param, seg)
+						found.param.set(paramName, seg)
 						return found
 					}
 				}
 			}
 
 			if (node.wildcard !== null) {
-				params.set("*", segments.slice(idx).join("/"))
-				return { matched: node.wildcard, params }
+				param.set("*", segments.slice(idx).join("/"))
+				return { matched: node.wildcard, param }
 			}
 		}
 		return null
-	}
-}
-
-export type Params = Map<string, string>
-type Handler<Context> = (ctx: Context) => Response | Promise<Response>
-
-export class WorkerRouter<Context> {
-	private _router: Tree<Handler<Context>>
-	private _fallbackHandler: Handler<Context> | null
-	constructor() {
-		this._router = new Tree<Handler<Context>>()
-		this._fallbackHandler = null
-	}
-
-	private add(
-		method: string,
-		pathname: string,
-		handler: Handler<Context>,
-	): this {
-		const segments = [method.toUpperCase(), ...pathname.split("/")]
-		this._router.set(segments, handler)
-		return this
-	}
-	head(pathname: string, handler: Handler<Context>): this {
-		return this.add("HEAD", pathname, handler)
-	}
-	get(pathname: string, handler: Handler<Context>): this {
-		return this.add("GET", pathname, handler)
-	}
-	post(pathname: string, handler: Handler<Context>): this {
-		return this.add("POST", pathname, handler)
-	}
-	put(pathname: string, handler: Handler<Context>): this {
-		return this.add("PUT", pathname, handler)
-	}
-	delete(pathname: string, handler: Handler<Context>): this {
-		return this.add("DELETE", pathname, handler)
-	}
-	fallback(handler: Handler<Context>): this {
-		this._fallbackHandler = handler
-		return this
-	}
-
-	route(request: Request): {
-		handler: Handler<Context>
-		params: Params
-	} | null {
-		const url = new URL(request.url)
-		const segments = [
-			request.method.toUpperCase(),
-			...url.pathname.split("/"),
-		]
-		const found = this._router.get(segments)
-		if (found) {
-			return { handler: found.matched, params: found.params }
-		} else if (this._fallbackHandler) {
-			return { handler: this._fallbackHandler, params: new Map() }
-		} else {
-			return null
-		}
 	}
 }

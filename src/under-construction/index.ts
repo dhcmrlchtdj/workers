@@ -4,7 +4,7 @@ import * as R from "../_common/http/response.js"
 ///
 
 const exportedHandler: ExportedHandler = {
-	async fetch(req, env, ctx) {
+	async fetch(req, env, ec) {
 		const fn = M.compose(
 			M.checkMethod("GET", "HEAD"),
 			M.cacheResponse(),
@@ -33,7 +33,7 @@ const exportedHandler: ExportedHandler = {
 				}
 			},
 		)
-		return fn({ req, env, ctx })
+		return fn({ req, env, ec })
 	},
 }
 export default exportedHandler

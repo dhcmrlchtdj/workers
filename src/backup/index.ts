@@ -35,12 +35,12 @@ const HANDERS: Record<string, Handler> = {
 ///
 
 const exportedHandler: ExportedHandler<ENV> = {
-	async fetch(req, env, ctx) {
+	async fetch(req, env, ec) {
 		const fn = M.compose<ENV>(
 			M.sendErrorToTelegram("backup"),
 			M.checkMethod("POST"),
 			M.checkContentType("multipart/form-data; boundary"),
-			async ({ req, env, ctx }) => {
+			async ({ req, env, ec }) => {
 				const { user, pass } = getBA(req.headers.get("authorization"))
 				const item = await env.BA.get<KV_BA>("backup:" + user, {
 					type: "json",
@@ -49,7 +49,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				if (item?.password === pass) {
 					const h = HANDERS[user]
 					if (h) {
-						return h(req, env, ctx)
+						return h(req, env, ec)
 					} else {
 						return HttpInternalServerError()
 					}
@@ -58,7 +58,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				}
 			},
 		)
-		return fn({ req, env, ctx })
+		return fn({ req, env, ec })
 	},
 }
 export default exportedHandler
@@ -69,7 +69,7 @@ function createHandler(directoryName: string): Handler {
 	return async function (
 		req: Request,
 		env: ENV,
-		ctx: ExecutionContext,
+		ec: ExecutionContext,
 	): Promise<Response> {
 		const body = await req.formData()
 		const file = body.get("file")
@@ -83,7 +83,7 @@ function createHandler(directoryName: string): Handler {
 			uploadToBackBlaze(env, filename, content),
 			uploadToCloudflare(env.R2apac, filename, content),
 		]
-		ctx.waitUntil(Promise.allSettled(tasks))
+		ec.waitUntil(Promise.allSettled(tasks))
 		await Promise.any(tasks)
 
 		const resp = R.build(R.status(201), R.json({ msg: "created" }))
