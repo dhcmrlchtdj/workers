@@ -1,5 +1,6 @@
 import { TelegramMonitor } from "./service/telegram-monitor.js"
 import * as S from "../_common/http/request.js"
+import * as R from "../_common/http/response.js"
 import {
 	HttpInternalServerError,
 	HttpMethodNotAllowed,
@@ -45,10 +46,46 @@ type RouterContext<ENV> = {
 }
 export class Router<ENV> {
 	private _router: Tree<Handler<RouterContext<ENV>>>
+	private _use: Middleware<ENV, RouterContext<ENV>>[]
 	constructor() {
 		this._router = new Tree()
+		this._use = []
 	}
-	route(rc: RequestContext<ENV>): Response | Promise<Response> {
+	use(...fns: Middleware<ENV, RouterContext<ENV>>[]): this {
+		this._use.push(...fns)
+		return this
+	}
+	route(
+		method: string | string[],
+		pathname: string,
+		...fns: [
+			Middleware<ENV, RouterContext<ENV>>,
+			...Middleware<ENV, RouterContext<ENV>>[],
+		]
+	): this {
+		if (Array.isArray(method)) {
+			method.forEach((m) => {
+				this._route(m, pathname, fns)
+			})
+		} else {
+			this._route(method, pathname, fns)
+		}
+		return this
+	}
+	private _route(
+		method: string,
+		pathname: string,
+		fns: Middleware<ENV, RouterContext<ENV>>[],
+	) {
+		const segments = [method.toUpperCase(), ...pathname.split("/")]
+		const withUse = [...this._use, ...fns] as [
+			Middleware<ENV, RouterContext<ENV>>,
+			...Middleware<ENV, RouterContext<ENV>>[],
+		]
+		const handler = compose(...withUse)
+		this._router.set(segments, handler)
+	}
+	handle(rc: RequestContext<ENV>): Response | Promise<Response> {
 		const req = rc.req
 		const url = new URL(req.url)
 		const segments = [req.method.toUpperCase(), ...url.pathname.split("/")]
@@ -59,26 +96,6 @@ export class Router<ENV> {
 		} else {
 			return HttpNotFound()
 		}
-	}
-
-	private _add(
-		method: string,
-		pathname: string,
-		handler: Handler<RouterContext<ENV>>,
-	): this {
-		const segments = [method.toUpperCase(), ...pathname.split("/")]
-		this._router.set(segments, handler)
-		return this
-	}
-
-	get(
-		pathname: string,
-		...fns: [
-			Middleware<ENV, RouterContext<ENV>>,
-			...Middleware<ENV, RouterContext<ENV>>[],
-		]
-	): this {
-		return this._add("GET", pathname, compose(...fns))
 	}
 }
 
@@ -176,5 +193,25 @@ export function sendErrorToTelegram<
 				return HttpInternalServerError()
 			}
 		}
+	}
+}
+
+export function serveHeadWithGet<
+	ENV,
+	Context extends RequestContext<ENV>,
+>(): Middleware<ENV, Context> {
+	return async (ctx, next) => {
+		const { req } = ctx
+		if (req.method.toUpperCase() !== "HEAD") {
+			return next(ctx)
+		}
+
+		const getReq = S.build(S.get(req.url), S.headers(req.headers))
+		const getResp = await next({ ...ctx, req: getReq })
+		const headResp = R.build(
+			R.status(getResp.status),
+			R.headers(getResp.headers),
+		)
+		return headResp
 	}
 }

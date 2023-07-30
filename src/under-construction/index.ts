@@ -8,12 +8,12 @@ const exportedHandler: ExportedHandler = {
 		const fn = M.compose(
 			M.checkMethod("GET", "HEAD"),
 			M.cacheResponse(),
+			M.serveHeadWithGet(),
 			async ({ req }) => {
 				const url = new URL(req.url)
-				const isHEAD = req.method.toUpperCase() === "HEAD"
 				if (url.pathname === "/") {
 					return R.build(
-						isHEAD ? R.noop : R.text("Under Construction"),
+						R.text("Under Construction"),
 						R.cacheControl(
 							"public, must-revalidate, s-maxage=86400, max-age=604800",
 						),
@@ -22,7 +22,7 @@ const exportedHandler: ExportedHandler = {
 					const favicon =
 						'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2 2"><circle cx="1" cy="1" r="1" fill="hsl(50,100%,75%)"/></svg>'
 					return R.build(
-						isHEAD ? R.noop : R.svg(favicon),
+						R.svg(favicon),
 						R.header("etag", "circle-fill-hsl-50-100-75"),
 						R.cacheControl(
 							"public, must-revalidate, s-maxage=86400, max-age=604800",
