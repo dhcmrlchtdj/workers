@@ -5,6 +5,7 @@ import type {
 	SendPhoto,
 	SendAnimation,
 	SendVideo,
+	File,
 	EditMessageText,
 	GetChatMember,
 	AnswerCallbackQuery,
@@ -49,6 +50,10 @@ function telegram(
 	token: string,
 	method: "answerCallbackQuery",
 ): (data: AnswerCallbackQuery) => Promise<boolean>
+function telegram(
+	token: string,
+	method: "getFile",
+): (data: { file_id: string }) => Promise<File>
 function telegram(token: string, method: string) {
 	const fn = (data: unknown) => send(token, method, data)
 	return fn as unknown

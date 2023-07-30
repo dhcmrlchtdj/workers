@@ -30,6 +30,11 @@ export type Message = {
 	caption?: string
 	caption_entities?: MessageEntity[]
 	reply_markup?: InlineKeyboardMarkup
+	document?: Document
+	photo?: PhotoSize[]
+	audio?: Audio
+	video?: Video
+	voice?: Voice
 }
 
 export type User = {
@@ -75,15 +80,18 @@ export type MessageEntity = {
 		| "italic"
 		| "underline"
 		| "strikethrough"
+		| "spoiler"
 		| "code"
 		| "pre"
 		| "text_link"
 		| "text_mention"
+		| "custom_emoji"
 	offset: number
 	length: number
 	url?: string
 	user?: User
 	language?: string
+	custom_emoji_id?: string
 }
 
 export type InlineKeyboardMarkup = {
@@ -168,4 +176,55 @@ export type AnswerCallbackQuery = {
 export type GetChatMember = {
 	chat_id: number
 	user_id: number
+}
+
+export type File = {
+	file_id: string
+	file_unique_id: string
+	file_size?: number
+	file_path?: string
+}
+export type Document = {
+	file_id: string
+	file_unique_id: string
+	thumbnail?: PhotoSize
+	file_name?: string
+	mime_type?: string
+	file_size?: number
+}
+export type PhotoSize = {
+	file_id: string
+	file_unique_id: string
+	width: number
+	height: number
+	file_size?: number
+}
+export type Audio = {
+	file_id: string
+	file_unique_id: string
+	duration: number
+	performer?: string
+	title?: string
+	file_name?: string
+	mime_type?: string
+	file_size?: number
+	thumbnail?: PhotoSize
+}
+export type Video = {
+	file_id: string
+	file_unique_id: string
+	width: number
+	height: number
+	duration: number
+	thumbnail?: PhotoSize
+	file_name?: string
+	mime_type?: string
+	file_size?: number
+}
+export type Voice = {
+	file_id: string
+	file_unique_id: string
+	duration: number
+	mime_type?: string
+	file_size?: number
 }

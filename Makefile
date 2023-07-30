@@ -40,6 +40,7 @@ deploy: on_ci
 	cd ./src/current-ip && wrangler deploy
 	cd ./src/proxy-list && wrangler deploy
 	cd ./src/r2-share && wrangler deploy
+	cd ./src/bot-share && wrangler deploy
 
 ###
 
