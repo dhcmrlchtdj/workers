@@ -122,11 +122,17 @@ async function uploadMessageFiles(ctx: BotContext) {
 			msg.document.mime_type,
 		)
 	}
-	if (msg.photo) {
-		const tasks = msg.photo.map((p) =>
-			uploadFile(ctx, p.file_id, "photo.jpg", "image/jpeg"),
-		)
-		await Promise.allSettled(tasks)
+	if (msg.photo && msg.photo.length > 0) {
+		msg.photo.sort((a, b) => {
+			if (a.width > b.width) {
+				return -1
+			} else if (a.height > b.height) {
+				return -1
+			} else {
+				return 1
+			}
+		})
+		await uploadFile(ctx, msg.photo[0]!.file_id, "jpg", "image/jpeg")
 	}
 	if (msg.audio) {
 		await uploadFile(
