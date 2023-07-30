@@ -7,8 +7,8 @@ const exportedHandler: ExportedHandler = {
 	async fetch(req, env, ec) {
 		const fn = M.compose(
 			M.checkMethod("GET", "HEAD"),
-			M.cacheResponse(),
 			M.serveHeadWithGet(),
+			M.cacheResponse(),
 			async ({ req }) => {
 				const url = new URL(req.url)
 				if (url.pathname === "/") {
@@ -23,7 +23,7 @@ const exportedHandler: ExportedHandler = {
 						'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2 2"><circle cx="1" cy="1" r="1" fill="hsl(50,100%,75%)"/></svg>'
 					return R.build(
 						R.svg(favicon),
-						R.header("etag", "circle-fill-hsl-50-100-75"),
+						R.header("etag", '"circle-fill-hsl-50-100-75"'),
 						R.cacheControl(
 							"public, must-revalidate, s-maxage=86400, max-age=604800",
 						),

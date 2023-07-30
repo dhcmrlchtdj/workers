@@ -1,6 +1,9 @@
 import * as M from "../_common/worker.middleware.js"
 import * as R from "../_common/http/response.js"
-import { HttpNotFound } from "../_common/http/status.js"
+import {
+	HttpInternalServerError,
+	HttpNotFound,
+} from "../_common/http/status.js"
 
 type ENV = {
 	BA: KVNamespace
@@ -11,15 +14,18 @@ type ENV = {
 
 const exportedHandler: ExportedHandler<ENV> = {
 	async fetch(req, env, ec) {
-		const router = new M.Router<ENV>()
-		router.route(
-			["GET", "HEAD"],
-			"/share/*",
-			M.sendErrorToTelegram("r2-share"),
-			M.cacheResponse(),
+		const fn = M.compose(
+			M.checkMethod("GET", "HEAD"),
 			M.serveHeadWithGet(),
-			async ({ req, env, param }) => {
-				const filename = param.get("*")!
+			M.cacheResponse(),
+			async ({ req }) => {
+				const url = new URL(req.url)
+				const pathname = url.pathname
+				if (!pathname.startsWith("/share/")) {
+					return HttpInternalServerError()
+				}
+
+				const filename = pathname.slice(7)
 				const object = await env.R2share.get(filename)
 				if (object === null) return HttpNotFound()
 
@@ -38,7 +44,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				return resp
 			},
 		)
-		return router.handle({ req, env, ec })
+		return fn({ req, env, ec })
 	},
 }
 export default exportedHandler
