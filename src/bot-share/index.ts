@@ -1,4 +1,5 @@
 import * as M from "../_common/worker.middleware.js"
+import { MIME_JSON } from "../_common/http/mime.js"
 import { HttpInternalServerError, HttpOk } from "../_common/http/status.js"
 import { telegram } from "../_common/service/telegram.js"
 import type {
@@ -28,7 +29,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 		router.route(
 			"POST",
 			"/telegram/share",
-			M.checkContentType("json"),
+			M.checkContentType(MIME_JSON),
 			async ({ req, env, ec }) => {
 				const bot = await env.BA.get<KV_BOT>("telegram:share", {
 					type: "json",

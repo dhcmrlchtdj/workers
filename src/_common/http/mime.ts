@@ -1,4 +1,5 @@
-export const MIME_YAML = "application/yaml; charset=utf-8"
-export const MIME_TEXT = "text/plain; charset=utf-8"
-export const MIME_JSON = "application/json; charset=utf-8"
+export const MIME_YAML_UTF8 = "application/yaml; charset=utf-8"
+export const MIME_TEXT_UTF8 = "text/plain; charset=utf-8"
+export const MIME_JSON_UTF8 = "application/json; charset=utf-8"
+export const MIME_JSON = "application/json"
 export const MIME_SVG = "image/svg+xml"
