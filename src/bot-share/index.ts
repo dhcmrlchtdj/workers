@@ -1,6 +1,10 @@
 import * as M from "../_common/worker.middleware.js"
 import { MIME_JSON } from "../_common/http/mime.js"
-import { HttpInternalServerError, HttpOk } from "../_common/http/status.js"
+import {
+	HttpBadRequest,
+	HttpInternalServerError,
+	HttpOk,
+} from "../_common/http/status.js"
 import { telegram } from "../_common/service/telegram.js"
 import type {
 	Message,
@@ -40,7 +44,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 					"x-telegram-bot-api-secret-token",
 				)
 				if (bot.webhookSecretToken !== secretToken) {
-					return HttpInternalServerError("secret token")
+					return HttpBadRequest("secret token")
 				}
 
 				const payload = await req.json<Update>()
@@ -103,6 +107,7 @@ async function handleCommand(ctx: BotContext, entity: MessageEntity) {
 				text: `<pre>${JSON.stringify(ctx.msg, null, 4)}</pre>`,
 				disable_web_page_preview: true,
 			})
+			break
 		}
 	}
 }
@@ -110,9 +115,8 @@ async function handleCommand(ctx: BotContext, entity: MessageEntity) {
 async function uploadMessageFiles(ctx: BotContext) {
 	const msg = ctx.msg
 
-	const user = msg.from
-	if (!user) return
-	if (user.id !== ctx.bot.admin) return
+	const chat = msg.chat
+	if (chat.id !== ctx.bot.admin) return
 
 	if (msg.document) {
 		await uploadFile(
@@ -161,10 +165,28 @@ async function uploadFile(
 	filename: string | undefined,
 	contentType: string | undefined,
 ) {
+	const sendMessage = telegram(bot.token, "sendMessage")
+	const uploading = await sendMessage({
+		parse_mode: "HTML",
+		chat_id: msg.chat.id,
+		reply_to_message_id: msg.message_id,
+		text: "uploading...",
+		disable_web_page_preview: true,
+	})
+	const editMessageText = telegram(bot.token, "editMessageText")
+
 	const getFile = telegram(bot.token, "getFile")
 	const fileInfo = await getFile({ file_id: fileId })
 
 	if (!fileInfo.file_path) {
+		const data = JSON.stringify(fileInfo, null, 4)
+		await editMessageText({
+			chat_id: uploading.chat.id,
+			message_id: uploading.message_id,
+			parse_mode: "HTML",
+			disable_web_page_preview: true,
+			text: `couldn't fetch file path<br><pre>${data}</pre>`,
+		})
 		return
 	}
 
@@ -180,12 +202,11 @@ async function uploadFile(
 		},
 	})
 
-	const sendMessage = telegram(bot.token, "sendMessage")
-	await sendMessage({
+	await editMessageText({
+		chat_id: uploading.chat.id,
+		message_id: uploading.message_id,
 		parse_mode: "HTML",
-		chat_id: msg.chat.id,
-		reply_to_message_id: msg.message_id,
-		text: `https://worker.h11.io/share/${uploaded.key}`,
 		disable_web_page_preview: true,
+		text: `https://worker.h11.io/share/${uploaded.key}`,
 	})
 }
