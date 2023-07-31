@@ -8,6 +8,7 @@ import {
 	HttpInternalServerError,
 	HttpUnauthorized,
 } from "../_common/http/status.js"
+import { MIME_FORM_DATA, MIME_OCTET } from "../_common/http/mime.js"
 
 type ENV = {
 	BA: KVNamespace
@@ -40,7 +41,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 		router.post(
 			"/backup",
 			W.sendErrorToTelegram("backup"),
-			W.checkContentType("multipart/form-data; boundary"),
+			W.checkContentType(MIME_FORM_DATA),
 			async ({ req, env, ec }) => {
 				const { user, pass } = getBA(req.headers.get("authorization"))
 				const item = await env.BA.get<KV_BA>("backup:" + user, {
@@ -96,7 +97,7 @@ async function uploadToCloudflare(
 	file: ArrayBuffer,
 ) {
 	await bucket.put(filename, file, {
-		httpMetadata: { contentType: "application/octet-stream" },
+		httpMetadata: { contentType: MIME_OCTET },
 	})
 }
 async function uploadToBackBlaze(
@@ -112,7 +113,7 @@ async function uploadToBackBlaze(
 		throw new Error("invalid b2 account")
 	}
 	const b2 = new BackBlaze(b.id, b.key, b.region, b.bucket)
-	await b2.putObject(filename, file, "application/octet-stream")
+	await b2.putObject(filename, file, MIME_OCTET)
 }
 
 function generateFilename(

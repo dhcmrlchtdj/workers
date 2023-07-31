@@ -6,6 +6,7 @@ import {
 	HttpUnauthorized,
 } from "../_common/http/status.js"
 import { getBA } from "../_common/http/basic_auth.js"
+import { MIME_FORM_DATA, MIME_OCTET } from "../_common/http/mime.js"
 
 type ENV = {
 	BA: KVNamespace
@@ -40,7 +41,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 		})
 		router.put(
 			"/share",
-			W.checkContentType("multipart/form-data; boundary"),
+			W.checkContentType(MIME_FORM_DATA),
 			async ({ req, env }) => {
 				const { pass } = getBA(req.headers.get("authorization"))
 				const item = await env.BA.get<{ password: string }>(
@@ -61,8 +62,10 @@ const exportedHandler: ExportedHandler<ENV> = {
 				if (!(file instanceof File)) {
 					return HttpBadRequest("`file` is not a File")
 				}
+
 				const id = String(Math.random()).slice(2)
-				const objectKey = `${Date.now()}.${id}.${file.name}`
+				let objectKey = `${Date.now()}.${id}`
+				if (file.name) objectKey += "." + file.name
 
 				const content = await file.arrayBuffer()
 
@@ -71,8 +74,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 					content,
 					{
 						httpMetadata: {
-							contentType:
-								file.type ?? "application/octet-stream",
+							contentType: file.type ?? MIME_OCTET,
 						},
 						customMetadata: {
 							via: "http-api",
