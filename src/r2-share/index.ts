@@ -20,8 +20,8 @@ const exportedHandler: ExportedHandler<ENV> = {
 		router.use("/*", W.sendErrorToTelegram("r2-share"))
 		router.head("/share/*", W.serveHeadWithGet())
 		router.get("/share/*", W.cacheResponse(), async ({ req, param }) => {
-			const filename = param.get("*")
-			const object = await env.R2share.get(filename!)
+			const filename = param.get("*")!
+			const object = await env.R2share.get(filename)
 			if (object === null) return HttpNotFound()
 
 			const reqEtag = req.headers.get("If-None-Match")

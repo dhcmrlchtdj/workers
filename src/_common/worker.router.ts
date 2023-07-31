@@ -71,7 +71,7 @@ export class Router<ENV> {
 						hIdx = 0
 						handlers = hs
 						const nextHandler = handlers[0]!
-						return nextHandler(ctx, next)
+						return nextHandler({ ...ctx, param }, next)
 					}
 				}
 			}

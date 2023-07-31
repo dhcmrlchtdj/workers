@@ -39,6 +39,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 					cacheTtl: 60 * 60, // 60min
 				})
 				if (bot === null) return HttpInternalServerError("config")
+
 				const secretToken = req.headers.get(
 					"x-telegram-bot-api-secret-token",
 				)
