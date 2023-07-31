@@ -1,4 +1,4 @@
-import * as M from "../_common/worker.middleware.js"
+import * as W from "../_common/worker.router.js"
 import { BackBlaze } from "../_common/service/backblaze.js"
 import { format } from "../_common/format-date.js"
 import { getBA } from "../_common/http/basic_auth.js"
@@ -36,10 +36,11 @@ const HANDERS: Record<string, Handler> = {
 
 const exportedHandler: ExportedHandler<ENV> = {
 	async fetch(req, env, ec) {
-		const fn = M.compose<ENV>(
-			M.sendErrorToTelegram("backup"),
-			M.checkMethod("POST"),
-			M.checkContentType("multipart/form-data; boundary"),
+		const router = new W.Router<ENV>()
+		router.post(
+			"/backup",
+			W.sendErrorToTelegram("backup"),
+			W.checkContentType("multipart/form-data; boundary"),
 			async ({ req, env, ec }) => {
 				const { user, pass } = getBA(req.headers.get("authorization"))
 				const item = await env.BA.get<KV_BA>("backup:" + user, {
@@ -58,7 +59,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				}
 			},
 		)
-		return fn({ req, env, ec })
+		return router.handle(req, env, ec)
 	},
 }
 export default exportedHandler

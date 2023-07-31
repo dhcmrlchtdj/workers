@@ -1,4 +1,4 @@
-import * as M from "../_common/worker.middleware.js"
+import * as W from "../_common/worker.router.js"
 import { MIME_JSON } from "../_common/http/mime.js"
 import {
 	HttpBadRequest,
@@ -28,12 +28,11 @@ type KV_BOT = {
 
 const exportedHandler: ExportedHandler<ENV> = {
 	async fetch(req, env, ec) {
-		const router = new M.Router<ENV>()
-		router.use(M.sendErrorToTelegram("telegram-share"))
-		router.route(
-			"POST",
+		const router = new W.Router<ENV>()
+		router.post(
 			"/telegram/share",
-			M.checkContentType(MIME_JSON),
+			W.sendErrorToTelegram("telegram-share"),
+			W.checkContentType(MIME_JSON),
 			async ({ req, env, ec }) => {
 				const bot = await env.BA.get<KV_BOT>("telegram:share", {
 					type: "json",
@@ -56,7 +55,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				return HttpOk()
 			},
 		)
-		return router.handle({ req, env, ec })
+		return router.handle(req, env, ec)
 	},
 }
 export default exportedHandler

@@ -1,4 +1,4 @@
-import * as M from "../_common/worker.middleware.js"
+import * as W from "../_common/worker.router.js"
 import * as R from "../_common/http/response.js"
 import { HttpUnauthorized } from "../_common/http/status.js"
 import { getBA } from "../_common/http/basic_auth.js"
@@ -14,8 +14,10 @@ type KVItem = { password: string; proxy: string[] }
 
 const exportedHandler: ExportedHandler<ENV> = {
 	async fetch(req, env, ec) {
-		const fn = M.compose<ENV>(
-			M.sendErrorToTelegram("proxy-list"),
+		const router = new W.Router<ENV>()
+		router.get(
+			"/proxy-list",
+			W.sendErrorToTelegram("proxy-list"),
 			async ({ req, env }) => {
 				const { user, pass } = getBA(req.headers.get("authorization"))
 				const item = await env.BA.get<KVItem>("proxy:" + user, {
@@ -32,7 +34,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				}
 			},
 		)
-		return fn({ req, env, ec })
+		return router.handle(req, env, ec)
 	},
 }
 export default exportedHandler

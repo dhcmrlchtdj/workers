@@ -1,4 +1,4 @@
-import * as M from "../_common/worker.middleware.js"
+import * as W from "../_common/worker.router.js"
 import { getBA } from "../_common/http/basic_auth.js"
 import {
 	encodeHtmlEntities as enc,
@@ -20,8 +20,10 @@ type KVItem = { password: string; ip: string }
 
 const exportedHandler: ExportedHandler<ENV> = {
 	async fetch(req, env, ec) {
-		const fn = M.compose<ENV>(
-			M.sendErrorToTelegram("current-ip"),
+		const router = new W.Router<ENV>()
+		router.get(
+			"/current-ip",
+			W.sendErrorToTelegram("current-ip"),
 			async ({ req, env }) => {
 				const currIp = req.headers.get("CF-Connecting-IP")
 				if (currIp === null) {
@@ -41,7 +43,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				}
 			},
 		)
-		return fn({ req, env, ec })
+		return router.handle(req, env, ec)
 	},
 }
 export default exportedHandler

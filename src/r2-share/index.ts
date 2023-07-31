@@ -1,4 +1,4 @@
-import * as M from "../_common/worker.middleware.js"
+import * as W from "../_common/worker.router.js"
 import * as R from "../_common/http/response.js"
 import {
 	HttpBadRequest,
@@ -17,37 +17,31 @@ type ENV = {
 
 const exportedHandler: ExportedHandler<ENV> = {
 	async fetch(req, env, ec) {
-		const router = new M.Router<ENV>()
-		router.use(M.sendErrorToTelegram("r2-share"))
-		router.route(
-			["GET", "HEAD"],
-			"/share/*",
-			M.serveHeadWithGet(),
-			M.cacheResponse(),
-			async ({ req, param }) => {
-				const filename = param.get("*")
-				const object = await env.R2share.get(filename!)
-				if (object === null) return HttpNotFound()
+		const router = new W.Router<ENV>()
+		router.use("/*", W.sendErrorToTelegram("r2-share"))
+		router.head("/share/*", W.serveHeadWithGet())
+		router.get("/share/*", W.cacheResponse(), async ({ req, param }) => {
+			const filename = param.get("*")
+			const object = await env.R2share.get(filename!)
+			if (object === null) return HttpNotFound()
 
-				const reqEtag = req.headers.get("If-None-Match")
-				const resp = R.build(
-					reqEtag?.includes(object.httpEtag)
-						? R.status(304)
-						: R.body(object.body),
-					R.header("etag", object.httpEtag),
-					R.cacheControl(
-						"public, must-revalidate, s-maxage=86400, max-age=604800",
-					),
-				)
-				object.writeHttpMetadata(resp.headers)
+			const reqEtag = req.headers.get("If-None-Match")
+			const resp = R.build(
+				reqEtag?.includes(object.httpEtag)
+					? R.status(304)
+					: R.body(object.body),
+				R.header("etag", object.httpEtag),
+				R.cacheControl(
+					"public, must-revalidate, s-maxage=86400, max-age=604800",
+				),
+			)
+			object.writeHttpMetadata(resp.headers)
 
-				return resp
-			},
-		)
-		router.route(
-			"PUT",
+			return resp
+		})
+		router.put(
 			"/share",
-			M.checkContentType("multipart/form-data; boundary"),
+			W.checkContentType("multipart/form-data; boundary"),
 			async ({ req, env }) => {
 				const { pass } = getBA(req.headers.get("authorization"))
 				const item = await env.BA.get<{ password: string }>(
@@ -88,7 +82,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				return resp
 			},
 		)
-		return router.handle({ req, env, ec })
+		return router.handle(req, env, ec)
 	},
 }
 export default exportedHandler
