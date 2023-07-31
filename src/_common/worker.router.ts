@@ -27,25 +27,30 @@ type Handler<ENV> = (
 type NextFn<ENV> = (ctx: RouterContext<ENV>) => Response | Promise<Response>
 
 export class Router<ENV> {
-	private _route: [Matcher<ENV>, NonEmptyArray<Handler<ENV>>][]
+	private _route: {
+		matcher: Matcher<ENV>
+		handlers: Handler<ENV>[]
+	}[]
 	constructor() {
-		this._route = []
+		this._route = [
+			{ matcher: createMatcher(""), handlers: [] }, // sentinel
+		]
 	}
 
-	use(pattern: string, ...handler: NonEmptyArray<Handler<ENV>>) {
-		this._route.push([createMatcher(pattern), handler])
+	use(pattern: string, ...handlers: NonEmptyArray<Handler<ENV>>) {
+		this._route.push({ matcher: createMatcher(pattern), handlers })
 	}
-	head(pattern: string, ...handler: NonEmptyArray<Handler<ENV>>) {
-		this._route.push([createMatcher(pattern, "HEAD"), handler])
+	head(pattern: string, ...handlers: NonEmptyArray<Handler<ENV>>) {
+		this._route.push({ matcher: createMatcher(pattern, "HEAD"), handlers })
 	}
-	get(pattern: string, ...handler: NonEmptyArray<Handler<ENV>>) {
-		this._route.push([createMatcher(pattern, "GET"), handler])
+	get(pattern: string, ...handlers: NonEmptyArray<Handler<ENV>>) {
+		this._route.push({ matcher: createMatcher(pattern, "GET"), handlers })
 	}
-	put(pattern: string, ...handler: NonEmptyArray<Handler<ENV>>) {
-		this._route.push([createMatcher(pattern, "PUT"), handler])
+	put(pattern: string, ...handlers: NonEmptyArray<Handler<ENV>>) {
+		this._route.push({ matcher: createMatcher(pattern, "PUT"), handlers })
 	}
-	post(pattern: string, ...handler: NonEmptyArray<Handler<ENV>>) {
-		this._route.push([createMatcher(pattern, "POST"), handler])
+	post(pattern: string, ...handlers: NonEmptyArray<Handler<ENV>>) {
+		this._route.push({ matcher: createMatcher(pattern, "POST"), handlers })
 	}
 
 	handle(
@@ -53,23 +58,22 @@ export class Router<ENV> {
 		env: ENV,
 		ec: ExecutionContext,
 	): Response | Promise<Response> {
-		let mIdx = -1
+		let mIdx = 0
 		let hIdx = -1
-		let handlers: Handler<ENV>[] = []
 		const next: NextFn<ENV> = (ctx: RouterContext<ENV>) => {
 			hIdx++
+			const { handlers } = this._route[mIdx]!
 			if (hIdx < handlers.length) {
 				const nextHandler = handlers[hIdx]!
 				return nextHandler(ctx, next)
 			}
 
 			for (mIdx++; mIdx < this._route.length; mIdx++) {
-				const [matcher, hs] = this._route[mIdx]!
-				if (hs.length > 0) {
+				const { matcher, handlers } = this._route[mIdx]!
+				if (handlers.length > 0) {
 					const param = matcher(ctx)
 					if (param) {
 						hIdx = 0
-						handlers = hs
 						const nextHandler = handlers[0]!
 						return nextHandler({ ...ctx, param }, next)
 					}
