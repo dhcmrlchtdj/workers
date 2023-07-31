@@ -35,6 +35,9 @@ export type Message = {
 	audio?: Audio
 	video?: Video
 	voice?: Voice
+	sticker?: Sticker
+	video_note?: VideoNote
+	animation?: Animation
 }
 
 export type User = {
@@ -227,4 +230,46 @@ export type Voice = {
 	duration: number
 	mime_type?: string
 	file_size?: number
+}
+export type Sticker = {
+	file_id: string
+	file_unique_id: string
+	type: "regular" | "mask" | "custom_emoji"
+	width: number
+	height: number
+	is_animated: boolean
+	is_video: boolean
+	thumbnail?: PhotoSize
+	emoji?: string
+	set_name?: string
+	premium_animation?: File
+	mask_position?: MaskPosition
+	custom_emoji_id?: string
+	needs_repainting?: true
+	file_size?: number
+}
+export type VideoNote = {
+	file_id: string
+	file_unique_id: string
+	length: number
+	duration: number
+	thumbnail?: PhotoSize
+	file_size?: number
+}
+export type Animation = {
+	file_id: string
+	file_unique_id: string
+	width: number
+	height: null
+	duration: null
+	thumbnail?: PhotoSize
+	file_name?: string
+	mime_type?: string
+	file_size?: number
+}
+export type MaskPosition = {
+	point: string
+	x_shift: number
+	y_shift: number
+	scale: number
 }

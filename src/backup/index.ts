@@ -55,7 +55,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 						return HttpInternalServerError()
 					}
 				} else {
-					throw HttpUnauthorized(["Basic"])
+					return HttpUnauthorized(["Basic"])
 				}
 			},
 		)
@@ -75,7 +75,7 @@ function createHandler(directoryName: string): Handler {
 		const body = await req.formData()
 		const file = body.get("file")
 		if (!(file instanceof File)) {
-			throw HttpBadRequest("`file` is not a File")
+			return HttpBadRequest("`file` is not a File")
 		}
 		const filename = generateFilename(directoryName, file.name)
 		const content = await file.arrayBuffer()

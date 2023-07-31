@@ -30,7 +30,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 					const resp = R.build(R.text(b64))
 					return resp
 				} else {
-					throw HttpUnauthorized(["Basic"])
+					return HttpUnauthorized(["Basic"])
 				}
 			},
 		)

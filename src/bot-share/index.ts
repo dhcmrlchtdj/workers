@@ -156,6 +156,17 @@ async function uploadMessageFiles(ctx: BotContext) {
 	if (msg.voice) {
 		await uploadFile(ctx, msg.voice.file_id, "voice", msg.voice.mime_type)
 	}
+	if (msg.video_note) {
+		await uploadFile(ctx, msg.video_note.file_id, "voice_note", undefined)
+	}
+	if (msg.sticker) {
+		await uploadFile(
+			ctx,
+			msg.sticker.file_id,
+			msg.sticker.set_name,
+			undefined,
+		)
+	}
 }
 
 async function uploadFile(
@@ -192,14 +203,20 @@ async function uploadFile(
 	const fileUrl = `https://api.telegram.org/file/bot${bot.token}/${fileInfo.file_path}`
 	const resp = await fetch(fileUrl)
 
-	let idWithName = fileInfo.file_unique_id
-	if (filename) idWithName += "." + filename
-	const objectKey = "telegram/" + encodeURIComponent(idWithName)
-	const uploaded = await env.R2share.put(objectKey, resp.body, {
-		httpMetadata: {
-			contentType: contentType ?? "application/octet-stream",
+	let objectKey = `${Date.now()}.${fileInfo.file_unique_id}`
+	if (filename) objectKey += "." + filename
+	const uploaded = await env.R2share.put(
+		encodeURIComponent(objectKey),
+		resp.body,
+		{
+			httpMetadata: {
+				contentType: contentType ?? "application/octet-stream",
+			},
+			customMetadata: {
+				via: "telegram-bot",
+			},
 		},
-	})
+	)
 
 	await editMessageText({
 		chat_id: uploading.chat.id,

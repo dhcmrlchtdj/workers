@@ -6,7 +6,6 @@ import {
 	HttpUnauthorized,
 } from "../_common/http/status.js"
 import { getBA } from "../_common/http/basic_auth.js"
-import { format } from "../_common/format-date.js"
 
 type ENV = {
 	BA: KVNamespace
@@ -34,8 +33,8 @@ const exportedHandler: ExportedHandler<ENV> = {
 				R.cacheControl(
 					"public, must-revalidate, s-maxage=86400, max-age=604800",
 				),
+				(b) => object.writeHttpMetadata(b.headers),
 			)
-			object.writeHttpMetadata(resp.headers)
 
 			return resp
 		})
@@ -60,20 +59,26 @@ const exportedHandler: ExportedHandler<ENV> = {
 				const body = await req.formData()
 				const file = body.get("file")
 				if (!(file instanceof File)) {
-					throw HttpBadRequest("`file` is not a File")
+					return HttpBadRequest("`file` is not a File")
 				}
-				const date = format(new Date(), "YYYYMMDD_hhmmss")
 				const id = String(Math.random()).slice(2)
-				const name = encodeURIComponent(file.name)
-				const filename = `${date}.${id}.${name}`
+				const objectKey = `${Date.now()}.${id}.${file.name}`
 
 				const content = await file.arrayBuffer()
 
-				const uploaded = await env.R2share.put(filename, content, {
-					httpMetadata: {
-						contentType: file.type ?? "application/octet-stream",
+				const uploaded = await env.R2share.put(
+					encodeURIComponent(objectKey),
+					content,
+					{
+						httpMetadata: {
+							contentType:
+								file.type ?? "application/octet-stream",
+						},
+						customMetadata: {
+							via: "http-api",
+						},
 					},
-				})
+				)
 
 				const resp = R.build(
 					R.status(201),
