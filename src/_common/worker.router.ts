@@ -53,8 +53,8 @@ export class Router<ENV> {
 		env: ENV,
 		ec: ExecutionContext,
 	): Response | Promise<Response> {
-		let mIdx = 0
-		let hIdx = 0
+		let mIdx = -1
+		let hIdx = -1
 		let handlers: Handler<ENV>[] = []
 		const next: NextFn<ENV> = (ctx: RouterContext<ENV>) => {
 			hIdx++
@@ -63,16 +63,16 @@ export class Router<ENV> {
 				return nextHandler(ctx, next)
 			}
 
-			mIdx++
-			while (mIdx < this._route.length) {
+			for (mIdx++; mIdx < this._route.length; mIdx++) {
 				const [matcher, hs] = this._route[mIdx]!
-				if (hs.length === 0) continue
-				const param = matcher(ctx)
-				if (param) {
-					hIdx = 0
-					handlers = hs
-					const nextHandler = handlers[0]!
-					return nextHandler(ctx, next)
+				if (hs.length > 0) {
+					const param = matcher(ctx)
+					if (param) {
+						hIdx = 0
+						handlers = hs
+						const nextHandler = handlers[0]!
+						return nextHandler(ctx, next)
+					}
 				}
 			}
 
@@ -111,7 +111,7 @@ function patternMatch(pattern: string, path: string) {
 		if (patternPart === "*") {
 			param.set("*", pathParts.slice(j).join("/"))
 			i++
-			j = pathParts.length
+			j = pathLen
 		} else if (patternPart.startsWith(":")) {
 			param.set(patternPart.slice(1), pathPart)
 			i++
