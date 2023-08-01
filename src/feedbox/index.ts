@@ -1,25 +1,30 @@
+import * as S from "../_common/http/request.js"
+
 export default {
 	async fetch(request: Request) {
 		const host = "feedbox.h11.dev"
-		const url = new URL(request.url)
-		url.host = host
-		const req = new Request(url.toString(), {
-			method: request.method,
-			headers: request.headers,
-			body: request.body,
-			redirect: "manual",
-		})
-		req.headers.set("host", host)
 
-		const xForwardFor = appendIpToXForwardFor(
-			req.headers.get("X-Forwarded-For"),
-			req.headers.get("CF-Connecting-IP"),
+		const req = S.build(
+			S.method(request.method),
+			S.url(request.url),
+			S.headers(request.headers),
+			S.body(request.body),
+			(b) => (b.url!.host = host),
+			S.header("host", host),
+			(b) => {
+				const xForwardFor = appendIpToXForwardFor(
+					request.headers.get("X-Forwarded-For"),
+					request.headers.get("CF-Connecting-IP"),
+				)
+				if (xForwardFor) {
+					b.headers.set("x-forwarded-for", xForwardFor)
+				}
+			},
 		)
-		if (xForwardFor) {
-			req.headers.set("X-Forwarded-For", xForwardFor)
-		}
-
-		return fetch(req)
+		return fetch(req, {
+			redirect: "manual",
+			cf: { cacheEverything: true },
+		})
 	},
 }
 
