@@ -1,4 +1,4 @@
-import * as W from "../_common/worker.router.js"
+import * as W from "../_common/worker/index.js"
 import { getBA } from "../_common/http/basic_auth.js"
 import {
 	encodeHtmlEntities as enc,

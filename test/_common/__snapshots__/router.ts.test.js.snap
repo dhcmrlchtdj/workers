@@ -1,0 +1,148 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Worker Router all 1`] = `
+{
+  "in": "/",
+  "out": "{"r":3,"p":[["*","/"]]}",
+}
+`;
+
+exports[`Worker Router all 2`] = `
+{
+  "in": "/a",
+  "out": "{"r":2,"p":[["*","a"]]}",
+}
+`;
+
+exports[`Worker Router all 3`] = `
+{
+  "in": "/a/",
+  "out": "{"r":2,"p":[["*","a/"]]}",
+}
+`;
+
+exports[`Worker Router all 4`] = `
+{
+  "in": "/a/b",
+  "out": "{"r":1,"p":[["*","b"]]}",
+}
+`;
+
+exports[`Worker Router all 5`] = `
+{
+  "in": "/a/b/c",
+  "out": "{"r":1,"p":[["*","b/c"]]}",
+}
+`;
+
+exports[`Worker Router all 6`] = `
+{
+  "in": "/b",
+  "out": "{"r":2,"p":[["*","b"]]}",
+}
+`;
+
+exports[`Worker Router param 1`] = `
+{
+  "in": "/",
+  "out": "404",
+}
+`;
+
+exports[`Worker Router param 2`] = `
+{
+  "in": "/a",
+  "out": "{"r":1,"p":[["p","a"]]}",
+}
+`;
+
+exports[`Worker Router param 3`] = `
+{
+  "in": "/a/",
+  "out": "404",
+}
+`;
+
+exports[`Worker Router param 4`] = `
+{
+  "in": "/a/b",
+  "out": "{"r":2,"p":[["p2","b"]]}",
+}
+`;
+
+exports[`Worker Router param 5`] = `
+{
+  "in": "/a/b/c",
+  "out": "404",
+}
+`;
+
+exports[`Worker Router param 6`] = `
+{
+  "in": "/x/b",
+  "out": "{"r":3,"p":[["p1","x"]]}",
+}
+`;
+
+exports[`Worker Router param 7`] = `
+{
+  "in": "/a/y",
+  "out": "{"r":2,"p":[["p2","y"]]}",
+}
+`;
+
+exports[`Worker Router param 8`] = `
+{
+  "in": "/x/y",
+  "out": "{"r":4,"p":[["p1","x"],["p2","y"]]}",
+}
+`;
+
+exports[`Worker Router static 1`] = `
+{
+  "in": "/",
+  "out": "{"r":1}",
+}
+`;
+
+exports[`Worker Router static 2`] = `
+{
+  "in": "/a",
+  "out": "{"r":2}",
+}
+`;
+
+exports[`Worker Router static 3`] = `
+{
+  "in": "/a/",
+  "out": "{"r":3}",
+}
+`;
+
+exports[`Worker Router static 4`] = `
+{
+  "in": "/a/b",
+  "out": "{"r":4}",
+}
+`;
+
+exports[`Worker Router static 5`] = `
+{
+  "in": "/a/b/",
+  "out": "404",
+}
+`;
+
+exports[`Worker Router static 6`] = `
+{
+  "in": "/a/b/c",
+  "out": "404",
+}
+`;
+
+exports[`Worker Router static 7`] = `
+{
+  "in": "/b",
+  "out": "404",
+}
+`;

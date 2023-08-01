@@ -1,4 +1,4 @@
-import * as W from "../_common/worker.router.js"
+import * as W from "../_common/worker/index.js"
 import { BackBlaze } from "../_common/service/backblaze.js"
 import { format } from "../_common/format-date.js"
 import { getBA } from "../_common/http/basic_auth.js"

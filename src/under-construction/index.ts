@@ -1,4 +1,4 @@
-import * as W from "../_common/worker.router.js"
+import * as W from "../_common/worker/index.js"
 import * as R from "../_common/http/response.js"
 
 ///
@@ -6,7 +6,7 @@ import * as R from "../_common/http/response.js"
 const exportedHandler: ExportedHandler = {
 	async fetch(req, env, ec) {
 		const router = new W.Router()
-		router.head("/*", W.serveHeadWithGet())
+		router.head("*", W.serveHeadWithGet())
 		router.get("/", W.cacheResponse(), async () => {
 			return R.build(
 				R.text("Under Construction"),
@@ -25,9 +25,6 @@ const exportedHandler: ExportedHandler = {
 					"public, must-revalidate, s-maxage=86400, max-age=604800",
 				),
 			)
-		})
-		router.get("/*", async () => {
-			return R.build(R.status(302), R.header("location", "/"))
 		})
 		return router.handle(req, env, ec)
 	},

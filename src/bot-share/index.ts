@@ -1,4 +1,4 @@
-import * as W from "../_common/worker.router.js"
+import * as W from "../_common/worker/index.js"
 import { MIME_JPEG, MIME_JSON, MIME_OCTET } from "../_common/http/mime.js"
 import {
 	HttpBadRequest,

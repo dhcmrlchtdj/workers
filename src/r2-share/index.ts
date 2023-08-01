@@ -1,4 +1,4 @@
-import * as W from "../_common/worker.router.js"
+import * as W from "../_common/worker/index.js"
 import * as R from "../_common/http/response.js"
 import {
 	HttpBadRequest,
@@ -18,7 +18,7 @@ type ENV = {
 const exportedHandler: ExportedHandler<ENV> = {
 	async fetch(req, env, ec) {
 		const router = new W.Router<ENV>()
-		router.use("/*", W.sendErrorToTelegram("r2-share"))
+		router.use("*", W.sendErrorToTelegram("r2-share"))
 		router.head("/share/*", W.serveHeadWithGet())
 		router.get("/share/*", W.cacheResponse(), async ({ req, param }) => {
 			const filename = param.get("*")!

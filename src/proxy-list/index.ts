@@ -1,4 +1,4 @@
-import * as W from "../_common/worker.router.js"
+import * as W from "../_common/worker/index.js"
 import * as R from "../_common/http/response.js"
 import { HttpUnauthorized } from "../_common/http/status.js"
 import { getBA } from "../_common/http/basic_auth.js"
