@@ -21,10 +21,7 @@ export default {
 				}
 			},
 		)
-		return fetch(req, {
-			redirect: "manual",
-			cf: { cacheEverything: true },
-		})
+		return fetch(req, { redirect: "manual" })
 	},
 }
 
