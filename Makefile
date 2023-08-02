@@ -24,7 +24,7 @@ lint:
 	eslint --ext=".ts" src test
 
 test: $(test_compiled)
-	jest --verbose=true --rootDir=./test $^
+	NODE_OPTIONS=--experimental-vm-modules jest --verbose=true --rootDir=./test $^
 
 # clean:
 
@@ -67,7 +67,7 @@ node_modules:
 	pnpm install
 
 $(test_compiled): node_modules/tsconfig.tsbuildinfo
-	esbuild --bundle --format=esm --target=esnext --platform=neutral --outfile=$@ ${@:.test.js=}
+	esbuild --bundle --format=esm --target=esnext --platform=node --outfile=$@ ${@:.test.js=}
 
 # https://developers.cloudflare.com/workers/platform/compatibility-dates/#change-history
 update_compatibility_date:

@@ -1,5 +1,5 @@
 import * as W from "../_common/worker/index.js"
-import { MIME_JPEG, MIME_JSON, MIME_OCTET } from "../_common/http/mime.js"
+import { MIME_JSON } from "../_common/http/mime.js"
 import {
 	HttpBadRequest,
 	HttpInternalServerError,
@@ -11,6 +11,7 @@ import type {
 	MessageEntity,
 	Update,
 } from "../_common/service/telegram-typings.js"
+import { detectContentType, selectedPatterns } from "../_common/http/sniff.js"
 
 type ENV = {
 	BA: KVNamespace
@@ -136,7 +137,7 @@ async function uploadMessageFiles(ctx: BotContext) {
 				return 1
 			}
 		})
-		await uploadFile(ctx, msg.photo[0]!.file_id, "jpg", MIME_JPEG)
+		await uploadFile(ctx, msg.photo[0]!.file_id, "photo", undefined)
 	}
 	if (msg.audio) {
 		await uploadFile(
@@ -203,16 +204,18 @@ async function uploadFile(
 
 	const fileUrl = `https://api.telegram.org/file/bot${bot.token}/${fileInfo.file_path}`
 	const resp = await fetch(fileUrl)
+	const body = await resp.arrayBuffer()
 
 	let objectKey = `${Date.now()}.${fileInfo.file_unique_id}`
 	if (filename) objectKey += "." + filename
 
 	const uploaded = await env.R2share.put(
 		encodeURIComponent(objectKey),
-		resp.body,
+		body,
 		{
 			httpMetadata: {
-				contentType: contentType ?? MIME_OCTET,
+				contentType:
+					contentType ?? detectContentType(body, selectedPatterns),
 			},
 			customMetadata: {
 				via: "telegram-bot",

@@ -13,8 +13,8 @@ describe("S3", () => {
 	}
 
 	test("signAWS4Header | Get Object", async () => {
-		jest.useFakeTimers()
-		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
+		import.meta.jest.useFakeTimers()
+		import.meta.jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
 		const r = await addAws4SignatureHeader(
 			S.build(
@@ -36,8 +36,8 @@ describe("S3", () => {
 	})
 
 	test("signAWS4Header | Put Object", async () => {
-		jest.useFakeTimers()
-		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
+		import.meta.jest.useFakeTimers()
+		import.meta.jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
 		const r = await addAws4SignatureHeader(
 			S.build(
@@ -61,8 +61,8 @@ describe("S3", () => {
 	})
 
 	test("signAWS4Header | Get Bucket Lifecycle", async () => {
-		jest.useFakeTimers()
-		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
+		import.meta.jest.useFakeTimers()
+		import.meta.jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
 		const r = await addAws4SignatureHeader(
 			S.build(
@@ -83,8 +83,8 @@ describe("S3", () => {
 	})
 
 	test("signAWS4Header | List Objects", async () => {
-		jest.useFakeTimers()
-		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
+		import.meta.jest.useFakeTimers()
+		import.meta.jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
 		const r = await addAws4SignatureHeader(
 			S.build(
@@ -107,8 +107,8 @@ describe("S3", () => {
 	})
 
 	test("signAWS4Query", async () => {
-		jest.useFakeTimers()
-		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
+		import.meta.jest.useFakeTimers()
+		import.meta.jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
 		const url = await createAws4SignedUrl(
 			S.build(
