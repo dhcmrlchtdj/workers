@@ -11,7 +11,7 @@ import type {
 	MessageEntity,
 	Update,
 } from "../_common/service/telegram-typings.js"
-import { detectContentType, selectedPatterns } from "../_common/http/sniff.js"
+import { detectContentType } from "../_common/http/sniff.js"
 
 type ENV = {
 	BA: KVNamespace
@@ -214,8 +214,7 @@ async function uploadFile(
 		body,
 		{
 			httpMetadata: {
-				contentType:
-					contentType ?? detectContentType(body, selectedPatterns),
+				contentType: contentType ?? detectContentType(body),
 			},
 			customMetadata: {
 				via: "telegram-bot",

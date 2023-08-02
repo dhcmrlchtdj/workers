@@ -8,16 +8,6 @@ const resolveFile = (p: string) =>
 
 describe("MIME Sniff", () => {
 	test("test", async () => {
-		const patterns = [
-			...S.htmlPatterns,
-			...S.documentPatterns,
-			...S.imagePatterns,
-			...S.audioVideoPatterns,
-			...S.fontPatterns,
-			...S.archivePatterns,
-			S.plaintextPattern,
-		]
-
 		const cases = [
 			{
 				file: "./__fixtures__/flac.flac",
@@ -35,7 +25,7 @@ describe("MIME Sniff", () => {
 		]
 		const r = cases.map(async (c) => {
 			const data = await fs.readFile(resolveFile(c.file))
-			const mime = S.detectContentType(data, patterns)
+			const mime = S.detectContentType(data)
 			expect(mime).toBe(c.mime)
 		})
 

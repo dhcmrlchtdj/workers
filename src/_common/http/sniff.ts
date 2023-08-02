@@ -62,168 +62,144 @@ type Pattern = { init: (firstNonWS: number) => Matcher; mime: string }
 
 export const htmlPatterns: Pattern[] = [
 	{
-		init: (firstNonWS) =>
-			skipWS(
-				createMatcherHtml(
-					[
-						0x3c, 0x21, 0x44, 0x4f, 0x43, 0x54, 0x59, 0x50, 0x45,
-						0x20, 0x48, 0x54, 0x4d, 0x4c,
-					],
-					[
-						0xff, 0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf,
-						0xff, 0xdf, 0xdf, 0xdf, 0xdf,
-					],
-				),
-			)(firstNonWS),
-		mime: "text/html; charset=utf-8",
-	},
-	{
-		init: (firstNonWS) =>
-			skipWS(
-				createMatcherHtml(
-					[0x3c, 0x48, 0x54, 0x4d, 0x4c],
-					[0xff, 0xdf, 0xdf, 0xdf, 0xdf],
-				),
-			)(firstNonWS),
-		mime: "text/html; charset=utf-8",
-	},
-	{
-		init: (firstNonWS) =>
-			skipWS(
-				createMatcherHtml(
-					[0x3c, 0x48, 0x45, 0x41, 0x44],
-					[0xff, 0xdf, 0xdf, 0xdf, 0xdf],
-				),
-			)(firstNonWS),
-		mime: "text/html; charset=utf-8",
-	},
-	{
-		init: (firstNonWS) =>
-			skipWS(
-				createMatcherHtml(
-					[0x3c, 0x53, 0x43, 0x52, 0x49, 0x50, 0x54],
-					[0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
-				),
-			)(firstNonWS),
-		mime: "text/html; charset=utf-8",
-	},
-	{
-		init: (firstNonWS) =>
-			skipWS(
-				createMatcherHtml(
-					[0x3c, 0x49, 0x46, 0x52, 0x41, 0x4d, 0x45],
-					[0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
-				),
-			)(firstNonWS),
-		mime: "text/html; charset=utf-8",
-	},
-	{
-		init: (firstNonWS) =>
-			skipWS(createMatcherHtml([0x3c, 0x48, 0x31], [0xff, 0xdf, 0xff]))(
-				firstNonWS,
+		init: skipWS(
+			createMatcherHtml(
+				[
+					0x3c, 0x21, 0x44, 0x4f, 0x43, 0x54, 0x59, 0x50, 0x45, 0x20,
+					0x48, 0x54, 0x4d, 0x4c,
+				],
+				[
+					0xff, 0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xff,
+					0xdf, 0xdf, 0xdf, 0xdf,
+				],
 			),
+		),
 		mime: "text/html; charset=utf-8",
 	},
 	{
-		init: (firstNonWS) =>
-			skipWS(
-				createMatcherHtml(
-					[0x3c, 0x44, 0x49, 0x56],
-					[0xff, 0xdf, 0xdf, 0xdf],
-				),
-			)(firstNonWS),
-		mime: "text/html; charset=utf-8",
-	},
-	{
-		init: (firstNonWS) =>
-			skipWS(
-				createMatcherHtml(
-					[0x3c, 0x46, 0x4f, 0x4e, 0x54],
-					[0xff, 0xdf, 0xdf, 0xdf, 0xdf],
-				),
-			)(firstNonWS),
-		mime: "text/html; charset=utf-8",
-	},
-	{
-		init: (firstNonWS) =>
-			skipWS(
-				createMatcherHtml(
-					[0x3c, 0x54, 0x41, 0x42, 0x4c, 0x45],
-					[0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
-				),
-			)(firstNonWS),
-		mime: "text/html; charset=utf-8",
-	},
-	{
-		init: (firstNonWS) =>
-			skipWS(createMatcherHtml([0x3c, 0x41], [0xff, 0xdf]))(firstNonWS),
-		mime: "text/html; charset=utf-8",
-	},
-	{
-		init: (firstNonWS) =>
-			skipWS(
-				createMatcherHtml(
-					[0x3c, 0x53, 0x54, 0x59, 0x4c, 0x45],
-					[0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
-				),
-			)(firstNonWS),
-		mime: "text/html; charset=utf-8",
-	},
-	{
-		init: (firstNonWS) =>
-			skipWS(
-				createMatcherHtml(
-					[0x3c, 0x54, 0x49, 0x54, 0x4c, 0x45],
-					[0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
-				),
-			)(firstNonWS),
-		mime: "text/html; charset=utf-8",
-	},
-	{
-		init: (firstNonWS) =>
-			skipWS(createMatcherHtml([0x3c, 0x42], [0xff, 0xdf]))(firstNonWS),
-		mime: "text/html; charset=utf-8",
-	},
-	{
-		init: (firstNonWS) =>
-			skipWS(
-				createMatcherHtml(
-					[0x3c, 0x42, 0x4f, 0x44, 0x59],
-					[0xff, 0xdf, 0xdf, 0xdf, 0xdf],
-				),
-			)(firstNonWS),
-		mime: "text/html; charset=utf-8",
-	},
-	{
-		init: (firstNonWS) =>
-			skipWS(createMatcherHtml([0x3c, 0x42, 0x52], [0xff, 0xdf, 0xdf]))(
-				firstNonWS,
+		init: skipWS(
+			createMatcherHtml(
+				[0x3c, 0x48, 0x54, 0x4d, 0x4c],
+				[0xff, 0xdf, 0xdf, 0xdf, 0xdf],
 			),
+		),
 		mime: "text/html; charset=utf-8",
 	},
 	{
-		init: (firstNonWS) =>
-			skipWS(createMatcherHtml([0x3c, 0x50], [0xff, 0xdf]))(firstNonWS),
+		init: skipWS(
+			createMatcherHtml(
+				[0x3c, 0x48, 0x45, 0x41, 0x44],
+				[0xff, 0xdf, 0xdf, 0xdf, 0xdf],
+			),
+		),
 		mime: "text/html; charset=utf-8",
 	},
 	{
-		init: (firstNonWS) =>
-			skipWS(
-				createMatcherHtml(
-					[0x3c, 0x21, 0x2d, 0x2d],
-					[0xff, 0xff, 0xff, 0xff],
-				),
-			)(firstNonWS),
+		init: skipWS(
+			createMatcherHtml(
+				[0x3c, 0x53, 0x43, 0x52, 0x49, 0x50, 0x54],
+				[0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
+			),
+		),
+		mime: "text/html; charset=utf-8",
+	},
+	{
+		init: skipWS(
+			createMatcherHtml(
+				[0x3c, 0x49, 0x46, 0x52, 0x41, 0x4d, 0x45],
+				[0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
+			),
+		),
+		mime: "text/html; charset=utf-8",
+	},
+	{
+		init: skipWS(createMatcherHtml([0x3c, 0x48, 0x31], [0xff, 0xdf, 0xff])),
+		mime: "text/html; charset=utf-8",
+	},
+	{
+		init: skipWS(
+			createMatcherHtml(
+				[0x3c, 0x44, 0x49, 0x56],
+				[0xff, 0xdf, 0xdf, 0xdf],
+			),
+		),
+		mime: "text/html; charset=utf-8",
+	},
+	{
+		init: skipWS(
+			createMatcherHtml(
+				[0x3c, 0x46, 0x4f, 0x4e, 0x54],
+				[0xff, 0xdf, 0xdf, 0xdf, 0xdf],
+			),
+		),
+		mime: "text/html; charset=utf-8",
+	},
+	{
+		init: skipWS(
+			createMatcherHtml(
+				[0x3c, 0x54, 0x41, 0x42, 0x4c, 0x45],
+				[0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
+			),
+		),
+		mime: "text/html; charset=utf-8",
+	},
+	{
+		init: skipWS(createMatcherHtml([0x3c, 0x41], [0xff, 0xdf])),
+		mime: "text/html; charset=utf-8",
+	},
+	{
+		init: skipWS(
+			createMatcherHtml(
+				[0x3c, 0x53, 0x54, 0x59, 0x4c, 0x45],
+				[0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
+			),
+		),
+		mime: "text/html; charset=utf-8",
+	},
+	{
+		init: skipWS(
+			createMatcherHtml(
+				[0x3c, 0x54, 0x49, 0x54, 0x4c, 0x45],
+				[0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
+			),
+		),
+		mime: "text/html; charset=utf-8",
+	},
+	{
+		init: skipWS(createMatcherHtml([0x3c, 0x42], [0xff, 0xdf])),
+		mime: "text/html; charset=utf-8",
+	},
+	{
+		init: skipWS(
+			createMatcherHtml(
+				[0x3c, 0x42, 0x4f, 0x44, 0x59],
+				[0xff, 0xdf, 0xdf, 0xdf, 0xdf],
+			),
+		),
+		mime: "text/html; charset=utf-8",
+	},
+	{
+		init: skipWS(createMatcherHtml([0x3c, 0x42, 0x52], [0xff, 0xdf, 0xdf])),
+		mime: "text/html; charset=utf-8",
+	},
+	{
+		init: skipWS(createMatcherHtml([0x3c, 0x50], [0xff, 0xdf])),
+		mime: "text/html; charset=utf-8",
+	},
+	{
+		init: skipWS(
+			createMatcherHtml(
+				[0x3c, 0x21, 0x2d, 0x2d],
+				[0xff, 0xff, 0xff, 0xff],
+			),
+		),
 		mime: "text/html; charset=utf-8",
 	},
 ]
 
 export const documentPatterns: Pattern[] = [
 	{
-		init: (firstNonWS) =>
-			skipWS(createMatcherExact([0x3c, 0x3f, 0x78, 0x6d, 0x6c]))(
-				firstNonWS,
-			),
+		init: skipWS(createMatcherExact([0x3c, 0x3f, 0x78, 0x6d, 0x6c])),
 		mime: "text/xml; charset=utf-8",
 	},
 	{
@@ -498,12 +474,12 @@ export const plaintextPattern: Pattern = {
 	mime: "text/plain; charset=utf-8",
 }
 
-export const selectedPatterns = [
-	// ...htmlPatterns,
+const allPatterns = [
+	...htmlPatterns,
 	...documentPatterns,
 	...imagePatterns,
 	...audioVideoPatterns,
-	// ...fontPatterns,
+	...fontPatterns,
 	...archivePatterns,
 	plaintextPattern,
 ]
@@ -515,7 +491,7 @@ const sniffLen = 512
 
 export function detectContentType(
 	data: ArrayBuffer,
-	patterns: Pattern[],
+	patterns: Pattern[] = allPatterns,
 ): string {
 	const buf = new Uint8Array(data.slice(0, sniffLen)) // resource header
 

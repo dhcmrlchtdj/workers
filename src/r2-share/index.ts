@@ -7,7 +7,7 @@ import {
 } from "../_common/http/status.js"
 import { getBA } from "../_common/http/basic_auth.js"
 import { MIME_FORM_DATA } from "../_common/http/mime.js"
-import { detectContentType, selectedPatterns } from "../_common/http/sniff.js"
+import { detectContentType } from "../_common/http/sniff.js"
 
 type ENV = {
 	BA: KVNamespace
@@ -76,8 +76,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 					{
 						httpMetadata: {
 							contentType:
-								file.type ??
-								detectContentType(content, selectedPatterns),
+								file.type ?? detectContentType(content),
 						},
 						customMetadata: {
 							via: "http-api",
