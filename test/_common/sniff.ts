@@ -8,27 +8,21 @@ const resolveFile = (p: string) =>
 
 describe("MIME Sniff", () => {
 	test("test", async () => {
-		const cases = [
-			{
-				file: "./__fixtures__/flac.flac",
-				mime: "application/octet-stream",
-			},
-			{
-				file: "./__fixtures__/mp3-raw.mp3",
-				mime: "application/octet-stream",
-			},
-			{ file: "./__fixtures__/mp3-with-id3.mp3", mime: "audio/mpeg" },
-			{ file: "./__fixtures__/mp4.mp4", mime: "video/mp4" },
-			{ file: "./__fixtures__/ogg.ogg", mime: "application/ogg" },
-			{ file: "./__fixtures__/wav.wav", mime: "audio/wave" },
-			{ file: "./__fixtures__/webm.webm", mime: "video/webm" },
-		]
-		const r = cases.map(async (c) => {
-			const data = await fs.readFile(resolveFile(c.file))
-			const mime = S.detectContentType(data)
-			expect(mime).toBe(c.mime)
-		})
+		await Promise.all([
+			t("./__fixtures__/flac.flac", "audio/flac"),
+			t("./__fixtures__/mp3-raw.mp3", "application/octet-stream"),
+			t("./__fixtures__/mp3-with-id3.mp3", "audio/mpeg"),
+			t("./__fixtures__/mp4.mp4", "video/mp4"),
+			t("./__fixtures__/ogg.ogg", "application/ogg"),
+			t("./__fixtures__/wav.wav", "audio/wave"),
+			t("./__fixtures__/webm.webm", "video/webm"),
+		])
 
-		await Promise.all(r)
+		async function t(file: string, mime: string) {
+			const data = await fs.readFile(resolveFile(file))
+			const actual = S.detectContentType(data)
+			expect(actual).toBe(mime)
+		}
+
 	})
 })
