@@ -451,6 +451,10 @@ export const archivePatterns: Pattern[] = [
 
 export const additionalPatterns: Pattern[] = [
 	{
+		init: () => createMatcherExact([0x28, 0xb5, 0x2f, 0xfd]),
+		mime: "application/zstd",
+	},
+	{
 		init: () => createMatcherExact([0x00, 0x61, 0x73, 0x6d]),
 		mime: "application/wasm",
 	},
@@ -481,6 +485,7 @@ const allPatterns = [
 	...audioVideoPatterns,
 	...fontPatterns,
 	...archivePatterns,
+	...additionalPatterns,
 	plaintextPattern,
 ]
 
