@@ -11,7 +11,7 @@ export class Router<ENV> {
 
 	constructor() {
 		this._route = [
-			{ matcher: createMatcher(undefined, ""), handlers: [] }, // sentinel
+			{ matcher: () => null, handlers: [] }, // sentinel
 		]
 	}
 

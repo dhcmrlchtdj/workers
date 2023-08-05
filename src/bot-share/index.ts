@@ -167,6 +167,7 @@ async function uploadFile(
 		text: "uploading...",
 		disable_web_page_preview: true,
 	})
+
 	const editMessageText = telegram(bot.token, "editMessageText")
 	const handleError = async (e: unknown) => {
 		await editMessageText({
@@ -176,11 +177,12 @@ async function uploadFile(
 			disable_web_page_preview: true,
 			text: `<pre>${encodeHtmlEntities(String(e))}</pre>`,
 		})
-		throw e
+		return null
 	}
 
 	const getFile = telegram(bot.token, "getFile")
 	const fileInfo = await getFile({ file_id: fileId }).catch(handleError)
+	if (!fileInfo) return
 
 	if (!fileInfo.file_path) {
 		const data = JSON.stringify(fileInfo, null, 4)
@@ -215,6 +217,7 @@ async function uploadFile(
 			},
 		},
 	).catch(handleError)
+	if (!uploaded) return
 
 	const sharedUrl = "https://worker.h11.io/share/" + uploaded.key
 	await editMessageText({
