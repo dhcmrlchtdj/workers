@@ -71,9 +71,8 @@ async function send(
 		| { ok: true; result: unknown; description?: string }
 		| { ok: false; error_code: number; description: string }
 
-	const body: ResponseType = await fetch(
-		S.build(S.post(url), S.json(data)),
-	).then((r) => r.json())
+	const req = S.build(S.post(url), S.json(data))
+	const body = await fetch(req).then((r) => r.json<ResponseType>())
 
 	if (body.ok) {
 		return body.result
@@ -102,27 +101,20 @@ export async function fromAdmin(token: string, msg: Message): Promise<boolean> {
 }
 
 export function extractCommand(
-	username: string,
 	msg: Message,
+	botName: string,
 ): { cmd: string; arg: string } | undefined {
 	if (!msg.text || !msg.entities) return undefined
 	const text = msg.text
 	const command = msg.entities
 		.filter((entity) => entity.type === "bot_command")
 		.map((entity) => {
-			const cmds = text
-				.slice(entity.offset, entity.offset + entity.length)
-				.split("@")
-			if (
-				cmds.length === 1 ||
-				(cmds.length === 2 && cmds[1] === username)
-			) {
-				const cmd = cmds[0]!
-				const arg = text.slice(entity.offset + entity.length).trim()
-				return { cmd, arg }
-			} else {
-				return undefined
+			let cmd = text.substr(entity.offset, entity.length)
+			if (cmd.endsWith(botName)) {
+				cmd = cmd.substr(0, cmd.length - botName.length)
 			}
+			const arg = text.substr(entity.offset + entity.length).trim()
+			return { cmd, arg }
 		})
 		.find((x) => x !== undefined)
 	return command

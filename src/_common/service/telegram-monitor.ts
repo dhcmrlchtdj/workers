@@ -15,11 +15,7 @@ export class TelegramMonitor {
 	}
 
 	error(err: unknown, req?: Request): Promise<void> {
-		return this._log("error", err, req)
-	}
-
-	warn(err: unknown, req?: Request): Promise<void> {
-		return this._log("warn", err, req)
+		return this._log(err, req)
 	}
 
 	async logResponse(resp: Response, req?: Request): Promise<void> {
@@ -35,17 +31,12 @@ export class TelegramMonitor {
 				body,
 			}),
 		)
-		return this._log("warn", err, req)
+		return this._log(err, req)
 	}
 
-	private _log(
-		level: string,
-		error: unknown,
-		req: Request | undefined,
-	): Promise<void> {
+	private _log(error: unknown, req: Request | undefined): Promise<void> {
 		const message: Record<string, unknown> = {
 			time: new Date().toISOString(),
-			level,
 			service: this._serviceName,
 			request: parseRequest(req),
 			error: error instanceof Error ? error.stack?.split(/\n +/) : error,
@@ -54,9 +45,8 @@ export class TelegramMonitor {
 	}
 
 	private async _send(message: Record<string, unknown>): Promise<void> {
-		const msg = JSON.stringify(message, null, 4)
-		console.log(msg)
 		if (this._token !== undefined && this._chatId !== undefined) {
+			const msg = JSON.stringify(message, null, 4)
 			const sendMessage = telegram(this._token, "sendMessage")
 			await sendMessage({
 				chat_id: Number(this._chatId),

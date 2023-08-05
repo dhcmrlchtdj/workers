@@ -5,12 +5,12 @@ import {
 	HttpInternalServerError,
 	HttpOk,
 } from "../_common/http/status.js"
-import { telegram } from "../_common/service/telegram.js"
-import type {
-	Message,
-	MessageEntity,
-	Update,
-} from "../_common/service/telegram-typings.js"
+import {
+	encodeHtmlEntities,
+	extractCommand,
+	telegram,
+} from "../_common/service/telegram.js"
+import type { Message, Update } from "../_common/service/telegram-typings.js"
 import { detectContentType } from "../_common/http/sniff.js"
 
 type ENV = {
@@ -71,41 +71,23 @@ type BotContext = {
 }
 
 async function handleMessage(ctx: BotContext) {
-	if (ctx.msg.entities) {
-		const tasks = ctx.msg.entities.map(async (entity) => {
-			switch (entity.type) {
-				case "bot_command": {
-					return handleCommand(ctx, entity)
-				}
-				default: {
-					return
-				}
-			}
-		})
-		await Promise.allSettled(tasks)
+	const cmd = extractCommand(ctx.msg, ctx.bot.name)
+	if (cmd) {
+		await handleCommand(ctx, cmd.cmd, cmd.arg)
+	} else {
+		await uploadMessageFiles(ctx)
 	}
-	await uploadMessageFiles(ctx)
 }
 
-async function handleCommand(ctx: BotContext, entity: MessageEntity) {
-	const text = ctx.msg.text
-	if (!text) return
-
-	let cmd = text.substr(entity.offset, entity.length)
-	if (cmd.endsWith(ctx.bot.name)) {
-		cmd = cmd.substr(0, cmd.length - ctx.bot.name.length)
-	}
-
-	// const endPos = entity.offset + entity.length
-	// const args = text.slice(endPos).trim().split(/\s+/)
-
+async function handleCommand(ctx: BotContext, cmd: string, _arg: string) {
 	switch (cmd) {
 		case "/echo": {
+			const msg = JSON.stringify(ctx.msg, null, 4)
 			const sendMessage = telegram(ctx.bot.token, "sendMessage")
 			await sendMessage({
 				parse_mode: "HTML",
 				chat_id: ctx.msg.chat.id,
-				text: `<pre>${JSON.stringify(ctx.msg, null, 4)}</pre>`,
+				text: `<pre>${encodeHtmlEntities(msg)}</pre>`,
 				disable_web_page_preview: true,
 			})
 			break
@@ -186,9 +168,19 @@ async function uploadFile(
 		disable_web_page_preview: true,
 	})
 	const editMessageText = telegram(bot.token, "editMessageText")
+	const handleError = async (e: unknown) => {
+		await editMessageText({
+			chat_id: uploading.chat.id,
+			message_id: uploading.message_id,
+			parse_mode: "HTML",
+			disable_web_page_preview: true,
+			text: `<pre>${encodeHtmlEntities(String(e))}</pre>`,
+		})
+		throw e
+	}
 
 	const getFile = telegram(bot.token, "getFile")
-	const fileInfo = await getFile({ file_id: fileId })
+	const fileInfo = await getFile({ file_id: fileId }).catch(handleError)
 
 	if (!fileInfo.file_path) {
 		const data = JSON.stringify(fileInfo, null, 4)
@@ -197,7 +189,9 @@ async function uploadFile(
 			message_id: uploading.message_id,
 			parse_mode: "HTML",
 			disable_web_page_preview: true,
-			text: `couldn't fetch file path<br><pre>${data}</pre>`,
+			text: `couldn't fetch file path<br><pre>${encodeHtmlEntities(
+				data,
+			)}</pre>`,
 		})
 		return
 	}
@@ -220,13 +214,14 @@ async function uploadFile(
 				via: "telegram-bot",
 			},
 		},
-	)
+	).catch(handleError)
 
+	const sharedUrl = "https://worker.h11.io/share/" + uploaded.key
 	await editMessageText({
 		chat_id: uploading.chat.id,
 		message_id: uploading.message_id,
 		parse_mode: "HTML",
 		disable_web_page_preview: true,
-		text: `https://worker.h11.io/share/${uploaded.key}`,
+		text: encodeHtmlEntities(sharedUrl),
 	})
 }
