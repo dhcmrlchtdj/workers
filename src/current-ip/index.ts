@@ -19,6 +19,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 		router.get(
 			"/current-ip",
 			W.sendErrorToTelegram("current-ip"),
+			W.serverTiming(),
 			W.basicAuth(async (user, pass, { env }) => {
 				const item = await env.BA.get<KVItem>("ip:" + user, {
 					type: "json",

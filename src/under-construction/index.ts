@@ -6,6 +6,7 @@ import * as R from "../_common/http/response.js"
 const exportedHandler: ExportedHandler = {
 	async fetch(req, env, ec) {
 		const router = new W.Router()
+		router.use("*", W.serverTiming())
 		router.head("*", W.serveHeadWithGet())
 		router.get("/", W.cacheResponse(), async () => {
 			return R.build(

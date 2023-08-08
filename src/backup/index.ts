@@ -39,6 +39,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 		router.post(
 			"/backup",
 			W.sendErrorToTelegram("backup"),
+			W.serverTiming(),
 			W.checkContentType(MIME_FORM_DATA),
 			W.basicAuth(async (user, pass, { env }) => {
 				const item = await env.BA.get<KV_BA>("backup:" + user, {

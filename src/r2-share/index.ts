@@ -14,7 +14,7 @@ type ENV = {
 const exportedHandler: ExportedHandler<ENV> = {
 	async fetch(req, env, ec) {
 		const router = new W.Router<ENV>()
-		router.use("*", W.sendErrorToTelegram("r2-share"))
+		router.use("*", W.sendErrorToTelegram("r2-share"), W.serverTiming())
 		router.head("/share/*", W.serveHeadWithGet())
 		router.get(
 			"/share/*",

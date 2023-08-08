@@ -33,6 +33,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 		router.post(
 			"/telegram/share",
 			W.sendErrorToTelegram("telegram-share"),
+			W.serverTiming(),
 			W.checkContentType(MIME_JSON),
 			async ({ req, env, ec }) => {
 				const bot = await env.BA.get<KV_BOT>("telegram:share", {

@@ -119,3 +119,17 @@ export function basicAuth<ENV>(
 		return next(ctx)
 	}
 }
+
+export function serverTiming<ENV>(): Handler<ENV> {
+	return async (ctx, next) => {
+		const start = Date.now()
+		const resp = await next(ctx)
+		const r = R.build(
+			R.status(resp.status),
+			R.headers(resp.headers),
+			R.body(resp.body),
+			R.header("server-timing", "total;dur=" + (Date.now() - start)),
+		)
+		return r
+	}
+}

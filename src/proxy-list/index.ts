@@ -16,6 +16,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 		router.get(
 			"/proxy-list",
 			W.sendErrorToTelegram("proxy-list"),
+			W.serverTiming(),
 			W.basicAuth(async (user, pass, { env }) => {
 				const item = await env.BA.get<KVItem>("proxy:" + user, {
 					type: "json",
