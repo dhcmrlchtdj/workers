@@ -1,11 +1,13 @@
-import type { Handler } from "./type.js"
+import type { Handler, RouterContext } from "./type.js"
 import * as R from "../http/response.js"
 import * as S from "../http/request.js"
 import {
 	HttpInternalServerError,
+	HttpUnauthorized,
 	HttpUnsupportedMediaType,
 } from "../http/status.js"
 import { TelegramMonitor } from "../service/telegram-monitor.js"
+import { getBA } from "../http/basic_auth.js"
 
 export function checkContentType<ENV>(expectedType: string): Handler<ENV> {
 	return (ctx, next) => {
@@ -98,5 +100,22 @@ export function serveHeadWithGet<ENV>(): Handler<ENV> {
 			R.headers(getResp.headers),
 		)
 		return headResp
+	}
+}
+
+export function basicAuth<ENV>(
+	verify: (
+		username: string,
+		password: string,
+		ctx: RouterContext<ENV>,
+	) => unknown,
+): Handler<ENV> {
+	return async (ctx, next) => {
+		const header = ctx.req.headers.get("authorization")
+		const { username, password } = getBA(header)
+		const credential = await verify(username, password, ctx)
+		if (!credential) throw HttpUnauthorized(["Basic"], "invalid")
+		ctx.credential = credential
+		return next(ctx)
 	}
 }

@@ -4,6 +4,7 @@ export type RouterContext<ENV> = {
 	ec: ExecutionContext
 	pathParts: string[]
 	param: Map<string, string>
+	credential: unknown
 }
 
 export type Matcher<ENV> = (

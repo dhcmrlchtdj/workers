@@ -23,6 +23,5 @@ describe("MIME Sniff", () => {
 			const actual = S.detectContentType(data)
 			expect(actual).toBe(mime)
 		}
-
 	})
 })

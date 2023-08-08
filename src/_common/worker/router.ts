@@ -89,6 +89,7 @@ export class Router<ENV> {
 			ec,
 			pathParts: new URL(req.url).pathname.split("/"),
 			param: new Map(),
+			credential: null,
 		}
 		return next(ctx)
 	}

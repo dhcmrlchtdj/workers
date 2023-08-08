@@ -1,12 +1,10 @@
 import * as W from "../_common/worker/index.js"
 import { BackBlaze } from "../_common/service/backblaze.js"
 import { format } from "../_common/format-date.js"
-import { getBA } from "../_common/http/basic_auth.js"
 import {
 	HttpAccepted,
 	HttpBadRequest,
 	HttpInternalServerError,
-	HttpUnauthorized,
 } from "../_common/http/status.js"
 import { MIME_FORM_DATA, MIME_OCTET } from "../_common/http/mime.js"
 
@@ -42,21 +40,19 @@ const exportedHandler: ExportedHandler<ENV> = {
 			"/backup",
 			W.sendErrorToTelegram("backup"),
 			W.checkContentType(MIME_FORM_DATA),
-			async ({ req, env, ec }) => {
-				const { user, pass } = getBA(req.headers.get("authorization"))
+			W.basicAuth(async (user, pass, { env }) => {
 				const item = await env.BA.get<KV_BA>("backup:" + user, {
 					type: "json",
 					cacheTtl: 60 * 60, // 60min
 				})
-				if (item?.password === pass) {
-					const h = HANDERS[user]
-					if (h) {
-						return h(req, env, ec)
-					} else {
-						return HttpInternalServerError()
-					}
+				return item?.password === pass && user
+			}),
+			async ({ req, env, ec, credential }) => {
+				const h = HANDERS[credential as string]
+				if (h) {
+					return h(req, env, ec)
 				} else {
-					return HttpUnauthorized(["Basic"])
+					return HttpInternalServerError()
 				}
 			},
 		)
