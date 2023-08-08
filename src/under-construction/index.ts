@@ -10,10 +10,8 @@ const exportedHandler: ExportedHandler = {
 		router.head("*", W.serveHeadWithGet())
 		router.get("/", W.cacheResponse(), async () => {
 			return R.build(
-				R.text("Under Construction"),
-				R.cacheControl(
-					"public, must-revalidate, s-maxage=86400, max-age=604800",
-				),
+				R.text("Under Construction\n(maybe"),
+				R.cacheControl("public, must-revalidate, max-age=86400"),
 			)
 		})
 		router.get("/favicon.ico", W.cacheResponse(), async () => {
