@@ -8,6 +8,7 @@ import {
 } from "../http/status.js"
 import { TelegramMonitor } from "../service/telegram-monitor.js"
 import { getBA } from "../http/basic_auth.js"
+import { addServerTiming, getInContext } from "./context.js"
 
 export function checkContentType<ENV>(expectedType: string): Handler<ENV> {
 	return (ctx, next) => {
@@ -121,13 +122,18 @@ export function basicAuth<ENV>(
 
 export function serverTiming<ENV>(): Handler<ENV> {
 	return async (ctx, next) => {
-		const start = Date.now()
+		const end = addServerTiming("total")
 		const resp = await next(ctx)
+		end()
+
 		const r = R.build(
 			R.status(resp.status),
 			R.headers(resp.headers),
 			R.body(resp.body),
-			R.header("server-timing", "total;dur=" + (Date.now() - start)),
+			R.header(
+				"server-timing",
+				getInContext("__ServerTiming__") as string,
+			),
 		)
 		return r
 	}

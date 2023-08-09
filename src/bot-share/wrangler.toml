@@ -4,7 +4,8 @@ route = "worker.h11.io/telegram/share*"
 workers_dev = false
 no_bundle = true
 
-compatibility_date = "2023-07-25"
+compatibility_date = "2023-08-09"
+compatibility_flags = [ "nodejs_compat" ]
 
 kv_namespaces = [{ binding = "BA", id = "fb7f86b3d7fb42bc8bb5ed43907a6479" }]
 r2_buckets = [{ binding = "R2share", bucket_name = "share" }]
