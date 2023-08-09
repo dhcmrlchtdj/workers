@@ -1,4 +1,4 @@
-import { type Builder, compose, header } from "./compose.js"
+import { type Builder, compose, header, headers, body } from "./compose.js"
 
 export * from "./compose.js"
 
@@ -6,6 +6,10 @@ export function build(...builders: ResponseBuilder[]): Response {
 	const b = { body: null, status: 200, headers: new Headers() }
 	compose(...builders)(b)
 	return new Response(b.body, b)
+}
+
+export function clone(resp: Response): ResponseBuilder {
+	return compose(status(resp.status), headers(resp.headers), body(resp.body))
 }
 
 export function status(status: number): ResponseBuilder {

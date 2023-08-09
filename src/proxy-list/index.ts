@@ -18,16 +18,18 @@ const exportedHandler: ExportedHandler<ENV> = {
 			W.sendErrorToTelegram("proxy-list"),
 			W.serverTiming(),
 			W.basicAuth(async (user, pass, { env }) => {
+				const end = W.addServerTiming("kv")
 				const item = await env.BA.get<KVItem>("proxy:" + user, {
 					type: "json",
 					cacheTtl: 60 * 60, // 60min
 				})
+				end()
 				if (item?.password !== pass) return false
 				W.setInContext("credential", item)
 				return true
 			}),
 			async () => {
-				const item = W.getInContext("credential") as KVItem
+				const item = W.getInContext<KVItem>("credential")
 				const proxy = item.proxy.join("\n")
 				const b64 = toBase64(proxy)
 				const resp = R.build(R.text(b64))

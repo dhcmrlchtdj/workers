@@ -21,7 +21,9 @@ const exportedHandler: ExportedHandler<ENV> = {
 			W.cacheResponse(),
 			async ({ req, env, param }) => {
 				const filename = param.get("*")!
+				const end = W.addServerTiming("r2")
 				const object = await env.R2share.get(filename)
+				end()
 				if (object === null) return HttpNotFound()
 
 				const reqEtag = req.headers.get("If-None-Match")

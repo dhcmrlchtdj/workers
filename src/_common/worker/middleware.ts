@@ -96,10 +96,7 @@ export function serveHeadWithGet<ENV>(): Handler<ENV> {
 
 		const getReq = S.build(S.get(req.url), S.headers(req.headers))
 		const getResp = await next({ ...ctx, req: getReq })
-		const headResp = R.build(
-			R.status(getResp.status),
-			R.headers(getResp.headers),
-		)
+		const headResp = R.build(R.clone(getResp), R.body(null))
 		return headResp
 	}
 }
@@ -127,13 +124,8 @@ export function serverTiming<ENV>(): Handler<ENV> {
 		end()
 
 		const r = R.build(
-			R.status(resp.status),
-			R.headers(resp.headers),
-			R.body(resp.body),
-			R.header(
-				"server-timing",
-				getInContext("__ServerTiming__") as string,
-			),
+			R.clone(resp),
+			R.header("server-timing", getInContext<string>("__ServerTiming__")),
 		)
 		return r
 	}

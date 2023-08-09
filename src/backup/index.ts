@@ -42,16 +42,18 @@ const exportedHandler: ExportedHandler<ENV> = {
 			W.serverTiming(),
 			W.checkContentType(MIME_FORM_DATA),
 			W.basicAuth(async (user, pass, { env }) => {
+				const end = W.addServerTiming("kv")
 				const item = await env.BA.get<KV_BA>("backup:" + user, {
 					type: "json",
 					cacheTtl: 60 * 60, // 60min
 				})
+				end()
 				if (item?.password !== pass) return false
 				W.setInContext("credential", user)
 				return true
 			}),
 			async ({ req, env, ec }) => {
-				const user = W.getInContext("credential") as string
+				const user = W.getInContext<string>("credential")
 				const h = HANDERS[user]
 				if (h) {
 					return h(req, env, ec)

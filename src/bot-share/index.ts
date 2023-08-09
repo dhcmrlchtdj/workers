@@ -36,10 +36,12 @@ const exportedHandler: ExportedHandler<ENV> = {
 			W.serverTiming(),
 			W.checkContentType(MIME_JSON),
 			async ({ req, env, ec }) => {
+				const end = W.addServerTiming("kv")
 				const bot = await env.BA.get<KV_BOT>("telegram:share", {
 					type: "json",
 					cacheTtl: 60 * 60, // 60min
 				})
+				end()
 				if (bot === null) return HttpInternalServerError("config")
 
 				const secretToken = req.headers.get(

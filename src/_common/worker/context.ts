@@ -2,11 +2,11 @@ import { AsyncLocalStorage } from "node:async_hooks"
 
 export const asyncContext = new AsyncLocalStorage<Map<string, unknown>>()
 
-export function getInContext(key: string): unknown {
+export function getInContext<T = unknown>(key: string): T {
 	const ctx = asyncContext.getStore()
 	if (!ctx) throw new Error("use: invalid context")
 	if (!ctx.has(key)) throw new Error("use: not exist")
-	return ctx.get(key)
+	return ctx.get(key) as T
 }
 
 export function setInContext(key: string, value: unknown) {
@@ -34,17 +34,15 @@ export function addServerTiming(name: string, desc?: string) {
 	return () => {
 		const dur = Date.now() - start
 
-		const key = "__ServerTiming__"
-
 		let value = name
 		if (desc) value += `;desc="${desc}"`
 		value += ";dur=" + dur
 
+		const key = "__ServerTiming__"
 		if (hasInContext(key)) {
-			const prevKey = getInContext(key) as string
+			const prevKey = getInContext<string>(key)
 			value = prevKey + ", " + value
 		}
-
 		setInContext(key, value)
 	}
 }

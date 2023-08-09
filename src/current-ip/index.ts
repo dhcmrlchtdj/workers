@@ -21,9 +21,11 @@ const exportedHandler: ExportedHandler<ENV> = {
 			W.sendErrorToTelegram("current-ip"),
 			W.serverTiming(),
 			W.basicAuth(async (user, pass, { env }) => {
+				const end = W.addServerTiming("kv")
 				const item = await env.BA.get<KVItem>("ip:" + user, {
 					type: "json",
 				})
+				end()
 				if (item?.password !== pass) return false
 				W.setInContext("credential", item)
 				return true
@@ -33,7 +35,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				if (currIp === null) {
 					return HttpBadRequest("CF-Connecting-IP is missed")
 				}
-				const item = W.getInContext("credential") as KVItem
+				const item = W.getInContext<KVItem>("credential")
 				await saveCurrentIp(env, item, currIp)
 				return HttpOk(currIp)
 			},
