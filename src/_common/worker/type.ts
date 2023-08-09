@@ -2,7 +2,6 @@ export type RouterContext<ENV> = {
 	req: Request
 	env: ENV
 	ec: ExecutionContext
-	pathParts: string[]
 	param: Map<string, string>
 }
 

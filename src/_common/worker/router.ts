@@ -1,6 +1,6 @@
 import type { Handler, Matcher, NextFn, RouterContext } from "./type.js"
 import { HttpNotFound } from "../http/status.js"
-import { asyncContext } from "./hook.js"
+import { asyncContext } from "./context.js"
 
 type NonEmptyArray<T> = [T, ...T[]]
 
@@ -84,18 +84,9 @@ export class Router<ENV> {
 
 			return HttpNotFound()
 		}
-		const resp = asyncContext.run(new Map(), () => {
-			const ctx = {
-				req,
-				env,
-				ec,
-				pathParts: new URL(req.url).pathname.split("/"),
-				param: new Map(),
-				credential: null,
-			}
-			return next(ctx)
+		return asyncContext.run(new Map(), () => {
+			return next({ req, env, ec, param: new Map() })
 		})
-		return resp
 	}
 }
 
@@ -117,17 +108,19 @@ function createMatcher<ENV>(
 		if (method) {
 			if (ctx.req.method.toUpperCase() !== method) return null
 		}
-		return matchPath(pathPattern.split("/"), ctx.pathParts)
+		return matchPath(pathPattern, new URL(ctx.req.url).pathname)
 	}
 }
 
 function matchPath(
-	patternParts: string[],
-	pathParts: string[],
+	pattern: string,
+	pathname: string,
 ): Map<string, string> | null {
 	const param = new Map<string, string>()
 
+	const patternParts = pattern.split("/")
 	const patternLen = patternParts.length
+	const pathParts = pathname.split("/")
 	const pathLen = pathParts.length
 
 	let i = 0

@@ -19,7 +19,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 		router.get(
 			"/share/*",
 			W.cacheResponse(),
-			async ({ req, param, env }) => {
+			async ({ req, env, param }) => {
 				const filename = param.get("*")!
 				const object = await env.R2share.get(filename)
 				if (object === null) return HttpNotFound()
