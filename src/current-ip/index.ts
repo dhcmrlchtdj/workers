@@ -24,15 +24,17 @@ const exportedHandler: ExportedHandler<ENV> = {
 				const item = await env.BA.get<KVItem>("ip:" + user, {
 					type: "json",
 				})
-				return item?.password === pass && item
+				if (item?.password !== pass) return false
+				W.setInContext("credential", item)
+				return true
 			}),
-			async ({ req, env, credential }) => {
+			async ({ req, env }) => {
 				const currIp = req.headers.get("CF-Connecting-IP")
 				if (currIp === null) {
 					return HttpBadRequest("CF-Connecting-IP is missed")
 				}
-
-				await saveCurrentIp(env, credential as KVItem, currIp)
+				const item = W.getInContext("credential") as KVItem
+				await saveCurrentIp(env, item, currIp)
 				return HttpOk(currIp)
 			},
 		)

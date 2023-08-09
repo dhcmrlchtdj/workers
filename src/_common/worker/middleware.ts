@@ -108,14 +108,13 @@ export function basicAuth<ENV>(
 		username: string,
 		password: string,
 		ctx: RouterContext<ENV>,
-	) => unknown,
+	) => Promise<boolean> | boolean,
 ): Handler<ENV> {
 	return async (ctx, next) => {
 		const header = ctx.req.headers.get("authorization")
 		const { username, password } = getBA(header)
 		const credential = await verify(username, password, ctx)
 		if (!credential) throw HttpUnauthorized(["Basic"], "invalid")
-		ctx.credential = credential
 		return next(ctx)
 	}
 }

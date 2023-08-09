@@ -22,10 +22,13 @@ const exportedHandler: ExportedHandler<ENV> = {
 					type: "json",
 					cacheTtl: 60 * 60, // 60min
 				})
-				return item?.password === pass && item
+				if (item?.password !== pass) return false
+				W.setInContext("credential", item)
+				return true
 			}),
-			async ({ credential }) => {
-				const proxy = (credential as KVItem).proxy.join("\n")
+			async () => {
+				const item = W.getInContext("credential") as KVItem
+				const proxy = item.proxy.join("\n")
 				const b64 = toBase64(proxy)
 				const resp = R.build(R.text(b64))
 				return resp

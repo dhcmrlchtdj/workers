@@ -46,10 +46,13 @@ const exportedHandler: ExportedHandler<ENV> = {
 					type: "json",
 					cacheTtl: 60 * 60, // 60min
 				})
-				return item?.password === pass && user
+				if (item?.password !== pass) return false
+				W.setInContext("credential", user)
+				return true
 			}),
-			async ({ req, env, ec, credential }) => {
-				const h = HANDERS[credential as string]
+			async ({ req, env, ec }) => {
+				const user = W.getInContext("credential") as string
+				const h = HANDERS[user]
 				if (h) {
 					return h(req, env, ec)
 				} else {

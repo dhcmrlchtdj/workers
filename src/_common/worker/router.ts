@@ -1,5 +1,6 @@
 import type { Handler, Matcher, NextFn, RouterContext } from "./type.js"
 import { HttpNotFound } from "../http/status.js"
+import { asyncContext } from "./hook.js"
 
 type NonEmptyArray<T> = [T, ...T[]]
 
@@ -83,15 +84,18 @@ export class Router<ENV> {
 
 			return HttpNotFound()
 		}
-		const ctx = {
-			req,
-			env,
-			ec,
-			pathParts: new URL(req.url).pathname.split("/"),
-			param: new Map(),
-			credential: null,
-		}
-		return next(ctx)
+		const resp = asyncContext.run(new Map(), () => {
+			const ctx = {
+				req,
+				env,
+				ec,
+				pathParts: new URL(req.url).pathname.split("/"),
+				param: new Map(),
+				credential: null,
+			}
+			return next(ctx)
+		})
+		return resp
 	}
 }
 

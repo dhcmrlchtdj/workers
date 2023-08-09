@@ -54,7 +54,7 @@ endif
 force: check build
 
 $(targets): node_modules/tsconfig.tsbuildinfo
-	esbuild --bundle --format=esm --target=esnext --platform=neutral --outfile=$@/index.js $@/index.ts
+	esbuild --bundle --format=esm --target=esnext --platform=node --outfile=$@/index.js $@/index.ts
 
 node_modules/tsconfig.tsbuildinfo: node_modules $(shell ls {src,test}/**/*.ts)
 	@make --no-print-directory check
