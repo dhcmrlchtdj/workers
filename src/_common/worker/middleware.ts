@@ -65,17 +65,15 @@ export function sendErrorToTelegram<ENV extends { BA: KVNamespace }>(
 		})
 		const monitor = new TelegramMonitor(name, item?.token, item?.chatId)
 
-		try {
-			ctx.ec = {
-				...ctx.ec,
-				waitUntil: (promise: Promise<unknown>) => {
-					const p = promise.catch((err) => monitor.error(err, req))
-					ec.waitUntil(p)
-				},
-			}
-			const resp = await next(ctx)
-			return resp
-		} catch (err) {
+		ctx.ec = {
+			...ctx.ec,
+			waitUntil: (promise: Promise<unknown>) => {
+				const p = promise.catch((err) => monitor.error(err, req))
+				ec.waitUntil(p)
+			},
+		}
+		const resp = next(ctx)
+		return Promise.resolve(resp).catch((err) => {
 			if (err instanceof Response) {
 				ec.waitUntil(monitor.logResponse(err, req))
 				return err
@@ -83,7 +81,7 @@ export function sendErrorToTelegram<ENV extends { BA: KVNamespace }>(
 				ec.waitUntil(monitor.error(err, req))
 				return HttpInternalServerError()
 			}
-		}
+		})
 	}
 }
 
@@ -111,8 +109,8 @@ export function basicAuth<ENV>(
 	return async (ctx, next) => {
 		const header = ctx.req.headers.get("authorization")
 		const { username, password } = getBA(header)
-		const credential = await verify(username, password, ctx)
-		if (!credential) throw HttpUnauthorized(["Basic"], "invalid")
+		const passed = await verify(username, password, ctx)
+		if (!passed) throw HttpUnauthorized(["Basic"], "invalid")
 		return next(ctx)
 	}
 }
