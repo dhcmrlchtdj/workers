@@ -1,6 +1,8 @@
 main = "index.js"
 name = "backup"
 route = "worker.h11.io/backup*"
+workers_dev = false
+no_bundle = true
 
 compatibility_date = "2023-08-09"
 compatibility_flags = [ "nodejs_compat" ]
