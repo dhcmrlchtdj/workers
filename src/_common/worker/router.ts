@@ -4,16 +4,16 @@ import { asyncContext } from "./context.js"
 
 type NonEmptyArray<T> = [T, ...T[]]
 
+type Route<ENV> = {
+	matcher: Matcher<ENV>
+	handlers: Handler<ENV>[]
+}
+
 export class Router<ENV> {
-	private _route: {
-		matcher: Matcher<ENV>
-		handlers: Handler<ENV>[]
-	}[]
+	private _route: Route<ENV>[]
 
 	constructor() {
-		this._route = [
-			{ matcher: () => null, handlers: [] }, // sentinel
-		]
+		this._route = []
 	}
 
 	private _addRoute(
@@ -59,34 +59,38 @@ export class Router<ENV> {
 		req: Request,
 		env: ENV,
 		ec: ExecutionContext,
-	): Response | Promise<Response> {
-		let mIdx = 0 // this._route[0] is sentinel
-		let hIdx = 0
-		const next: NextFn<ENV> = (ctx: RouterContext<ENV>) => {
-			hIdx++
-			const { handlers } = this._route[mIdx]!
-			if (hIdx < handlers.length) {
-				const nextHandler = handlers[hIdx]!
-				return nextHandler(ctx, next)
-			}
-
-			for (mIdx++; mIdx < this._route.length; mIdx++) {
-				const { matcher, handlers } = this._route[mIdx]!
-				if (handlers.length > 0) {
-					const param = matcher(ctx)
-					if (param) {
-						hIdx = 0
-						const nextHandler = handlers[0]!
-						return nextHandler({ ...ctx, param }, next)
-					}
-				}
-			}
-
-			return HttpNotFound()
+	): ReturnType<Handler<ENV>> {
+		const gen = routeGenerator(this._route)
+		gen.next() // init
+		const next: NextFn<ENV> = (ctx) => {
+			const route = gen.next(ctx)
+			if (route.done) return HttpNotFound()
+			const { handler, param } = route.value
+			return handler({ ...ctx, param }, next)
 		}
-		return asyncContext.run(new Map(), () => {
-			return next({ req, env, ec, param: new Map() })
-		})
+		const ctx = { req, env, ec, param: new Map() }
+		return asyncContext.run(new Map(), next, ctx)
+	}
+}
+
+function* routeGenerator<ENV>(route: Route<ENV>[]): Generator<
+	{
+		handler: Handler<ENV>
+		param: Map<string, string>
+	},
+	void,
+	RouterContext<ENV>
+> {
+	// @ts-expect-error
+	let ctx = yield // init
+	for (let i = 0; i < route.length; i++) {
+		const { matcher, handlers } = route[i]!
+		if (handlers.length === 0) continue
+		const param = matcher(ctx)
+		if (!param) continue
+		for (let j = 0; j < handlers.length; j++) {
+			ctx = yield { handler: handlers[j]!, param }
+		}
 	}
 }
 
