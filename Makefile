@@ -35,12 +35,13 @@ upgrade:
 	pnpm update --latest # --interactive
 
 deploy: on_ci
-	cd ./src/feedbox && wrangler deploy
-	cd ./src/backup && wrangler deploy
-	cd ./src/current-ip && wrangler deploy
-	cd ./src/proxy-list && wrangler deploy
-	cd ./src/r2-share && wrangler deploy
-	cd ./src/bot-share && wrangler deploy
+	cd ./src/backup && wrangler --experimental-json-config deploy
+	cd ./src/bot-share && wrangler --experimental-json-config deploy
+	cd ./src/current-ip && wrangler --experimental-json-config deploy
+	cd ./src/feedbox && wrangler --experimental-json-config deploy
+	cd ./src/proxy-list && wrangler --experimental-json-config deploy
+	cd ./src/r2-share && wrangler --experimental-json-config deploy
+	cd ./src/under-construction && wrangler --experimental-json-config deploy
 
 ###
 
