@@ -74,6 +74,6 @@ $(test_compiled): node_modules/tsconfig.tsbuildinfo
 update_compatibility_date:
 	@for t in $(targets); do \
 		gsed -i \
-		"s/compatibility_date =.*/compatibility_date = \"$(shell date '+%Y-%m-%d')\"/" \
-		"$$t/wrangler.toml"; \
+		"s/\"compatibility_date\":.*/\"compatibility_date\": \"$(shell date '+%Y-%m-%d')\",/" \
+		"$$t/wrangler.json"; \
 		done
