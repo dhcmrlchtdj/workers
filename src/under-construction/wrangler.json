@@ -3,7 +3,7 @@
 	"name": "under-construction",
 	"routes": ["h11.io/*", "worker.h11.io/*"],
 
-	"compatibility_date": "2023-08-13",
+	"compatibility_date": "2023-08-12",
 	"compatibility_flags": ["nodejs_compat"],
 	"workers_dev": false,
 	"no_bundle": true,
