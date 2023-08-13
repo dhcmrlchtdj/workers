@@ -6,33 +6,17 @@ type ENV = {
 	BA: KVNamespace
 }
 
-type KV_poetry = {
-	author: string
-	paragraphs: string[]
-	rhythmic: string
-}
-
 ///
 
 const router = new W.Router<ENV>()
 router.use("*", W.serverTiming())
 router.head("*", W.serveHeadWithGet())
 router.get("/", W.cacheResponse(), async ({ env }) => {
-	const end = W.addServerTiming("kv")
-	const poetry = await env.BA.get<KV_poetry[]>("poetry:song300", {
-		type: "json",
-		cacheTtl: 86400, // 1d
-	})
-	end()
-	if (!poetry) return HttpNotFound()
-
-	const idx = Math.floor(poetry.length * Math.random())
-	const poem = poetry[idx]
-	if (!poem) return HttpNotFound()
-
+	const poem = await randomPick(env.BA)
 	return R.build(
-		R.text([poem.rhythmic, poem.author, "", ...poem.paragraphs].join("\n")),
+		R.text(poem),
 		R.cacheControl("public, must-revalidate, max-age=60"),
+		R.header("poetry-source", "github.com/chinese-poetry#66fc88c"),
 	)
 })
 router.get("/favicon.ico", W.cacheResponse(), async () => {
@@ -46,6 +30,84 @@ router.get("/favicon.ico", W.cacheResponse(), async () => {
 		),
 	)
 })
+
+function randomPick(kv: KVNamespace): Promise<string> {
+	const arr = [pickShijing(), pickChuci(), pickSong300()]
+	const chosen = arr[Math.floor(arr.length * Math.random())]!
+	return chosen(kv)
+}
+function pick<T>(key: string, format: (poem: T) => string) {
+	return async (kv: KVNamespace) => {
+		const end = W.addServerTiming("kv")
+		const poetry = await kv.get<T[]>(key, {
+			type: "json",
+			cacheTtl: 86400, // 1d
+		})
+		end()
+		if (!poetry) throw HttpNotFound()
+		const poem = poetry[Math.floor(poetry.length * Math.random())]!
+		return format(poem)
+	}
+}
+function pickShijing() {
+	return pick(
+		"poetry:shijing",
+		(poem: {
+			chapter: string
+			section: string
+			title: string
+			content: string[]
+		}) => {
+			const text = [
+				poem.chapter + "\u2027" + poem.section + "\u2027" + poem.title,
+				"",
+				...poem.content,
+			].join("\n")
+			return text
+		},
+	)
+}
+function pickChuci() {
+	return pick(
+		"poetry:chuci",
+		(poem: {
+			section: string
+			title: string
+			author: string
+			content: string[]
+		}) => {
+			const offset = Math.min(
+				poem.content.length - 2,
+				Math.floor(poem.content.length * Math.random()),
+			)
+			const text = [
+				poem.section === poem.title
+					? poem.section
+					: poem.section + "\u2027" + poem.title,
+				poem.author,
+				"",
+				...poem.content.slice(offset, offset + 2),
+			].join("\n")
+			return text
+		},
+	)
+}
+function pickSong300() {
+	return pick(
+		"poetry:song300",
+		(poem: { author: string; paragraphs: string[]; rhythmic: string }) => {
+			const text = [
+				poem.rhythmic,
+				poem.author,
+				"",
+				...poem.paragraphs,
+			].join("\n")
+			return text
+		},
+	)
+}
+
+///
 
 const exportedHandler: ExportedHandler<ENV> = {
 	fetch: (req, env, ec) => router.handle(req, env, ec),
