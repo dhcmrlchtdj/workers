@@ -16,7 +16,7 @@ router.get("/", W.cacheResponse(), async ({ env }) => {
 	return R.build(
 		R.text(poem),
 		R.cacheControl("public, must-revalidate, max-age=60"),
-		R.header("poetry-source", "github.com/chinese-poetry#66fc88c"),
+		R.header("ww-poetry-source", "github.com/chinese-poetry#66fc88c"),
 	)
 })
 router.get("/favicon.ico", W.cacheResponse(), async () => {

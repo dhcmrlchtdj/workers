@@ -42,11 +42,11 @@ export function cacheResponse<ENV>(): Handler<ENV> {
 		// https://developers.cloudflare.com/workers/runtime-apis/cache/#invalid-parameters
 		if (resp.status === 200) {
 			const r = resp.clone()
-			r.headers.set("x-worker-cache-status", "HIT")
+			r.headers.set("ww-cache-status", "HIT")
 			ec.waitUntil(cache.put(cacheKey, r))
 		}
 
-		resp.headers.set("x-worker-cache-status", "MISS")
+		resp.headers.set("ww-cache-status", "MISS")
 		return resp
 	}
 }
