@@ -1,4 +1,9 @@
-import { MIME_JSON_UTF8, MIME_SVG, MIME_TEXT_UTF8 } from "./mime.js"
+import {
+	MIME_SVG,
+	MIME_HTML_UTF8,
+	MIME_JSON_UTF8,
+	MIME_TEXT_UTF8,
+} from "./mime.js"
 
 export type Builder<T> = (x: T) => void
 
@@ -57,6 +62,12 @@ export function json<T extends { body?: BodyInit | null; headers: Headers }>(
 	data: unknown,
 ): Builder<T> {
 	return compose(body(JSON.stringify(data)), contentType(MIME_JSON_UTF8))
+}
+
+export function html<T extends { body?: BodyInit | null; headers: Headers }>(
+	data: string,
+): Builder<T> {
+	return compose(body(data), contentType(MIME_HTML_UTF8))
 }
 
 export function text<T extends { body?: BodyInit | null; headers: Headers }>(
