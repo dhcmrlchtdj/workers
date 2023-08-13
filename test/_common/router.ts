@@ -9,16 +9,14 @@ describe("Worker Router", () => {
 		r.get("/*", ({ param }) => R.build(R.json({ r: 2, p: [...param] })))
 		r.get("*", ({ param }) => R.build(R.json({ r: 3, p: [...param] })))
 
-		const testcase = ["/", "/a", "/a/", "/a/b", "/a/b/c", "/b"]
-		const test = testcase.map(async (c) => {
-			// @ts-expect-error
-			const resp = await r.handle(
-				S.build(S.get("https://example.com" + c)),
-			)
-			const text = await resp.text()
-			expect({ in: c, out: text }).toMatchSnapshot()
-		})
-		await Promise.all(test)
+		await Promise.all([
+			t(r, "/"),
+			t(r, "/a"),
+			t(r, "/a/"),
+			t(r, "/a/b"),
+			t(r, "/a/b/c"),
+			t(r, "/b"),
+		])
 	})
 
 	test("param", async () => {
@@ -30,25 +28,16 @@ describe("Worker Router", () => {
 			R.build(R.json({ r: 4, p: [...param] })),
 		)
 
-		const testcase = [
-			"/",
-			"/a",
-			"/a/",
-			"/a/b",
-			"/a/b/c",
-			"/x/b",
-			"/a/y",
-			"/x/y",
-		]
-		const test = testcase.map(async (c) => {
-			// @ts-expect-error
-			const resp = await r.handle(
-				S.build(S.get("https://example.com" + c)),
-			)
-			const text = await resp.text()
-			expect({ in: c, out: text }).toMatchSnapshot()
-		})
-		await Promise.all(test)
+		await Promise.all([
+			t(r, "/"),
+			t(r, "/a"),
+			t(r, "/a/"),
+			t(r, "/a/b"),
+			t(r, "/a/b/c"),
+			t(r, "/x/b"),
+			t(r, "/a/y"),
+			t(r, "/x/y"),
+		])
 	})
 
 	test("static", async () => {
@@ -58,15 +47,24 @@ describe("Worker Router", () => {
 		r.get("/a/", () => R.build(R.json({ r: 3 })))
 		r.get("/a/b", () => R.build(R.json({ r: 4 })))
 
-		const testcase = ["/", "/a", "/a/", "/a/b", "/a/b/", "/a/b/c", "/b"]
-		const test = testcase.map(async (c) => {
-			// @ts-expect-error
-			const resp = await r.handle(
-				S.build(S.get("https://example.com" + c)),
-			)
-			const text = await resp.text()
-			expect({ in: c, out: text }).toMatchSnapshot()
-		})
-		await Promise.all(test)
+		await Promise.all([
+			t(r, "/"),
+			t(r, "/a"),
+			t(r, "/a/"),
+			t(r, "/a/b"),
+			t(r, "/a/b/"),
+			t(r, "/a/b/c"),
+			t(r, "/b"),
+		])
 	})
 })
+
+async function t(router: W.Router<unknown>, path: string) {
+	const resp = await router.handle(
+		S.build(S.get("https://example.com" + path)),
+		{},
+		{} as ExecutionContext,
+	)
+	const text = await resp.text()
+	expect({ in: path, out: text }).toMatchSnapshot()
+}
