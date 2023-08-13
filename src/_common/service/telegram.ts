@@ -109,11 +109,12 @@ export function extractCommand(
 	const command = msg.entities
 		.filter((entity) => entity.type === "bot_command")
 		.map((entity) => {
-			let cmd = text.substr(entity.offset, entity.length)
+			const cmdEnd = entity.offset + entity.length
+			let cmd = text.slice(entity.offset, cmdEnd)
 			if (cmd.endsWith(botName)) {
-				cmd = cmd.substr(0, cmd.length - botName.length)
+				cmd = cmd.slice(0, cmd.length - botName.length)
 			}
-			const arg = text.substr(entity.offset + entity.length).trim()
+			const arg = text.slice(cmdEnd).trim()
 			return { cmd, arg }
 		})
 		.find((x) => x !== undefined)
