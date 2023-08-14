@@ -15,7 +15,7 @@ router.get("/", W.cacheResponse(), async ({ env }) => {
 	const poem = await randomPick(env.BA)
 	return R.build(
 		R.text(poem),
-		R.cacheControl("public, must-revalidate, max-age=60"),
+		R.cacheControl("public, must-revalidate, max-age=20"),
 		R.header("ww-poetry-source", "github.com/chinese-poetry#66fc88c"),
 	)
 })
@@ -76,17 +76,15 @@ function pickChuci() {
 			author: string
 			content: string[]
 		}) => {
-			const offset = Math.min(
-				poem.content.length - 2,
-				Math.floor(poem.content.length * Math.random()),
-			)
+			const offset =
+				Math.floor((poem.content.length / 2 - 2) * Math.random()) * 2
 			const text = [
 				poem.section === poem.title
 					? poem.section
 					: poem.section + "\u2027" + poem.title,
 				poem.author,
 				"",
-				...poem.content.slice(offset, offset + 2),
+				...poem.content.slice(offset, offset + 4),
 			].join("\n")
 			return text
 		},
