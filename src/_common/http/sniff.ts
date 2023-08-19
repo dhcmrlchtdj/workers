@@ -45,6 +45,7 @@ function createMatcherHtml(pattern: number[], mask: number[]): Matcher {
 	}
 }
 
+/* @__NO_SIDE_EFFECTS__ */
 function magicNumber(mime: string, pattern: number[], skipWS = false): Pattern {
 	if (skipWS) {
 		return {
@@ -57,6 +58,7 @@ function magicNumber(mime: string, pattern: number[], skipWS = false): Pattern {
 	}
 }
 
+/* @__NO_SIDE_EFFECTS__ */
 function magicNumberMask(
 	mime: string,
 	pattern: number[],
@@ -65,6 +67,7 @@ function magicNumberMask(
 	return { mime, init: () => createMatcherMasked(pattern, mask) }
 }
 
+/* @__NO_SIDE_EFFECTS__ */
 function magicHtml(pattern: number[], mask: number[]): Pattern {
 	return {
 		mime: "text/html; charset=utf-8",
