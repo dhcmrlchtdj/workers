@@ -8,6 +8,7 @@ import {
 import {
 	encodeHtmlEntities,
 	extractCommand,
+	filterUrl,
 	telegram,
 } from "../_common/service/telegram.js"
 import type { Message, Update } from "../_common/service/telegram-typings.js"
@@ -74,16 +75,17 @@ type BotContext = {
 }
 
 async function handleMessage(ctx: BotContext) {
-	const cmd = extractCommand(ctx.msg, ctx.bot.name)
-	if (cmd) {
-		await handleCommand(ctx, cmd.cmd, cmd.arg)
-	} else {
-		await uploadMessageFiles(ctx)
-	}
+	await Promise.allSettled([
+		uploadMessageFiles(ctx),
+		uploadMessageUrl(ctx),
+		handleCommand(ctx),
+	])
 }
 
-async function handleCommand(ctx: BotContext, cmd: string, _arg: string) {
-	switch (cmd) {
+async function handleCommand(ctx: BotContext) {
+	const cmd = extractCommand(ctx.msg, ctx.bot.name)
+	if (!cmd) return
+	switch (cmd.cmd) {
 		case "/echo": {
 			const msg = JSON.stringify(ctx.msg, null, 4)
 			const sendMessage = telegram(ctx.bot.token, "sendMessage")
@@ -96,6 +98,39 @@ async function handleCommand(ctx: BotContext, cmd: string, _arg: string) {
 			break
 		}
 	}
+}
+
+async function uploadMessageUrl(ctx: BotContext) {
+	const url = filterUrl(ctx.msg)
+	if (url.length === 0) return
+
+	const sendMessage = telegram(ctx.bot.token, "sendMessage")
+	const editMessageText = telegram(ctx.bot.token, "editMessageText")
+
+	await Promise.allSettled(
+		url.map(async (u) => {
+			const uploading = await sendMessage({
+				parse_mode: "HTML",
+				chat_id: ctx.msg.chat.id,
+				reply_to_message_id: ctx.msg.message_id,
+				text: "uploading...",
+				disable_web_page_preview: true,
+			})
+			const id = String(Math.random()).slice(2)
+			await uploadByUrl(ctx.env, u, id, undefined)
+				.then((sharedUrl) => encodeHtmlEntities(sharedUrl))
+				.catch((e) => `<pre>${encodeHtmlEntities(String(e))}</pre>`)
+				.then((text) => {
+					return editMessageText({
+						chat_id: uploading.chat.id,
+						message_id: uploading.message_id,
+						parse_mode: "HTML",
+						disable_web_page_preview: true,
+						text,
+					})
+				})
+		}),
+	)
 }
 
 async function uploadMessageFiles(ctx: BotContext) {
@@ -202,10 +237,33 @@ async function uploadFile(
 	}
 
 	const fileUrl = `https://api.telegram.org/file/bot${bot.token}/${fileInfo.file_path}`
-	const resp = await fetch(fileUrl)
+	const sharedUrl = await uploadByUrl(
+		env,
+		fileUrl,
+		fileInfo.file_unique_id + (filename ? "." + filename : ""),
+		contentType,
+	).catch(handleError)
+	if (!sharedUrl) return
+
+	await editMessageText({
+		chat_id: uploading.chat.id,
+		message_id: uploading.message_id,
+		parse_mode: "HTML",
+		disable_web_page_preview: true,
+		text: encodeHtmlEntities(sharedUrl),
+	})
+}
+
+async function uploadByUrl(
+	env: ENV,
+	url: string,
+	filename: string,
+	contentType: string | undefined,
+) {
+	const resp = await fetch(url)
 	const body = await resp.arrayBuffer()
 
-	let objectKey = `${Date.now()}.${fileInfo.file_unique_id}`
+	let objectKey = `${Date.now()}`
 	if (filename) objectKey += "." + filename
 
 	const uploaded = await env.R2share.put(
@@ -219,15 +277,6 @@ async function uploadFile(
 				via: "telegram-bot",
 			},
 		},
-	).catch(handleError)
-	if (!uploaded) return
-
-	const sharedUrl = "https://worker.h11.io/share/" + uploaded.key
-	await editMessageText({
-		chat_id: uploading.chat.id,
-		message_id: uploading.message_id,
-		parse_mode: "HTML",
-		disable_web_page_preview: true,
-		text: encodeHtmlEntities(sharedUrl),
-	})
+	)
+	return "https://worker.h11.io/share/" + uploaded.key
 }

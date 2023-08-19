@@ -120,3 +120,20 @@ export function extractCommand(
 		.find((x) => x !== undefined)
 	return command
 }
+
+export function filterUrl(msg: Message): string[] {
+	if (!msg.text || !msg.entities) return []
+	const text = msg.text
+	const url = msg.entities
+		.map((entity) => {
+			if (entity.type === "url") {
+				return text.slice(entity.offset, entity.offset + entity.length)
+			} else if (entity.type === "text_link") {
+				return entity.url!
+			} else {
+				return ""
+			}
+		})
+		.filter(Boolean)
+	return url
+}
