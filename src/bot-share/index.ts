@@ -95,7 +95,21 @@ async function handleCommand(ctx: BotContext) {
 				text: `<pre>${encodeHtmlEntities(msg)}</pre>`,
 				disable_web_page_preview: true,
 			})
-			break
+			return
+		}
+		case "/delete": {
+			const key = sharedUrlToKey(cmd.arg)
+			const msg = await ctx.env.R2share.delete(key)
+				.then(() => `${key} is deleted`)
+				.catch((e) => stringifyError(e, true))
+			const sendMessage = telegram(ctx.bot.token, "sendMessage")
+			await sendMessage({
+				parse_mode: "HTML",
+				chat_id: ctx.msg.chat.id,
+				text: `<pre>${encodeHtmlEntities(msg)}</pre>`,
+				disable_web_page_preview: true,
+			})
+			return
 		}
 		case "/list": {
 			const lst = await ctx.env.R2share.list({ limit: 10 })
@@ -108,7 +122,7 @@ async function handleCommand(ctx: BotContext) {
 				text: `<pre>${encodeHtmlEntities(msg)}</pre>`,
 				disable_web_page_preview: true,
 			})
-			break
+			return
 		}
 	}
 }
@@ -132,7 +146,12 @@ async function uploadMessageUrl(ctx: BotContext) {
 			const id = String(Math.random()).slice(2)
 			await uploadByUrl(ctx.env, u, id, undefined)
 				.then((sharedUrl) => encodeHtmlEntities(sharedUrl))
-				.catch((e) => `<pre>${encodeHtmlEntities(String(e))}</pre>`)
+				.catch(
+					(e) =>
+						`<pre>${encodeHtmlEntities(
+							stringifyError(e, true),
+						)}</pre>`,
+				)
 				.then((text) => {
 					return editMessageText({
 						chat_id: uploading.chat.id,
@@ -276,7 +295,7 @@ async function uploadByUrl(
 	const resp = await fetch(url)
 	const body = await resp.arrayBuffer()
 
-	let objectKey = `${Date.now()}`
+	let objectKey = `${10_000_000_000_000 - Date.now()}`
 	if (filename) objectKey += "." + filename
 
 	const uploaded = await env.R2share.put(
@@ -296,4 +315,25 @@ async function uploadByUrl(
 
 function keyToSharedUrl(key: string) {
 	return "https://worker.h11.io/share/" + key
+}
+
+function sharedUrlToKey(url: string) {
+	const prefix = "https://worker.h11.io/share/"
+	if (url.startsWith(prefix)) {
+		return url.slice(prefix.length)
+	} else {
+		return url
+	}
+}
+
+function stringifyError(err: unknown, stringify: true): string
+function stringifyError(err: unknown, stringify: false): string[]
+function stringifyError(err: unknown, stringify: boolean): string | string[] {
+	let arr: string[]
+	if (err instanceof Error && err.stack) {
+		arr = err.stack.split(/\n +/)
+	} else {
+		arr = [String(err)]
+	}
+	return stringify ? JSON.stringify(arr, null, 4) : arr
 }

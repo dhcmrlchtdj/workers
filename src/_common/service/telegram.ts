@@ -124,9 +124,13 @@ export function extractCommand(
 export function filterUrl(msg: Message): string[] {
 	if (!msg.text || !msg.entities) return []
 	const text = msg.text
+	let hasCommand = false
 	const url = msg.entities
 		.map((entity) => {
-			if (entity.type === "url") {
+			if (entity.type === "bot_command") {
+				hasCommand = true
+				return ""
+			} else if (entity.type === "url") {
 				return text.slice(entity.offset, entity.offset + entity.length)
 			} else if (entity.type === "text_link") {
 				return entity.url!
@@ -135,5 +139,5 @@ export function filterUrl(msg: Message): string[] {
 			}
 		})
 		.filter(Boolean)
-	return url
+	return hasCommand ? [] : url
 }
