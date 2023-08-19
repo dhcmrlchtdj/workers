@@ -3,7 +3,7 @@
 	"name": "feedbox",
 	"route": "feedbox.h11.io/*",
 
-	"compatibility_date": "2023-08-12",
+	"compatibility_date": "2023-08-20",
 	"compatibility_flags": ["nodejs_compat"],
 	"workers_dev": false,
 	"no_bundle": true,
