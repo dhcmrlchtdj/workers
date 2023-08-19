@@ -97,6 +97,19 @@ async function handleCommand(ctx: BotContext) {
 			})
 			break
 		}
+		case "/list": {
+			const lst = await ctx.env.R2share.list({ limit: 10 })
+			const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
+			const msg = JSON.stringify(urls, null, 4)
+			const sendMessage = telegram(ctx.bot.token, "sendMessage")
+			await sendMessage({
+				parse_mode: "HTML",
+				chat_id: ctx.msg.chat.id,
+				text: `<pre>${encodeHtmlEntities(msg)}</pre>`,
+				disable_web_page_preview: true,
+			})
+			break
+		}
 	}
 }
 
@@ -278,5 +291,9 @@ async function uploadByUrl(
 			},
 		},
 	)
-	return "https://worker.h11.io/share/" + uploaded.key
+	return keyToSharedUrl(uploaded.key)
+}
+
+function keyToSharedUrl(key: string) {
+	return "https://worker.h11.io/share/" + key
 }
