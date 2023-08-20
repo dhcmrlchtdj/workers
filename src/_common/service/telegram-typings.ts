@@ -4,6 +4,7 @@ export type Update = {
 	edited_message?: Message
 	channel_post?: Message
 	edited_channel_post?: Message
+	callback_query?: CallbackQuery
 }
 
 export type ChatMember = {
@@ -104,6 +105,7 @@ export type InlineKeyboardMarkup = {
 export type InlineKeyboardButton = {
 	text: string
 	url?: string
+	callback_data?: string // 1~64 bytes
 }
 
 ///
@@ -272,4 +274,14 @@ export type MaskPosition = {
 	x_shift: number
 	y_shift: number
 	scale: number
+}
+
+export type CallbackQuery = {
+	id: string
+	from: User
+	message?: Message
+	inline_message_id?: string
+	chat_instance?: string
+	data?: string
+	game_short_name?: string
 }

@@ -11,7 +11,12 @@ import {
 	filterUrl,
 	telegram,
 } from "../_common/service/telegram.js"
-import type { Message, Update } from "../_common/service/telegram-typings.js"
+import type {
+	CallbackQuery,
+	InlineKeyboardMarkup,
+	Message,
+	Update,
+} from "../_common/service/telegram-typings.js"
 import { detectContentType } from "../_common/http/sniff.js"
 
 type ENV = {
@@ -55,7 +60,31 @@ const exportedHandler: ExportedHandler<ENV> = {
 				const payload = await req.json<Update>()
 				if (payload.message) {
 					ec.waitUntil(
-						handleMessage({ env, bot, msg: payload.message }),
+						handleMessage({
+							env,
+							bot,
+							update: payload,
+							msg: payload.message,
+						}),
+					)
+				}
+				if (payload.callback_query) {
+					const answer = async () => {
+						const answerCallbackQuery = telegram(
+							bot.token,
+							"answerCallbackQuery",
+						)
+						await answerCallbackQuery({
+							callback_query_id: payload.callback_query!.id,
+						})
+					}
+					ec.waitUntil(
+						handleCallback({
+							env,
+							bot,
+							update: payload,
+							cb: payload.callback_query,
+						}).then(answer, answer),
 					)
 				}
 				return HttpOk()
@@ -71,7 +100,9 @@ export default exportedHandler
 type BotContext = {
 	env: ENV
 	bot: KV_BOT
-	msg: Message
+	update: Update
+	msg?: Message
+	cb?: CallbackQuery
 }
 
 async function handleMessage(ctx: BotContext) {
@@ -79,11 +110,12 @@ async function handleMessage(ctx: BotContext) {
 		uploadMessageFiles(ctx),
 		uploadMessageUrl(ctx),
 		handleCommand(ctx),
+		handleCallback(ctx),
 	])
 }
 
 async function handleCommand(ctx: BotContext) {
-	const cmd = extractCommand(ctx.msg, ctx.bot.name)
+	const cmd = extractCommand(ctx.msg!, ctx.bot.name)
 	if (!cmd) return
 	switch (cmd.cmd) {
 		case "/echo": {
@@ -91,7 +123,7 @@ async function handleCommand(ctx: BotContext) {
 			const sendMessage = telegram(ctx.bot.token, "sendMessage")
 			await sendMessage({
 				parse_mode: "HTML",
-				chat_id: ctx.msg.chat.id,
+				chat_id: ctx.msg!.chat.id,
 				text: `<pre>${encodeHtmlEntities(msg)}</pre>`,
 				disable_web_page_preview: true,
 			})
@@ -105,7 +137,7 @@ async function handleCommand(ctx: BotContext) {
 			const sendMessage = telegram(ctx.bot.token, "sendMessage")
 			await sendMessage({
 				parse_mode: "HTML",
-				chat_id: ctx.msg.chat.id,
+				chat_id: ctx.msg!.chat.id,
 				text: `<pre>${encodeHtmlEntities(msg)}</pre>`,
 				disable_web_page_preview: true,
 			})
@@ -114,21 +146,65 @@ async function handleCommand(ctx: BotContext) {
 		case "/list": {
 			const lst = await ctx.env.R2share.list({ limit: 10 })
 			const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
-			const msg = JSON.stringify(urls, null, 4)
+			const msg = urls.join("\n")
+
+			// TODO: use kv to storage prev cursor
+
+			const btns: InlineKeyboardMarkup = { inline_keyboard: [] }
+			if (lst.truncated) {
+				btns.inline_keyboard.push([
+					{
+						text: "next 10",
+						callback_data: lst.cursor,
+					},
+				])
+			}
+
 			const sendMessage = telegram(ctx.bot.token, "sendMessage")
 			await sendMessage({
 				parse_mode: "HTML",
-				chat_id: ctx.msg.chat.id,
+				chat_id: ctx.msg!.chat.id,
 				text: `<pre>${encodeHtmlEntities(msg)}</pre>`,
 				disable_web_page_preview: true,
+				reply_markup: btns,
 			})
 			return
 		}
 	}
 }
 
+async function handleCallback(ctx: BotContext) {
+	const cb = ctx.cb!
+	if (!(cb.data && cb.message)) return
+
+	const lst = await ctx.env.R2share.list({ limit: 10, cursor: cb.data })
+	const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
+	const msg = urls.join("\n")
+
+	// TODO: get prev from KV
+	const btns: InlineKeyboardMarkup = { inline_keyboard: [] }
+	if (lst.truncated) {
+		btns.inline_keyboard.push([
+			{
+				text: "next 10",
+				callback_data: JSON.stringify({ c: lst.cursor }),
+			},
+		])
+	}
+
+	const editMessageText = telegram(ctx.bot.token, "editMessageText")
+	return editMessageText({
+		chat_id: cb.message.chat.id,
+		message_id: cb.message.message_id,
+		parse_mode: "HTML",
+		disable_web_page_preview: true,
+		text: `<pre>${encodeHtmlEntities(msg)}</pre>`,
+		reply_markup: btns,
+	})
+}
+
 async function uploadMessageUrl(ctx: BotContext) {
-	const url = filterUrl(ctx.msg)
+	const url = filterUrl(ctx.msg!)
 	if (url.length === 0) return
 
 	const sendMessage = telegram(ctx.bot.token, "sendMessage")
@@ -138,8 +214,8 @@ async function uploadMessageUrl(ctx: BotContext) {
 		url.map(async (u) => {
 			const uploading = await sendMessage({
 				parse_mode: "HTML",
-				chat_id: ctx.msg.chat.id,
-				reply_to_message_id: ctx.msg.message_id,
+				chat_id: ctx.msg!.chat.id,
+				reply_to_message_id: ctx.msg!.message_id,
 				text: "uploading...",
 				disable_web_page_preview: true,
 			})
@@ -166,7 +242,7 @@ async function uploadMessageUrl(ctx: BotContext) {
 }
 
 async function uploadMessageFiles(ctx: BotContext) {
-	const msg = ctx.msg
+	const msg = ctx.msg!
 
 	const chat = msg.chat
 	if (chat.id !== ctx.bot.admin) return
@@ -232,8 +308,8 @@ async function uploadFile(
 	const sendMessage = telegram(bot.token, "sendMessage")
 	const uploading = await sendMessage({
 		parse_mode: "HTML",
-		chat_id: msg.chat.id,
-		reply_to_message_id: msg.message_id,
+		chat_id: msg!.chat.id,
+		reply_to_message_id: msg!.message_id,
 		text: "uploading...",
 		disable_web_page_preview: true,
 	})
