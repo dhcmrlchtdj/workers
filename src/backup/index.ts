@@ -87,7 +87,7 @@ function createHandler(directoryName: string): Handler {
 			uploadToBackBlaze(env, filename, content),
 			uploadToCloudflare(env.R2apac, filename, content),
 		]
-		ec.waitUntil(Promise.allSettled(tasks))
+		tasks.forEach((t) => ec.waitUntil(t))
 
 		return HttpAccepted()
 	}

@@ -18,10 +18,17 @@ import type {
 	Update,
 } from "../_common/service/telegram-typings.js"
 import { detectContentType } from "../_common/http/sniff.js"
+import {
+	keyToSharedUrl,
+	randomKey,
+	sharedUrlToKey,
+	stringifyError,
+} from "./util.js"
 
 type ENV = {
 	BA: KVNamespace
 	R2share: R2Bucket
+	R2apac: R2Bucket
 }
 
 type KV_BOT = {
@@ -61,13 +68,12 @@ const exportedHandler: ExportedHandler<ENV> = {
 				if (payload.message) {
 					const isAdmin = payload.message.from?.id === bot.admin
 					if (isAdmin) {
-						ec.waitUntil(
-							handleMessage({
-								env,
-								bot,
-								msg: payload.message,
-							}),
-						)
+						handleMessage({
+							ec,
+							env,
+							bot,
+							msg: payload.message,
+						})
 					}
 				}
 				if (payload.callback_query) {
@@ -87,6 +93,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 					} else {
 						ec.waitUntil(
 							handleCallback({
+								ec,
 								env,
 								bot,
 								cb: payload.callback_query,
@@ -106,23 +113,49 @@ export default exportedHandler
 ///
 
 type BotContextCallback = {
+	ec: ExecutionContext
 	env: ENV
 	bot: KV_BOT
 	cb: CallbackQuery
 }
 
 async function handleCallback(ctx: BotContextCallback) {
-	const lst = await ctx.env.R2share.list({ limit: 5 })
+	if (!ctx.cb.data) return
+	const data = await ctx.env.R2share.get(ctx.cb.data)
+	if (!data) return
+	const pagingInfo = JSON.parse(await data.text()) as ListPagingInfo
+
+	const lst = await ctx.env.R2share.list({
+		limit: 5,
+		cursor: pagingInfo.cursor,
+	})
 	const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
 	const msg = urls.join("\n")
 
-	const btns: InlineKeyboardMarkup = { inline_keyboard: [] }
+	const btns: InlineKeyboardMarkup = { inline_keyboard: [[]] }
+	if (pagingInfo.prevName) {
+		btns.inline_keyboard[0]!.push({
+			text: "prev 5",
+			callback_data: pagingInfo.prevName,
+		})
+	}
 	if (lst.truncated) {
-		btns.inline_keyboard.push([
-			{
-				text: "next 5",
-			},
-		])
+		const next = "box-share/" + randomKey()
+		await ctx.env.R2apac.put(
+			next,
+			JSON.stringify({
+				cursor: lst.cursor,
+				currName: next,
+				prevName: pagingInfo.currName,
+			} satisfies ListPagingInfo),
+		)
+		btns.inline_keyboard[0]!.push({
+			text: "next 5",
+			callback_data: next,
+		})
+	}
+	if (btns.inline_keyboard[0]!.length === 0) {
+		btns.inline_keyboard = []
 	}
 
 	const editMessageText = telegram(ctx.bot.token, "editMessageText")
@@ -137,17 +170,19 @@ async function handleCallback(ctx: BotContextCallback) {
 }
 
 type BotContextMessage = {
+	ec: ExecutionContext
 	env: ENV
 	bot: KV_BOT
 	msg: Message
 }
 
-async function handleMessage(ctx: BotContextMessage) {
-	await Promise.allSettled([
+function handleMessage(ctx: BotContextMessage) {
+	const tasks = [
 		uploadMessageFiles(ctx),
 		uploadMessageUrl(ctx),
 		handleCommand(ctx),
-	])
+	]
+	tasks.forEach((t) => ctx.ec.waitUntil(t))
 }
 
 async function handleCommand(ctx: BotContextMessage) {
@@ -184,16 +219,34 @@ async function handleCommand(ctx: BotContextMessage) {
 			return
 		}
 		case "/list": {
-			const prefix = cmd.arg
-			const lst = await ctx.env.R2share.list({ limit: 5, prefix })
+			const lst = await ctx.env.R2share.list({ limit: 5 })
 			const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
 			const msg = urls.join("\n\n")
 
 			const btns: InlineKeyboardMarkup = { inline_keyboard: [] }
 			if (lst.truncated) {
+				const curr = "box-share/" + randomKey()
+				await ctx.env.R2apac.put(
+					curr,
+					JSON.stringify({
+						cursor: "",
+						currName: curr,
+						prevName: null,
+					} satisfies ListPagingInfo),
+				)
+				const next = "box-share/" + randomKey()
+				await ctx.env.R2apac.put(
+					next,
+					JSON.stringify({
+						cursor: lst.cursor,
+						currName: next,
+						prevName: curr,
+					} satisfies ListPagingInfo),
+				)
 				btns.inline_keyboard.push([
 					{
 						text: "next 5",
+						callback_data: next,
 					},
 				])
 			}
@@ -227,8 +280,7 @@ async function uploadMessageUrl(ctx: BotContextMessage) {
 				text: "uploading...",
 				disable_web_page_preview: true,
 			})
-			const id = String(Math.random()).slice(2)
-			await uploadByUrl(ctx.env, u, id, undefined)
+			await uploadByUrl(ctx.env, u, undefined, undefined)
 				.then((sharedUrl) => encodeHtmlEntities(sharedUrl))
 				.catch(
 					(e) =>
@@ -369,13 +421,13 @@ async function uploadFile(
 async function uploadByUrl(
 	env: ENV,
 	url: string,
-	filename: string,
+	filename: string | undefined,
 	contentType: string | undefined,
 ) {
 	const resp = await fetch(url)
 	const body = await resp.arrayBuffer()
 
-	let objectKey = `${10_000_000_000_000 - Date.now()}`
+	let objectKey = randomKey()
 	if (filename) objectKey += "." + filename
 
 	const uploaded = await env.R2share.put(
@@ -393,27 +445,8 @@ async function uploadByUrl(
 	return keyToSharedUrl(uploaded.key)
 }
 
-function keyToSharedUrl(key: string) {
-	return "https://worker.h11.io/share/" + key
-}
-
-function sharedUrlToKey(url: string) {
-	const prefix = "https://worker.h11.io/share/"
-	if (url.startsWith(prefix)) {
-		return url.slice(prefix.length)
-	} else {
-		return ""
-	}
-}
-
-function stringifyError(err: unknown, stringify: true): string
-function stringifyError(err: unknown, stringify: false): string[]
-function stringifyError(err: unknown, stringify: boolean): string | string[] {
-	let arr: string[]
-	if (err instanceof Error && err.stack) {
-		arr = err.stack.split(/\n +/)
-	} else {
-		arr = [String(err)]
-	}
-	return stringify ? JSON.stringify(arr, null, 4) : arr
+type ListPagingInfo = {
+	cursor: string
+	currName: string
+	prevName: string | null
 }
