@@ -11,7 +11,12 @@ import {
 	filterUrl,
 	telegram,
 } from "../_common/service/telegram.js"
-import type { Message, Update } from "../_common/service/telegram-typings.js"
+import type {
+	CallbackQuery,
+	InlineKeyboardMarkup,
+	Message,
+	Update,
+} from "../_common/service/telegram-typings.js"
 import { detectContentType } from "../_common/http/sniff.js"
 
 type ENV = {
@@ -65,6 +70,31 @@ const exportedHandler: ExportedHandler<ENV> = {
 						)
 					}
 				}
+				if (payload.callback_query) {
+					const answer = async () => {
+						const answerCallbackQuery = telegram(
+							bot.token,
+							"answerCallbackQuery",
+						)
+						await answerCallbackQuery({
+							callback_query_id: payload.callback_query!.id,
+						})
+					}
+					const isAdmin =
+						payload.callback_query.message?.from?.id === bot.admin
+					if (!isAdmin) {
+						ec.waitUntil(answer())
+					} else {
+						ec.waitUntil(
+							handleCallback({
+								env,
+								bot,
+								cb: payload.callback_query,
+							}).then(answer, answer),
+						)
+					}
+				}
+
 				return HttpOk()
 			},
 		)
@@ -74,6 +104,37 @@ const exportedHandler: ExportedHandler<ENV> = {
 export default exportedHandler
 
 ///
+
+type BotContextCallback = {
+	env: ENV
+	bot: KV_BOT
+	cb: CallbackQuery
+}
+
+async function handleCallback(ctx: BotContextCallback) {
+	const lst = await ctx.env.R2share.list({ limit: 5 })
+	const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
+	const msg = urls.join("\n")
+
+	const btns: InlineKeyboardMarkup = { inline_keyboard: [] }
+	if (lst.truncated) {
+		btns.inline_keyboard.push([
+			{
+				text: "next 5",
+			},
+		])
+	}
+
+	const editMessageText = telegram(ctx.bot.token, "editMessageText")
+	return editMessageText({
+		chat_id: ctx.cb.message!.chat.id,
+		message_id: ctx.cb.message!.message_id,
+		parse_mode: "HTML",
+		disable_web_page_preview: true,
+		text: `<pre>${encodeHtmlEntities(msg)}</pre>`,
+		reply_markup: btns,
+	})
+}
 
 type BotContextMessage = {
 	env: ENV
@@ -128,12 +189,22 @@ async function handleCommand(ctx: BotContextMessage) {
 			const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
 			const msg = urls.join("\n\n")
 
+			const btns: InlineKeyboardMarkup = { inline_keyboard: [] }
+			if (lst.truncated) {
+				btns.inline_keyboard.push([
+					{
+						text: "next 5",
+					},
+				])
+			}
+
 			const sendMessage = telegram(ctx.bot.token, "sendMessage")
 			await sendMessage({
 				parse_mode: "HTML",
 				chat_id: ctx.msg.chat.id,
 				text: encodeHtmlEntities(msg),
 				disable_web_page_preview: true,
+				reply_markup: btns,
 			})
 			return
 		}
