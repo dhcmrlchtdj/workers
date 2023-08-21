@@ -65,6 +65,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				}
 
 				const payload = await req.json<Update>()
+
 				if (payload.message) {
 					const isAdmin = payload.message.from?.id === bot.admin
 					if (isAdmin) {
@@ -87,18 +88,19 @@ const exportedHandler: ExportedHandler<ENV> = {
 						})
 					}
 					const isAdmin =
-						payload.callback_query.message?.from?.id === bot.admin
+						payload.callback_query.from?.id === bot.admin
 					if (!isAdmin) {
 						ec.waitUntil(answer())
 					} else {
-						ec.waitUntil(
-							handleCallback({
-								ec,
-								env,
-								bot,
-								cb: payload.callback_query,
-							}).then(answer, answer),
-						)
+						const r = handleCallback({
+							ec,
+							env,
+							bot,
+							cb: payload.callback_query,
+						})
+						await r
+						ec.waitUntil(r.then(answer))
+						ec.waitUntil(r.catch(answer))
 					}
 				}
 
@@ -120,8 +122,8 @@ type BotContextCallback = {
 }
 
 async function handleCallback(ctx: BotContextCallback) {
-	if (!ctx.cb.data) return
-	const data = await ctx.env.R2share.get(ctx.cb.data)
+	if (!(ctx.cb.data && ctx.cb.message)) return
+	const data = await ctx.env.R2apac.get(ctx.cb.data)
 	if (!data) return
 	const pagingInfo = JSON.parse(await data.text()) as ListPagingInfo
 
@@ -130,7 +132,7 @@ async function handleCallback(ctx: BotContextCallback) {
 		cursor: pagingInfo.cursor,
 	})
 	const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
-	const msg = urls.join("\n")
+	const msg = urls.join("\n\n")
 
 	const btns: InlineKeyboardMarkup = { inline_keyboard: [[]] }
 	if (pagingInfo.prevName) {
@@ -159,12 +161,12 @@ async function handleCallback(ctx: BotContextCallback) {
 	}
 
 	const editMessageText = telegram(ctx.bot.token, "editMessageText")
-	return editMessageText({
-		chat_id: ctx.cb.message!.chat.id,
-		message_id: ctx.cb.message!.message_id,
+	await editMessageText({
+		chat_id: ctx.cb.message.chat.id,
+		message_id: ctx.cb.message.message_id,
 		parse_mode: "HTML",
 		disable_web_page_preview: true,
-		text: `<pre>${encodeHtmlEntities(msg)}</pre>`,
+		text: encodeHtmlEntities(msg),
 		reply_markup: btns,
 	})
 }
