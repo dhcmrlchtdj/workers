@@ -146,19 +146,36 @@ async function handleCallback(ctx: BotContextCallback) {
 		})
 	}
 	if (lst.truncated) {
-		const next = "box-share/" + randomKey()
-		await ctx.env.R2apac.put(
-			next,
-			JSON.stringify({
-				cursor: lst.cursor,
-				currName: next,
-				prevName: pagingInfo.currName,
-			} satisfies ListPagingInfo),
-		)
-		btns.inline_keyboard[0]!.push({
-			text: "next 10",
-			callback_data: next,
-		})
+		if (pagingInfo.nextPage) {
+			btns.inline_keyboard[0]!.push({
+				text: "next 10",
+				callback_data: pagingInfo.nextPage,
+			})
+		} else {
+			const next = "box-share/" + randomKey()
+			await Promise.all([
+				ctx.env.R2apac.put(
+					pagingInfo.currName,
+					JSON.stringify({
+						...pagingInfo,
+						nextPage: next,
+					} satisfies ListPagingInfo),
+				),
+				ctx.env.R2apac.put(
+					next,
+					JSON.stringify({
+						cursor: lst.cursor,
+						currName: next,
+						prevName: pagingInfo.currName,
+						nextPage: null,
+					} satisfies ListPagingInfo),
+				),
+			])
+			btns.inline_keyboard[0]!.push({
+				text: "next 10",
+				callback_data: next,
+			})
+		}
 	}
 	if (btns.inline_keyboard[0]!.length === 0) {
 		btns.inline_keyboard = []
@@ -232,23 +249,27 @@ async function handleCommand(ctx: BotContextMessage) {
 			const btns: InlineKeyboardMarkup = { inline_keyboard: [] }
 			if (lst.truncated) {
 				const curr = "box-share/" + randomKey()
-				await ctx.env.R2apac.put(
-					curr,
-					JSON.stringify({
-						cursor: "",
-						currName: curr,
-						prevName: null,
-					} satisfies ListPagingInfo),
-				)
 				const next = "box-share/" + randomKey()
-				await ctx.env.R2apac.put(
-					next,
-					JSON.stringify({
-						cursor: lst.cursor,
-						currName: next,
-						prevName: curr,
-					} satisfies ListPagingInfo),
-				)
+				await Promise.all([
+					ctx.env.R2apac.put(
+						curr,
+						JSON.stringify({
+							cursor: "",
+							currName: curr,
+							prevName: null,
+							nextPage: next,
+						} satisfies ListPagingInfo),
+					),
+					ctx.env.R2apac.put(
+						next,
+						JSON.stringify({
+							cursor: lst.cursor,
+							currName: next,
+							prevName: curr,
+							nextPage: null,
+						} satisfies ListPagingInfo),
+					),
+				])
 				btns.inline_keyboard.push([
 					{
 						text: "next 10",
@@ -455,4 +476,5 @@ type ListPagingInfo = {
 	cursor: string
 	currName: string
 	prevName: string | null
+	nextPage: string | null
 }
