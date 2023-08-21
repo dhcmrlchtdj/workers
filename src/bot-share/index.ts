@@ -127,17 +127,21 @@ async function handleCallback(ctx: BotContextCallback) {
 	if (!data) return
 	const pagingInfo = JSON.parse(await data.text()) as ListPagingInfo
 
-	const lst = await ctx.env.R2share.list({
-		limit: 5,
-		cursor: pagingInfo.cursor,
-	})
+	const lst = await ctx.env.R2share.list(
+		pagingInfo.cursor
+			? {
+					limit: 10,
+					cursor: pagingInfo.cursor,
+			  }
+			: { limit: 10 },
+	)
 	const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
 	const msg = urls.join("\n\n")
 
 	const btns: InlineKeyboardMarkup = { inline_keyboard: [[]] }
 	if (pagingInfo.prevName) {
 		btns.inline_keyboard[0]!.push({
-			text: "prev 5",
+			text: "prev 10",
 			callback_data: pagingInfo.prevName,
 		})
 	}
@@ -152,7 +156,7 @@ async function handleCallback(ctx: BotContextCallback) {
 			} satisfies ListPagingInfo),
 		)
 		btns.inline_keyboard[0]!.push({
-			text: "next 5",
+			text: "next 10",
 			callback_data: next,
 		})
 	}
@@ -221,7 +225,7 @@ async function handleCommand(ctx: BotContextMessage) {
 			return
 		}
 		case "/list": {
-			const lst = await ctx.env.R2share.list({ limit: 5 })
+			const lst = await ctx.env.R2share.list({ limit: 10 })
 			const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
 			const msg = urls.join("\n\n")
 
@@ -247,7 +251,7 @@ async function handleCommand(ctx: BotContextMessage) {
 				)
 				btns.inline_keyboard.push([
 					{
-						text: "next 5",
+						text: "next 10",
 						callback_data: next,
 					},
 				])
