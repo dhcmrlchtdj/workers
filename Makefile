@@ -23,8 +23,10 @@ fmt:
 lint:
 	eslint --ext=".ts" src test
 
+t :=
 test: $(test_compiled)
-	NODE_OPTIONS=--experimental-vm-modules jest --verbose=true --rootDir=./test $^
+	@echo "filter test with 'make test t=xxx'"
+	NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --rootDir=./test --verbose=true -t=$(t)
 
 # clean:
 
