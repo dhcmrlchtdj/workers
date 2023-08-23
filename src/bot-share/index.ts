@@ -17,13 +17,15 @@ import type {
 	Message,
 	Update,
 } from "../_common/service/telegram-typings.js"
-import { detectContentType } from "../_common/http/sniff.js"
 import {
 	keyToSharedUrl,
 	randomKey,
 	sharedUrlToKey,
 	stringifyError,
+	uploadByBuffer,
+	uploadByUrl,
 } from "./util.js"
+import { fromStr } from "../_common/array_buffer.js"
 
 type ENV = {
 	BA: KVNamespace
@@ -241,6 +243,42 @@ async function handleCommand(ctx: BotContextMessage) {
 			})
 			return
 		}
+		case "/save": {
+			const reply = ctx.msg.reply_to_message
+			if (!(reply && reply.text)) return
+			const sendMessage = telegram(ctx.bot.token, "sendMessage")
+			const editMessageText = telegram(ctx.bot.token, "editMessageText")
+			const uploading = await sendMessage({
+				parse_mode: "HTML",
+				chat_id: ctx.msg.chat.id,
+				reply_to_message_id: ctx.msg.message_id,
+				text: "uploading...",
+				disable_web_page_preview: true,
+			})
+			await uploadByBuffer(
+				ctx.env,
+				fromStr(reply.text),
+				undefined,
+				undefined,
+			)
+				.then((sharedUrl) => encodeHtmlEntities(sharedUrl))
+				.catch(
+					(e) =>
+						`<pre>${encodeHtmlEntities(
+							stringifyError(e, true),
+						)}</pre>`,
+				)
+				.then((text) => {
+					return editMessageText({
+						chat_id: uploading.chat.id,
+						message_id: uploading.message_id,
+						parse_mode: "HTML",
+						disable_web_page_preview: true,
+						text,
+					})
+				})
+			return
+		}
 		case "/list": {
 			const lst = await ctx.env.R2share.list({ limit: 10 })
 			const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
@@ -443,34 +481,6 @@ async function uploadFile(
 		disable_web_page_preview: true,
 		text: encodeHtmlEntities(sharedUrl),
 	})
-}
-
-async function uploadByUrl(
-	env: ENV,
-	url: string,
-	filename: string | undefined,
-	contentType: string | undefined,
-): Promise<string> {
-	const resp = await fetch(url)
-	if (!resp.ok) throw new Error(String(resp.status))
-	const body = await resp.arrayBuffer()
-
-	let objectKey = randomKey()
-	if (filename) objectKey += "." + filename
-
-	const uploaded = await env.R2share.put(
-		encodeURIComponent(objectKey),
-		body,
-		{
-			httpMetadata: {
-				contentType: contentType ?? detectContentType(body),
-			},
-			customMetadata: {
-				via: "telegram-bot",
-			},
-		},
-	)
-	return keyToSharedUrl(uploaded.key)
 }
 
 type ListPagingInfo = {
