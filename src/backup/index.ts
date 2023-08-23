@@ -122,10 +122,20 @@ function generateFilename(
 	directoryName: string,
 	name: string | null | undefined,
 ): string {
-	const date = format(new Date(), "YYYYMMDD_hhmmss")
+	const now = new Date()
+	const ts = 10_000_000_000_000 - now.getTime()
+	const date = format(now, "YYYYMMDD_hhmmss")
 	if (name) {
-		return directoryName + "/" + date + "." + encodeURIComponent(name)
+		return (
+			directoryName +
+			"/" +
+			ts +
+			"." +
+			date +
+			"." +
+			encodeURIComponent(name)
+		)
 	} else {
-		return directoryName + "/" + date
+		return directoryName + "/" + ts + "." + date
 	}
 }
