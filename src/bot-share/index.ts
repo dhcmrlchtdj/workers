@@ -298,7 +298,7 @@ async function uploadMessageUrl(ctx: BotContextMessage) {
 	const sendMessage = telegram(ctx.bot.token, "sendMessage")
 	const editMessageText = telegram(ctx.bot.token, "editMessageText")
 
-	await Promise.allSettled(
+	await Promise.all(
 		url.map(async (u) => {
 			const uploading = await sendMessage({
 				parse_mode: "HTML",
@@ -450,8 +450,9 @@ async function uploadByUrl(
 	url: string,
 	filename: string | undefined,
 	contentType: string | undefined,
-) {
+): Promise<string> {
 	const resp = await fetch(url)
+	if (!resp.ok) throw new Error(String(resp.status))
 	const body = await resp.arrayBuffer()
 
 	let objectKey = randomKey()
