@@ -125,7 +125,9 @@ type BotContextCallback = {
 
 async function handleCallback(ctx: BotContextCallback) {
 	if (!(ctx.cb.data && ctx.cb.message)) return
-	const data = await ctx.env.R2apac.get(ctx.cb.data)
+	const callbackData = JSON.parse(ctx.cb.data) as { c: string; a: string }
+	if (callbackData.c !== "/list") return
+	const data = await ctx.env.R2apac.get(callbackData.a)
 	if (!data) return
 	const pagingInfo = JSON.parse(await data.text()) as ListPagingInfo
 
@@ -144,14 +146,20 @@ async function handleCallback(ctx: BotContextCallback) {
 	if (pagingInfo.prevName) {
 		btns.inline_keyboard[0]!.push({
 			text: "prev 10",
-			callback_data: pagingInfo.prevName,
+			callback_data: JSON.stringify({
+				c: "/list",
+				a: pagingInfo.prevName,
+			}),
 		})
 	}
 	if (lst.truncated) {
 		if (pagingInfo.nextPage) {
 			btns.inline_keyboard[0]!.push({
 				text: "next 10",
-				callback_data: pagingInfo.nextPage,
+				callback_data: JSON.stringify({
+					c: "/list",
+					a: pagingInfo.nextPage,
+				}),
 			})
 		} else {
 			const next = "box-share/" + randomKey()
@@ -175,7 +183,7 @@ async function handleCallback(ctx: BotContextCallback) {
 			])
 			btns.inline_keyboard[0]!.push({
 				text: "next 10",
-				callback_data: next,
+				callback_data: JSON.stringify({ c: "/list", a: next }),
 			})
 		}
 	}
@@ -311,7 +319,7 @@ async function handleCommand(ctx: BotContextMessage) {
 				btns.inline_keyboard.push([
 					{
 						text: "next 10",
-						callback_data: next,
+						callback_data: JSON.stringify({ c: "/list", a: next }),
 					},
 				])
 			}
