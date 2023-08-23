@@ -10,7 +10,7 @@ describe("S3", () => {
 		region: "us-east-1",
 		accessKeyId: "AKIAIOSFODNN7EXAMPLE",
 		secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-	}
+	} as const
 
 	test("signAWS4Header | Get Object", async () => {
 		import.meta.jest.useFakeTimers()
