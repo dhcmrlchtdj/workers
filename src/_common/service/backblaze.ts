@@ -29,7 +29,7 @@ export class BackBlaze {
 			S.build(
 				S.put(url),
 				S.body(file),
-				S.header(host, host),
+				S.header("host", host),
 				S.contentType(contentType),
 			),
 			{

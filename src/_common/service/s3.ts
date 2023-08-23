@@ -8,7 +8,7 @@ import { createHMAC } from "../crypto/hmac.js"
 import { format } from "../format-date.js"
 
 type AWSConfig = {
-	service: string // "s3"
+	service: "s3"
 	region: string
 	accessKeyId: string
 	secretAccessKey: string
