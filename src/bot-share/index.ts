@@ -238,17 +238,26 @@ async function handleCommand(ctx: BotContextMessage) {
 				.split(/\s+/)
 				.map((x) => sharedUrlToKey(x))
 				.filter(Boolean)
-			if (key.length === 0) return
-			const msg = await ctx.env.R2share.delete(key)
-				.then(() => key.join("\n\n") + "\n\ndeleted")
-				.catch((e) => stringifyError(e, true))
-			const sendMessage = telegram(ctx.bot.token, "sendMessage")
-			await sendMessage({
-				parse_mode: "HTML",
-				chat_id: ctx.msg.chat.id,
-				text: encodeHtmlEntities(msg),
-				disable_web_page_preview: true,
-			})
+			const reply = ctx.msg.reply_to_message
+			if (reply && reply.text) {
+				const replyKeys = reply.text
+					.split(/\s+/)
+					.map((x) => sharedUrlToKey(x))
+					.filter(Boolean)
+				key.push(...replyKeys)
+			}
+			if (key.length > 0) {
+				const msg = await ctx.env.R2share.delete(key)
+					.then(() => key.join("\n\n") + "\n\ndeleted")
+					.catch((e) => stringifyError(e, true))
+				const sendMessage = telegram(ctx.bot.token, "sendMessage")
+				await sendMessage({
+					parse_mode: "HTML",
+					chat_id: ctx.msg.chat.id,
+					text: encodeHtmlEntities(msg),
+					disable_web_page_preview: true,
+				})
+			}
 			return
 		}
 		case "/save": {
@@ -266,7 +275,10 @@ async function handleCommand(ctx: BotContextMessage) {
 			await uploadByBuffer(
 				ctx.env,
 				fromStr(reply.text),
-				undefined,
+				reply.forward_sender_name ??
+					reply.forward_signature ?? // channel
+					reply.forward_from?.first_name ?? // chat
+					reply.from?.first_name,
 				undefined,
 			)
 				.then((sharedUrl) => encodeHtmlEntities(sharedUrl))
