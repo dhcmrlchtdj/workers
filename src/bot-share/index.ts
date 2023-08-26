@@ -100,7 +100,6 @@ const exportedHandler: ExportedHandler<ENV> = {
 							bot,
 							cb: payload.callback_query,
 						})
-						await r
 						ec.waitUntil(r.then(answer))
 						ec.waitUntil(r.catch(answer))
 					}
