@@ -1,4 +1,4 @@
-import { detectContentType } from "../_common/http/sniff.js"
+import { detectContentType, mimeToExt } from "../_common/http/sniff.js"
 
 type ENV = {
 	BA: KVNamespace
@@ -64,19 +64,21 @@ export async function uploadByBuffer(
 	filename: string | undefined,
 	contentType: string | undefined,
 ): Promise<string> {
+	const cType = contentType ?? detectContentType(data)
+
 	let objectKey = randomKey()
 	if (filename) objectKey += "." + filename
+	const ext = mimeToExt[cType]
+	if (ext && !(filename && filename.endsWith(ext))) {
+		objectKey += "." + ext
+	}
 
 	const uploaded = await env.R2share.put(
 		encodeURIComponent(objectKey),
 		data,
 		{
-			httpMetadata: {
-				contentType: contentType ?? detectContentType(data),
-			},
-			customMetadata: {
-				via: "telegram-bot",
-			},
+			httpMetadata: { contentType: cType },
+			customMetadata: { via: "telegram-bot" },
 		},
 	)
 	return keyToSharedUrl(uploaded.key)
