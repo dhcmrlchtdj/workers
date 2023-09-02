@@ -271,9 +271,12 @@ async function handleCommand(ctx: BotContextMessage) {
 				text: "uploading...",
 				disable_web_page_preview: true,
 			})
+
+			const meta = { via: "telegram-bot", source: "telegram message" }
 			await uploadByBuffer(
 				ctx.env,
 				fromStr(reply.text),
+				meta,
 				reply.forward_sender_name ??
 					reply.forward_signature ?? // channel
 					reply.forward_from?.first_name ?? // chat

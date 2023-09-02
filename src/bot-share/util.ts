@@ -55,12 +55,14 @@ export async function uploadByUrl(
 	const resp = await fetch(url)
 	if (!resp.ok) throw new Error(String(resp.status))
 	const body = await resp.arrayBuffer()
-	return uploadByBuffer(env, body, filename, contentType)
+	const meta = { via: "telegram-bot", source: url }
+	return uploadByBuffer(env, body, meta, filename, contentType)
 }
 
 export async function uploadByBuffer(
 	env: ENV,
 	data: ArrayBuffer,
+	meta: Record<string, string>,
 	filename: string | undefined,
 	contentType: string | undefined,
 ): Promise<string> {
@@ -78,7 +80,7 @@ export async function uploadByBuffer(
 		data,
 		{
 			httpMetadata: { contentType: cType },
-			customMetadata: { via: "telegram-bot" },
+			customMetadata: meta,
 		},
 	)
 	return keyToSharedUrl(uploaded.key)
