@@ -1,6 +1,6 @@
 {
 	"main": "index.js",
-	"name": "under-construction",
+	"name": "poetry",
 	"routes": ["h11.io/*", "worker.h11.io/*"],
 
 	"kv_namespaces": [

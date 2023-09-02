@@ -43,7 +43,7 @@ deploy: on_ci
 	cd ./src/feedbox && wrangler --experimental-json-config deploy
 	cd ./src/proxy-list && wrangler --experimental-json-config deploy
 	cd ./src/r2-share && wrangler --experimental-json-config deploy
-	cd ./src/under-construction && wrangler --experimental-json-config deploy
+	cd ./src/poetry && wrangler --experimental-json-config deploy
 
 ###
 

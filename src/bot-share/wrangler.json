@@ -1,6 +1,6 @@
 {
 	"main": "index.js",
-	"name": "tg-share",
+	"name": "bot-share",
 	"route": "worker.h11.io/telegram/share*",
 
 	"kv_namespaces": [
