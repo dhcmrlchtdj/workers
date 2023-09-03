@@ -1,4 +1,4 @@
-import { fromStr } from "../uint8array.js"
+import { fromStr } from "../uint8array.ts"
 
 export interface Filter {
 	add(key: string): void

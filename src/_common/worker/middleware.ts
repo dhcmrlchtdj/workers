@@ -1,14 +1,14 @@
-import type { Handler, RouterContext } from "./type.js"
-import * as R from "../http/response.js"
-import * as S from "../http/request.js"
+import type { Handler, RouterContext } from "./type.ts"
+import * as R from "../http/response.ts"
+import * as S from "../http/request.ts"
 import {
 	HttpInternalServerError,
 	HttpUnauthorized,
 	HttpUnsupportedMediaType,
-} from "../http/status.js"
-import { TelegramMonitor } from "../service/telegram-monitor.js"
-import { getBA } from "../http/basic_auth.js"
-import { addServerTiming, getInContext } from "./context.js"
+} from "../http/status.ts"
+import { TelegramMonitor } from "../service/telegram-monitor.ts"
+import { getBA } from "../http/basic_auth.ts"
+import { addServerTiming, getInContext } from "./context.ts"
 
 export function checkContentType<ENV>(expectedType: string): Handler<ENV> {
 	return (ctx, next) => {

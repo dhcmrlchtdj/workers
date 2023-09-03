@@ -1,7 +1,7 @@
 // https://www.backblaze.com/b2/docs/s3_compatible_api.html
 
-import * as S from "../http/request.js"
-import { addAws4SignatureHeader } from "./s3.js"
+import * as S from "../http/request.ts"
+import { addAws4SignatureHeader } from "./s3.ts"
 
 export class BackBlaze {
 	private accessKeyId: string

@@ -9,8 +9,8 @@ import type {
 	EditMessageText,
 	GetChatMember,
 	AnswerCallbackQuery,
-} from "./telegram-typings.js"
-import * as S from "../http/request.js"
+} from "./telegram-typings.ts"
+import * as S from "../http/request.ts"
 
 export const encodeHtmlEntities = (raw: string): string => {
 	const pairs: Record<string, string> = {

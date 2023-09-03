@@ -1,7 +1,8 @@
+import { describe, expect, test } from "@jest/globals"
 import * as fs from "node:fs/promises"
 import * as url from "node:url"
 import * as path from "node:path"
-import * as S from "../../src/_common/http/sniff.js"
+import * as S from "../../src/_common/http/sniff.ts"
 
 const resolveFile = (p: string) =>
 	path.relative(process.cwd(), url.fileURLToPath(new URL(p, import.meta.url)))

@@ -1,5 +1,5 @@
-import { none, some, type Option } from "../option.js"
-import { Deferred } from "./deferred.js"
+import { none, some, type Option } from "../option.ts"
+import { Deferred } from "./deferred.ts"
 
 ///
 

@@ -1,5 +1,5 @@
-import { LinkedList, Entry } from "./linked-list.js"
-import { type Option, some, none } from "../option.js"
+import { LinkedList, Entry } from "./linked-list.ts"
+import { type Option, some, none } from "../option.ts"
 
 export class LinkedMap<K, V> {
 	private map: Map<K, Entry<K, V>>

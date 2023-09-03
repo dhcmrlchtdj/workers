@@ -1,8 +1,9 @@
-import * as S from "../../src/_common/http/request.js"
+import { jest, describe, expect, test } from "@jest/globals"
+import * as S from "../../src/_common/http/request.ts"
 import {
 	addAws4SignatureHeader,
 	createAws4SignedUrl,
-} from "../../src/_common/service/s3.js"
+} from "../../src/_common/service/s3.ts"
 
 describe("S3", () => {
 	const awsConfig = {
@@ -13,8 +14,8 @@ describe("S3", () => {
 	} as const
 
 	test("signAWS4Header | Get Object", async () => {
-		import.meta.jest.useFakeTimers()
-		import.meta.jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
+		jest.useFakeTimers()
+		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
 		const r = await addAws4SignatureHeader(
 			S.build(
@@ -36,8 +37,8 @@ describe("S3", () => {
 	})
 
 	test("signAWS4Header | Put Object", async () => {
-		import.meta.jest.useFakeTimers()
-		import.meta.jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
+		jest.useFakeTimers()
+		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
 		const r = await addAws4SignatureHeader(
 			S.build(
@@ -61,8 +62,8 @@ describe("S3", () => {
 	})
 
 	test("signAWS4Header | Get Bucket Lifecycle", async () => {
-		import.meta.jest.useFakeTimers()
-		import.meta.jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
+		jest.useFakeTimers()
+		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
 		const r = await addAws4SignatureHeader(
 			S.build(
@@ -83,8 +84,8 @@ describe("S3", () => {
 	})
 
 	test("signAWS4Header | List Objects", async () => {
-		import.meta.jest.useFakeTimers()
-		import.meta.jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
+		jest.useFakeTimers()
+		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
 		const r = await addAws4SignatureHeader(
 			S.build(
@@ -107,8 +108,8 @@ describe("S3", () => {
 	})
 
 	test("signAWS4Query", async () => {
-		import.meta.jest.useFakeTimers()
-		import.meta.jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
+		jest.useFakeTimers()
+		jest.setSystemTime(new Date("2013-05-24T00:00:00.000Z"))
 
 		const url = await createAws4SignedUrl(
 			S.build(

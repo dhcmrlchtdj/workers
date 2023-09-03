@@ -1,6 +1,7 @@
-import * as W from "../../src/_common/worker/index.js"
-import * as S from "../../src/_common/http/request.js"
-import * as R from "../../src/_common/http/response.js"
+import { describe, expect, test } from "@jest/globals"
+import * as W from "../../src/_common/worker/index.ts"
+import * as S from "../../src/_common/http/request.ts"
+import * as R from "../../src/_common/http/response.ts"
 
 describe("Worker Router", () => {
 	test("all", async () => {

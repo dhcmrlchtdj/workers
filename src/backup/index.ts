@@ -1,12 +1,12 @@
-import * as W from "../_common/worker/index.js"
-import { BackBlaze } from "../_common/service/backblaze.js"
-import { format } from "../_common/format-date.js"
+import * as W from "../_common/worker/index.ts"
+import { BackBlaze } from "../_common/service/backblaze.ts"
+import { format } from "../_common/format-date.ts"
 import {
 	HttpAccepted,
 	HttpBadRequest,
 	HttpInternalServerError,
-} from "../_common/http/status.js"
-import { MIME_FORM_DATA, MIME_OCTET } from "../_common/http/mime.js"
+} from "../_common/http/status.ts"
+import { MIME_FORM_DATA, MIME_OCTET } from "../_common/http/mime.ts"
 
 type ENV = {
 	BA: KVNamespace

@@ -1,4 +1,4 @@
-import { MIME_OCTET } from "./mime.js"
+import { MIME_OCTET } from "./mime.ts"
 
 // https://mimesniff.spec.whatwg.org/
 // Last Updated 17 July 2023

@@ -1,6 +1,6 @@
-import { type Builder, compose } from "./compose.js"
+import { type Builder, compose } from "./compose.ts"
 
-export * from "./compose.js"
+export * from "./compose.ts"
 
 export function build(...builders: RequestBuilder[]): Request {
 	const req: RequestInner = {

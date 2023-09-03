@@ -1,9 +1,9 @@
-import * as W from "../_common/worker/index.js"
+import * as W from "../_common/worker/index.ts"
 import {
 	encodeHtmlEntities as enc,
 	telegram,
-} from "../_common/service/telegram.js"
-import { HttpBadRequest, HttpOk } from "../_common/http/status.js"
+} from "../_common/service/telegram.ts"
+import { HttpBadRequest, HttpOk } from "../_common/http/status.ts"
 
 type ENV = {
 	BA: KVNamespace

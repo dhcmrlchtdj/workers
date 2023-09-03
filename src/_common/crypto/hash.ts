@@ -1,5 +1,5 @@
-import * as buffer from "../array_buffer.js"
-import * as uint8 from "../uint8array.js"
+import * as buffer from "../array_buffer.ts"
+import * as uint8 from "../uint8array.ts"
 
 export class Hash {
 	private data: Uint8Array[]

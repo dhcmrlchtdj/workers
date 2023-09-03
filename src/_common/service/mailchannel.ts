@@ -1,7 +1,7 @@
 // https://api.mailchannels.net/tx/v1/documentation
 // https://developers.cloudflare.com/pages/platform/functions/plugins/mailchannels/
 
-import * as S from "../http/request.js"
+import * as S from "../http/request.ts"
 
 type MailAddress = { email: string; name?: string }
 type MailContent = { type: string; value: string }

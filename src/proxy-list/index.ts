@@ -1,6 +1,6 @@
-import * as W from "../_common/worker/index.js"
-import * as R from "../_common/http/response.js"
-import { toBase64 } from "../_common/base64.js"
+import * as W from "../_common/worker/index.ts"
+import * as R from "../_common/http/response.ts"
+import { toBase64 } from "../_common/base64.ts"
 
 type ENV = {
 	BA: KVNamespace

@@ -1,6 +1,6 @@
-import type { Handler, Matcher, NextFn, RouterContext } from "./type.js"
-import { HttpNotFound } from "../http/status.js"
-import { asyncContext } from "./context.js"
+import type { Handler, Matcher, NextFn, RouterContext } from "./type.ts"
+import { HttpNotFound } from "../http/status.ts"
+import { asyncContext } from "./context.ts"
 
 type NonEmptyArray<T> = [T, ...T[]]
 

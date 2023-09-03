@@ -1,4 +1,5 @@
-import { ARC } from "../../src/_common/ds/lru.js"
+import { describe, expect, test } from "@jest/globals"
+import { ARC } from "../../src/_common/ds/lru.ts"
 
 describe("ARC", () => {
 	// https://github.com/hashicorp/golang-lru/blob/v2.0.1/arc_test.go

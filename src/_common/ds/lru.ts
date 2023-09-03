@@ -1,6 +1,6 @@
-import { Entry } from "./linked-list.js"
-import { LinkedMap } from "./linked-map.js"
-import { type Option, none, some } from "../option.js"
+import { Entry } from "./linked-list.ts"
+import { LinkedMap } from "./linked-map.ts"
+import { type Option, none, some } from "../option.ts"
 
 export interface CachePolicy<K, V> {
 	size(): number
@@ -195,7 +195,7 @@ export class TwoQueue<K, V> implements CachePolicy<K, V> {
 	private frequent: LRU<K, V> // Am
 	private recent: LinkedMap<K, V> // A1in
 	private ghost: LinkedMap<K, null> // A1out
-	constructor(capacity: number, frequentRatio = 0.75, ghostRatio = 0.5) {
+	constructor(capacity: number, frequentRatio = 0.9, ghostRatio = 0.9) {
 		this.frequentCapacity = Math.ceil(capacity * frequentRatio)
 		this.recentCapacity = capacity - this.frequentCapacity
 		this.ghostCapacity = Math.ceil(capacity * ghostRatio)

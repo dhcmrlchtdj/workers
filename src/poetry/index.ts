@@ -1,6 +1,6 @@
-import * as W from "../_common/worker/index.js"
-import * as R from "../_common/http/response.js"
-import { HttpNotFound } from "../_common/http/status.js"
+import * as W from "../_common/worker/index.ts"
+import * as R from "../_common/http/response.ts"
+import { HttpNotFound } from "../_common/http/status.ts"
 
 type ENV = {
 	BA: KVNamespace

@@ -1,4 +1,4 @@
-import { encodeHtmlEntities, telegram } from "./telegram.js"
+import { encodeHtmlEntities, telegram } from "./telegram.ts"
 
 export class TelegramMonitor {
 	private _serviceName: string

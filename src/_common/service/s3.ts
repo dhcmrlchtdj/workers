@@ -3,9 +3,9 @@
 // https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
 // https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
 
-import { createHash } from "../crypto/hash.js"
-import { createHMAC } from "../crypto/hmac.js"
-import { format } from "../format-date.js"
+import { createHash } from "../crypto/hash.ts"
+import { createHMAC } from "../crypto/hmac.ts"
+import { format } from "../format-date.ts"
 
 type AWSConfig = {
 	service: "s3"

@@ -3,7 +3,7 @@ import {
 	MIME_HTML_UTF8,
 	MIME_JSON_UTF8,
 	MIME_TEXT_UTF8,
-} from "./mime.js"
+} from "./mime.ts"
 
 export type Builder<T> = (x: T) => void
 

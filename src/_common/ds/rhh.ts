@@ -1,4 +1,4 @@
-import { none, some, type Option } from "../option.js"
+import { none, some, type Option } from "../option.ts"
 
 const I_KEY = 0
 const I_VAL = 1

@@ -1,6 +1,6 @@
-import { type Builder, compose, header, headers, body } from "./compose.js"
+import { type Builder, compose, header, headers, body } from "./compose.ts"
 
-export * from "./compose.js"
+export * from "./compose.ts"
 
 export function build(...builders: ResponseBuilder[]): Response {
 	const b = { body: null, status: 200, headers: new Headers() }

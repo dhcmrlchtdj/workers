@@ -1,4 +1,4 @@
-import { none, some, type Option } from "../option.js"
+import { none, some, type Option } from "../option.ts"
 
 const assert = (c: boolean, msg?: string): void => {
 	if (!c) throw new Error(msg)

@@ -1,4 +1,5 @@
-import { Deque } from "../../src/_common/ds/deque.js"
+import { describe, expect, test } from "@jest/globals"
+import { Deque } from "../../src/_common/ds/deque.ts"
 
 describe("Deque", () => {
 	test("grow case 1", () => {

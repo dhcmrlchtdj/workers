@@ -7,17 +7,18 @@
 	"license": "Apache-2.0",
 	"type": "module",
 	"devDependencies": {
-		"@cloudflare/workers-types": "4.20230807.0",
-		"@types/jest": "29.5.3",
-		"@typescript-eslint/eslint-plugin": "6.3.0",
-		"@typescript-eslint/parser": "6.3.0",
-		"esbuild": "0.19.1",
-		"eslint": "8.47.0",
+		"@cloudflare/workers-types": "4.20230821.0",
+		"@jest/globals": "29.6.4",
+		"@types/node": "20.5.9",
+		"@typescript-eslint/eslint-plugin": "6.5.0",
+		"@typescript-eslint/parser": "6.5.0",
+		"esbuild": "0.19.2",
+		"eslint": "8.48.0",
 		"eslint-config-prettier": "9.0.0",
-		"jest": "29.6.2",
-		"prettier": "3.0.1",
-		"typescript": "5.1.6",
-		"wrangler": "3.5.1"
+		"jest": "29.6.4",
+		"prettier": "3.0.3",
+		"typescript": "5.2.2",
+		"wrangler": "3.6.0"
 	},
 	"prettier": {
 		"printWidth": 80,

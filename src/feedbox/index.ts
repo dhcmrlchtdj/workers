@@ -1,4 +1,4 @@
-import * as S from "../_common/http/request.js"
+import * as S from "../_common/http/request.ts"
 
 export default {
 	async fetch(request: Request) {
