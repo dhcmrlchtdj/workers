@@ -272,11 +272,10 @@ async function handleCommand(ctx: BotContextMessage) {
 				disable_web_page_preview: true,
 			})
 
-			const meta = { via: "telegram-bot", source: "telegram message" }
 			await uploadByBuffer(
 				ctx.env,
 				fromStr(reply.text),
-				meta,
+				{ source: "telegram message" },
 				reply.forward_sender_name ??
 					reply.forward_signature ?? // channel
 					reply.forward_from?.first_name ?? // chat
@@ -367,7 +366,7 @@ async function uploadMessageUrl(ctx: BotContextMessage) {
 				text: "uploading...",
 				disable_web_page_preview: true,
 			})
-			await uploadByUrl(ctx.env, u, undefined, undefined)
+			await uploadByUrl(ctx.env, u, { source: u }, undefined, undefined)
 				.then((sharedUrl) => encodeHtmlEntities(sharedUrl))
 				.catch(
 					(e) =>
@@ -491,6 +490,7 @@ async function uploadFile(
 	const sharedUrl = await uploadByUrl(
 		env,
 		fileUrl,
+		{ source: "telegram file" },
 		fileInfo.file_unique_id + (filename ? "." + filename : ""),
 		contentType,
 	).catch(handleError)

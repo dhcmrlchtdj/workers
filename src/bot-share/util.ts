@@ -49,13 +49,13 @@ export function sharedUrlToKey(url: string) {
 export async function uploadByUrl(
 	env: ENV,
 	url: string,
+	meta: Record<string, string>,
 	filename: string | undefined,
 	contentType: string | undefined,
 ): Promise<string> {
 	const resp = await fetch(url)
 	if (!resp.ok) throw new Error(String(resp.status))
 	const body = await resp.arrayBuffer()
-	const meta = { via: "telegram-bot", source: url }
 	return uploadByBuffer(env, body, meta, filename, contentType)
 }
 
@@ -75,6 +75,7 @@ export async function uploadByBuffer(
 		objectKey += "." + ext
 	}
 
+	meta["via"] = "telegram-bot"
 	const uploaded = await env.R2share.put(
 		encodeURIComponent(objectKey),
 		data,
