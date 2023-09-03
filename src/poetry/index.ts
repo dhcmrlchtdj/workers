@@ -19,7 +19,7 @@ router.get("/", W.cacheResponse(), async ({ env }) => {
 		R.header("ww-poetry-source", "github.com/chinese-poetry#66fc88c"),
 	)
 })
-router.get("/favicon.ico", W.cacheResponse(), async () => {
+router.get("/favicon.ico", W.cacheResponse(), () => {
 	const favicon =
 		'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2 2"><circle cx="1" cy="1" r="1" fill="hsl(50,100%,75%)"/></svg>'
 	return R.build(

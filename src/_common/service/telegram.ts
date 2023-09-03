@@ -62,7 +62,7 @@ export { telegram }
 
 async function send(
 	token: string,
-	method: unknown,
+	method: string,
 	data: unknown,
 ): Promise<unknown> {
 	const url = `https://api.telegram.org/bot${token}/${method}`

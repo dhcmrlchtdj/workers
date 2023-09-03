@@ -28,7 +28,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				W.setInContext("credential", item)
 				return true
 			}),
-			async () => {
+			() => {
 				const item = W.getInContext<KVItem>("credential")
 				const proxy = item.proxy.join("\n")
 				const b64 = toBase64(proxy)
