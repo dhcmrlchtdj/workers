@@ -70,7 +70,7 @@ node_modules:
 	pnpm install
 
 $(test_compiled): node_modules/tsconfig.tsbuildinfo
-	esbuild --bundle --format=esm --target=esnext --platform=node --outfile=$@ ${@:.test.js=}
+	esbuild --bundle --format=esm --target=esnext --platform=node --external:'@jest/globals' --outfile=$@ ${@:.test.js=}
 
 # https://developers.cloudflare.com/workers/platform/compatibility-dates/#change-history
 update_compatibility_date:
