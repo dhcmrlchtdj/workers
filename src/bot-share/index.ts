@@ -122,6 +122,7 @@ type BotContextCallback = {
 	cb: CallbackQuery
 }
 
+const LIST_PER_PAGE = 5
 async function handleCallback(ctx: BotContextCallback) {
 	if (!(ctx.cb.data && ctx.cb.message)) return
 	const callbackData = JSON.parse(ctx.cb.data) as { c: string; a: string }
@@ -133,10 +134,10 @@ async function handleCallback(ctx: BotContextCallback) {
 	const lst = await ctx.env.R2share.list(
 		pagingInfo.cursor
 			? {
-					limit: 10,
+					limit: LIST_PER_PAGE,
 					cursor: pagingInfo.cursor,
 			  }
-			: { limit: 10 },
+			: { limit: LIST_PER_PAGE },
 	)
 	const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
 	const msg = urls.join("\n\n")
@@ -144,7 +145,7 @@ async function handleCallback(ctx: BotContextCallback) {
 	const btns: InlineKeyboardMarkup = { inline_keyboard: [[]] }
 	if (pagingInfo.prevName) {
 		btns.inline_keyboard[0]!.push({
-			text: "prev 10",
+			text: `prev ${LIST_PER_PAGE}`,
 			callback_data: JSON.stringify({
 				c: "/list",
 				a: pagingInfo.prevName,
@@ -154,7 +155,7 @@ async function handleCallback(ctx: BotContextCallback) {
 	if (lst.truncated) {
 		if (pagingInfo.nextPage) {
 			btns.inline_keyboard[0]!.push({
-				text: "next 10",
+				text: `next ${LIST_PER_PAGE}`,
 				callback_data: JSON.stringify({
 					c: "/list",
 					a: pagingInfo.nextPage,
@@ -181,7 +182,7 @@ async function handleCallback(ctx: BotContextCallback) {
 				),
 			])
 			btns.inline_keyboard[0]!.push({
-				text: "next 10",
+				text: `next ${LIST_PER_PAGE}`,
 				callback_data: JSON.stringify({ c: "/list", a: next }),
 			})
 		}
@@ -301,7 +302,7 @@ async function handleCommand(ctx: BotContextMessage) {
 			return
 		}
 		case "/list": {
-			const lst = await ctx.env.R2share.list({ limit: 10 })
+			const lst = await ctx.env.R2share.list({ limit: LIST_PER_PAGE })
 			const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
 			const msg = urls.join("\n\n")
 
@@ -331,7 +332,7 @@ async function handleCommand(ctx: BotContextMessage) {
 				])
 				btns.inline_keyboard.push([
 					{
-						text: "next 10",
+						text: `next ${LIST_PER_PAGE}`,
 						callback_data: JSON.stringify({ c: "/list", a: next }),
 					},
 				])
