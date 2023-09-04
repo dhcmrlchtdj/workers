@@ -57,7 +57,7 @@ endif
 force: check build
 
 $(targets): node_modules/tsconfig.tsbuildinfo
-	esbuild --bundle --format=esm --target=esnext --platform=node --outfile=$@/index.js $@/index.ts
+	esbuild --bundle --format=esm --target=esnext --platform=browser --external:'node:*' --outfile=$@/index.js $@/index.ts
 
 node_modules/tsconfig.tsbuildinfo: node_modules $(shell ls {src,test}/**/*.ts)
 	@make --no-print-directory check
@@ -70,7 +70,7 @@ node_modules:
 	pnpm install
 
 $(test_compiled): node_modules/tsconfig.tsbuildinfo
-	esbuild --bundle --format=esm --target=esnext --platform=node --external:'@jest/globals' --outfile=$@ ${@:.test.js=}
+	esbuild --bundle --format=esm --target=esnext --platform=browser --external:'node:*' --external:'@jest/globals' --outfile=$@ ${@:.test.js=}
 
 # https://developers.cloudflare.com/workers/platform/compatibility-dates/#change-history
 update_compatibility_date:
