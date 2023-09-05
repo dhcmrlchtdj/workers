@@ -66,8 +66,7 @@ class Page<K, V> {
 			}
 		} else {
 			return {
-				// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-				leaf: this.values.map((v, idx) => `${this.keys[idx]}=${v}`),
+				leaf: this.values.map((v, idx) => this.keys[idx] + "=" + v),
 			}
 		}
 	}
