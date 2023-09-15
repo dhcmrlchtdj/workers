@@ -1,9 +1,9 @@
-import * as W from "../_common/worker/index.ts"
+import { HttpBadRequest, HttpOk } from "../_common/http/status.ts"
 import {
 	encodeHtmlEntities as enc,
 	telegram,
 } from "../_common/service/telegram.ts"
-import { HttpBadRequest, HttpOk } from "../_common/http/status.ts"
+import * as W from "../_common/worker/index.ts"
 
 type ENV = {
 	BA: KVNamespace

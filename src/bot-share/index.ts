@@ -1,22 +1,23 @@
-import * as W from "../_common/worker/index.ts"
+import { fromStr } from "../_common/array_buffer.ts"
 import { MIME_JSON } from "../_common/http/mime.ts"
 import {
 	HttpBadRequest,
 	HttpInternalServerError,
 	HttpOk,
 } from "../_common/http/status.ts"
-import {
-	encodeHtmlEntities,
-	extractCommand,
-	filterUrl,
-	telegram,
-} from "../_common/service/telegram.ts"
 import type {
 	CallbackQuery,
 	InlineKeyboardMarkup,
 	Message,
 	Update,
 } from "../_common/service/telegram-typings.ts"
+import {
+	encodeHtmlEntities,
+	extractCommand,
+	filterUrl,
+	telegram,
+} from "../_common/service/telegram.ts"
+import * as W from "../_common/worker/index.ts"
 import {
 	keyToSharedUrl,
 	randomKey,
@@ -25,7 +26,6 @@ import {
 	uploadByBuffer,
 	uploadByUrl,
 } from "./util.ts"
-import { fromStr } from "../_common/array_buffer.ts"
 
 type ENV = {
 	BA: KVNamespace

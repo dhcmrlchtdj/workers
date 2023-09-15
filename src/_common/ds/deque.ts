@@ -1,4 +1,4 @@
-import { type Option, some, none } from "../option.ts"
+import { none, some, type Option } from "../option.ts"
 
 // credit
 // https://doc.rust-lang.org/std/collections/struct.VecDeque.html

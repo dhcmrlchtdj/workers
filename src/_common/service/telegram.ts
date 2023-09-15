@@ -1,16 +1,16 @@
+import * as S from "../http/request.ts"
 import type {
-	Message,
+	AnswerCallbackQuery,
 	ChatMember,
+	EditMessageText,
+	File,
+	GetChatMember,
+	Message,
+	SendAnimation,
 	SendMessage,
 	SendPhoto,
-	SendAnimation,
 	SendVideo,
-	File,
-	EditMessageText,
-	GetChatMember,
-	AnswerCallbackQuery,
 } from "./telegram-typings.ts"
-import * as S from "../http/request.ts"
 
 export const encodeHtmlEntities = (raw: string): string => {
 	const pairs: Record<string, string> = {

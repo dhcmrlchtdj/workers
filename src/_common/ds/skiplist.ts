@@ -1,4 +1,4 @@
-import { some, type Option, none } from "../option.ts"
+import { none, some, type Option } from "../option.ts"
 
 // https://ticki.github.io/blog/skip-lists-done-right/
 // https://graphics.stanford.edu/~seander/bithacks.html

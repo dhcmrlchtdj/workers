@@ -1,4 +1,4 @@
-import { type Builder, compose } from "./compose.ts"
+import { compose, type Builder } from "./compose.ts"
 
 export * from "./compose.ts"
 

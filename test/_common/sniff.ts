@@ -1,7 +1,7 @@
 import { describe, expect, test } from "@jest/globals"
 import * as fs from "node:fs/promises"
-import * as url from "node:url"
 import * as path from "node:path"
+import * as url from "node:url"
 import * as S from "../../src/_common/http/sniff.ts"
 
 const resolveFile = (p: string) =>

@@ -1,7 +1,7 @@
 import {
-	MIME_SVG,
 	MIME_HTML_UTF8,
 	MIME_JSON_UTF8,
+	MIME_SVG,
 	MIME_TEXT_UTF8,
 } from "./mime.ts"
 

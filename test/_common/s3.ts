@@ -1,4 +1,4 @@
-import { jest, describe, expect, test } from "@jest/globals"
+import { describe, expect, jest, test } from "@jest/globals"
 import * as S from "../../src/_common/http/request.ts"
 import {
 	addAws4SignatureHeader,

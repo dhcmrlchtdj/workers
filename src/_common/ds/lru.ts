@@ -1,6 +1,6 @@
+import { none, some, type Option } from "../option.ts"
 import { Entry } from "./linked-list.ts"
 import { LinkedMap } from "./linked-map.ts"
-import { type Option, none, some } from "../option.ts"
 
 export interface CachePolicy<K, V> {
 	size(): number
