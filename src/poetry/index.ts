@@ -32,7 +32,11 @@ router.get("/favicon.ico", W.cacheResponse(), () => {
 })
 
 function randomPick(kv: KVNamespace): Promise<string> {
-	const arr = [pickShijing(), pickChuci(), pickSong300()]
+	const arr = [
+		// pickShijing(),
+		// pickChuci(),
+		pickSong300(),
+	]
 	const chosen = arr[Math.floor(arr.length * Math.random())]!
 	return chosen(kv)
 }
