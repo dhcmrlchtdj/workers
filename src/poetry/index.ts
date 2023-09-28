@@ -53,47 +53,47 @@ function pick<T>(key: string, format: (poem: T) => string) {
 		return format(poem)
 	}
 }
-function pickShijing() {
-	return pick(
-		"poetry:shijing",
-		(poem: {
-			chapter: string
-			section: string
-			title: string
-			content: string[]
-		}) => {
-			const text = [
-				poem.chapter + "\u2027" + poem.section + "\u2027" + poem.title,
-				"",
-				...poem.content,
-			].join("\n")
-			return text
-		},
-	)
-}
-function pickChuci() {
-	return pick(
-		"poetry:chuci",
-		(poem: {
-			section: string
-			title: string
-			author: string
-			content: string[]
-		}) => {
-			const offset =
-				Math.floor((poem.content.length / 2 - 2) * Math.random()) * 2
-			const text = [
-				poem.section === poem.title
-					? poem.section
-					: poem.section + "\u2027" + poem.title,
-				poem.author,
-				"",
-				...poem.content.slice(offset, offset + 4),
-			].join("\n")
-			return text
-		},
-	)
-}
+// function pickShijing() {
+//     return pick(
+//         "poetry:shijing",
+//         (poem: {
+//             chapter: string
+//             section: string
+//             title: string
+//             content: string[]
+//         }) => {
+//             const text = [
+//                 poem.chapter + "\u2027" + poem.section + "\u2027" + poem.title,
+//                 "",
+//                 ...poem.content,
+//             ].join("\n")
+//             return text
+//         },
+//     )
+// }
+// function pickChuci() {
+//     return pick(
+//         "poetry:chuci",
+//         (poem: {
+//             section: string
+//             title: string
+//             author: string
+//             content: string[]
+//         }) => {
+//             const offset =
+//                 Math.floor((poem.content.length / 2 - 2) * Math.random()) * 2
+//             const text = [
+//                 poem.section === poem.title
+//                     ? poem.section
+//                     : poem.section + "\u2027" + poem.title,
+//                 poem.author,
+//                 "",
+//                 ...poem.content.slice(offset, offset + 4),
+//             ].join("\n")
+//             return text
+//         },
+//     )
+// }
 function pickSong300() {
 	return pick(
 		"poetry:song300",
