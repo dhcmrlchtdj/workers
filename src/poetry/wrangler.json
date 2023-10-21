@@ -7,7 +7,7 @@
 		{ "binding": "BA", "id": "fb7f86b3d7fb42bc8bb5ed43907a6479" }
 	],
 
-	"compatibility_date": "2023-08-20",
+	"compatibility_date": "2023-10-21",
 	"compatibility_flags": ["nodejs_compat"],
 	"workers_dev": false,
 	"no_bundle": true,
