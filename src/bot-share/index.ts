@@ -162,7 +162,7 @@ async function handleCallback(ctx: BotContextCallback) {
 				}),
 			})
 		} else {
-			const next = "box-share/" + randomKey()
+			const next = "bot-share/" + randomKey()
 			await Promise.all([
 				ctx.env.R2apac.put(
 					pagingInfo.currName,
@@ -308,8 +308,8 @@ async function handleCommand(ctx: BotContextMessage) {
 
 			const btns: InlineKeyboardMarkup = { inline_keyboard: [] }
 			if (lst.truncated) {
-				const curr = "box-share/" + randomKey()
-				const next = "box-share/" + randomKey()
+				const curr = "bot-share/" + randomKey()
+				const next = "bot-share/" + randomKey()
 				await Promise.all([
 					ctx.env.R2apac.put(
 						curr,
