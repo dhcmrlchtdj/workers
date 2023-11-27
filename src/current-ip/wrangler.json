@@ -1,7 +1,7 @@
 {
 	"main": "index.js",
 	"name": "current-ip",
-	"route": "worker.h11.io/current-ip*",
+	"route": "worker.h11.dev/current-ip*",
 
 	"kv_namespaces": [
 		{ "binding": "BA", "id": "fb7f86b3d7fb42bc8bb5ed43907a6479" }

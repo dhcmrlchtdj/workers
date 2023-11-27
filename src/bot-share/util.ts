@@ -32,11 +32,11 @@ export function randomKey(): string {
 ///
 
 export function keyToSharedUrl(key: string) {
-	return "https://worker.h11.io/share/" + key
+	return "https://worker.h11.dev/share/" + key
 }
 
 export function sharedUrlToKey(url: string) {
-	const prefix = "https://worker.h11.io/share/"
+	const prefix = "https://worker.h11.dev/share/"
 	if (url.startsWith(prefix)) {
 		return url.slice(prefix.length)
 	} else {

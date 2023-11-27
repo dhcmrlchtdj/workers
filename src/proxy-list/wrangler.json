@@ -1,7 +1,7 @@
 {
 	"main": "index.js",
 	"name": "proxy-list",
-	"route": "worker.h11.io/proxy-list*",
+	"route": "worker.h11.dev/proxy-list*",
 
 	"kv_namespaces": [
 		{ "binding": "BA", "id": "fb7f86b3d7fb42bc8bb5ed43907a6479" }
