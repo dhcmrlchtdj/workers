@@ -14,27 +14,31 @@ type ENV = {
 const router = new W.Router<ENV>()
 router.use("*", W.sendErrorToTelegram("r2-share"), W.serverTiming())
 router.head(["/share/*", "/s/*"], W.serveHeadWithGet())
-router.get(["/share/*", "/s/*"], W.cacheResponse(), async ({ req, env, param }) => {
-	const filename = param.get("*")!
-	const end = W.addServerTiming("r2")
-	const object = await env.R2share.get(filename)
-	end()
-	if (object === null) return HttpNotFound()
+router.get(
+	["/share/*", "/s/*"],
+	W.cacheResponse(),
+	async ({ req, env, param }) => {
+		const filename = param.get("*")!
+		const end = W.addServerTiming("r2")
+		const object = await env.R2share.get(filename)
+		end()
+		if (object === null) return HttpNotFound()
 
-	const reqEtag = req.headers.get("If-None-Match")
-	const resp = R.build(
-		reqEtag?.includes(object.httpEtag)
-			? R.status(304)
-			: R.body(object.body),
-		R.header("etag", object.httpEtag),
-		R.cacheControl(
-			"public, must-revalidate, s-maxage=86400, max-age=604800",
-		),
-		(b) => object.writeHttpMetadata(b.headers),
-	)
+		const reqEtag = req.headers.get("If-None-Match")
+		const resp = R.build(
+			reqEtag?.includes(object.httpEtag)
+				? R.status(304)
+				: R.body(object.body),
+			R.header("etag", object.httpEtag),
+			R.cacheControl(
+				"public, must-revalidate, s-maxage=86400, max-age=604800",
+			),
+			(b) => object.writeHttpMetadata(b.headers),
+		)
 
-	return resp
-})
+		return resp
+	},
+)
 router.put(
 	"/share",
 	W.checkContentType(MIME_FORM_DATA),
