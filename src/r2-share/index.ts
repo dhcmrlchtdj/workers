@@ -13,8 +13,8 @@ type ENV = {
 
 const router = new W.Router<ENV>()
 router.use("*", W.sendErrorToTelegram("r2-share"), W.serverTiming())
-router.head("/share/*", W.serveHeadWithGet())
-router.get("/share/*", W.cacheResponse(), async ({ req, env, param }) => {
+router.head(["/share/*", "/s/*"], W.serveHeadWithGet())
+router.get(["/share/*", "/s/*"], W.cacheResponse(), async ({ req, env, param }) => {
 	const filename = param.get("*")!
 	const end = W.addServerTiming("r2")
 	const object = await env.R2share.get(filename)
@@ -73,7 +73,7 @@ router.put(
 
 		const resp = R.build(
 			R.status(201),
-			R.header("location", "/share/" + uploaded.key),
+			R.header("location", "/s/" + uploaded.key),
 		)
 		return resp
 	},
