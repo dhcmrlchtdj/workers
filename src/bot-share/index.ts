@@ -136,7 +136,7 @@ async function handleCallback(ctx: BotContextCallback) {
 			? {
 					limit: LIST_PER_PAGE,
 					cursor: pagingInfo.cursor,
-			  }
+				}
 			: { limit: LIST_PER_PAGE },
 	)
 	const urls = lst.objects.map((x) => keyToSharedUrl(x.key))
