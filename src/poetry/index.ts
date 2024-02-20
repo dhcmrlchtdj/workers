@@ -30,6 +30,13 @@ router.get("/favicon.ico", W.cacheResponse(), () => {
 		),
 	)
 })
+router.get("/robots.txt", W.cacheResponse(), () => {
+	const robots = "User-agent: *\nDisallow: /"
+	return R.build(
+		R.text(robots),
+		R.cacheControl("public, must-revalidate, max-age=86400"),
+	)
+})
 
 function randomPick(kv: KVNamespace): Promise<string> {
 	const arr = [
