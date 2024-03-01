@@ -357,10 +357,15 @@ function getAuthor(msg: Message) {
 			case "hidden_user":
 				return forward.sender_user_name
 			case "chat":
+				return (
+					forward.author_signature ??
+					forward.sender_chat.title ??
+					msg.from?.first_name
+				)
 			case "channel":
 				return (
 					forward.author_signature ??
-					forward.sender_chat.first_name ??
+					forward.chat.title ??
 					msg.from?.first_name
 				)
 		}

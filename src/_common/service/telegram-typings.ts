@@ -56,7 +56,7 @@ export type MessageOrigin =
 	| {
 			type: "channel"
 			date: number
-			sender_chat: Chat
+			chat: Chat
 			message_id: number
 			author_signature?: string
 	  }
