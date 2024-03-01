@@ -277,10 +277,7 @@ async function handleCommand(ctx: BotContextMessage) {
 				ctx.env,
 				fromStr(reply.text),
 				{ source: "telegram message" },
-				reply.forward_sender_name ??
-					reply.forward_signature ?? // channel
-					reply.forward_from?.first_name ?? // chat
-					reply.from?.first_name,
+				getAuthor(reply),
 				undefined,
 			)
 				.then((sharedUrl) => encodeHtmlEntities(sharedUrl))
@@ -349,6 +346,26 @@ async function handleCommand(ctx: BotContextMessage) {
 			return
 		}
 	}
+}
+
+function getAuthor(msg: Message) {
+	const forward = msg.forward_origin
+	if (forward) {
+		switch (forward.type) {
+			case "user":
+				return forward.sender_user.first_name
+			case "hidden_user":
+				return forward.sender_user_name
+			case "chat":
+			case "channel":
+				return (
+					forward.author_signature ??
+					forward.sender_chat.first_name ??
+					msg.from?.first_name
+				)
+		}
+	}
+	return msg.from?.first_name
 }
 
 async function uploadMessageUrl(ctx: BotContextMessage) {

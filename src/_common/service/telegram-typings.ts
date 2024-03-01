@@ -17,12 +17,7 @@ export type Message = {
 	sender_chat?: Chat
 	date: number
 	chat: Chat
-	forward_from?: User
-	forward_from_chat?: Chat
-	forward_from_message_id?: number
-	forward_signature?: string
-	forward_sender_name?: string
-	forward_date?: number
+	forward_origin?: MessageOrigin
 	reply_to_message?: Message
 	via_bot?: User
 	edit_date?: number
@@ -40,6 +35,31 @@ export type Message = {
 	video_note?: VideoNote
 	animation?: Animation
 }
+
+export type MessageOrigin =
+	| {
+			type: "user"
+			date: number
+			sender_user: User
+	  }
+	| {
+			type: "hidden_user"
+			date: number
+			sender_user_name: string
+	  }
+	| {
+			type: "chat"
+			date: number
+			sender_chat: Chat
+			author_signature?: string
+	  }
+	| {
+			type: "channel"
+			date: number
+			sender_chat: Chat
+			message_id: number
+			author_signature?: string
+	  }
 
 export type User = {
 	id: number
