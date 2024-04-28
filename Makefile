@@ -21,7 +21,7 @@ fmt:
 	prettier --write . "!pnpm-lock.yaml"
 
 lint:
-	eslint src test
+	oxlint -D=correctness --import-plugin --deny-warnings
 	prettier --check . "!pnpm-lock.yaml"
 
 t :=
