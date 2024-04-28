@@ -72,7 +72,7 @@ async function send(
 		| { ok: false; error_code: number; description: string }
 
 	const req = S.build(S.post(url), S.json(data))
-	const body = await fetch(req).then((r) => r.json() as Promise<ResponseType>)
+	const body = await fetch(req).then((r) => r.json<ResponseType>())
 
 	if (body.ok) {
 		return body.result
