@@ -19,7 +19,7 @@ export const encodeHtmlEntities = (raw: string): string => {
 		">": "&gt;",
 		'"': "&quot;",
 	}
-	return raw.replace(/[&<>"]/g, (matched) => pairs[matched]!)
+	return raw.replaceAll(/[&<>"]/g, (matched) => pairs[matched]!)
 }
 
 function telegram(
@@ -84,7 +84,7 @@ async function send(
 ///
 
 export function sentByMe(username: string, msg: Message): boolean {
-	return !!(msg.from?.is_bot && msg.from.username == username)
+	return !!(msg.from?.is_bot && msg.from.username === username)
 }
 
 export async function fromAdmin(token: string, msg: Message): Promise<boolean> {

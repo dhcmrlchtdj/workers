@@ -18,6 +18,7 @@ export function getBA(auth: string | null): {
 
 	const decoded = fromBase64(encoded).normalize("NFC")
 	const index = decoded.indexOf(":")
+	// eslint-disable-next-line no-control-regex
 	if (index === -1 || /[\x00-\x1F\x7F]/.test(decoded)) {
 		throw HttpBadRequest("invalid authorization value")
 	}

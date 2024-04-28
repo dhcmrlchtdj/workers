@@ -167,7 +167,7 @@ function DEFAULT_HASH_FN<K extends string | number>(key: K) {
 // https://github.com/immutable-js/immutable-js/blob/v4.3.0/src/Hash.js
 // MIT License
 function hashNumber(n: number): number {
-	if (n !== n || n === Infinity) {
+	if (Number.isNaN(n) || n === Infinity) {
 		return 0
 	}
 	let hashed = n | 0

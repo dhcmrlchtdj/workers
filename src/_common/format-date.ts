@@ -20,9 +20,8 @@ export const format = (date: Date, fmt: string): string => {
 		s: _second,
 		ss: pad(_second),
 	}
-	return fmt.replace(
+	return fmt.replaceAll(
 		/YYYY|MM?|DD?|hh?|mm?|ss?/g,
-		// @ts-expect-error
-		(matched) => pairs[matched]!,
+		(matched) => pairs[matched] as string,
 	)
 }

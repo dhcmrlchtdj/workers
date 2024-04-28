@@ -21,7 +21,19 @@ fmt:
 	prettier --write . "!pnpm-lock.yaml"
 
 lint:
-	oxlint -D=correctness --import-plugin --deny-warnings
+	oxlint --deny-warnings \
+		-D=correctness \
+		-D=suspicious \
+		-D=pedantic \
+		-A=no-new-array \
+		-A=ban-ts-comment \
+		-A=max-lines \
+		-A=prefer-math-trunc \
+		-A=no-negated-condition \
+		-A=no-mixed-operators \
+		-A=prefer-code-point \
+		-A=no-hex-escape \
+		--import-plugin
 	prettier --check . "!pnpm-lock.yaml"
 
 t :=

@@ -310,7 +310,7 @@ export const plaintextPattern: Pattern = {
 			const b = data[i]!
 			if (
 				b <= 0x08 ||
-				b == 0x0b ||
+				b === 0x0b ||
 				(0x0e <= b && b <= 0x1a) ||
 				(0x1c <= b && b <= 0x1f)
 			) {

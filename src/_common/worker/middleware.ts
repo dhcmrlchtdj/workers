@@ -72,8 +72,9 @@ export function sendErrorToTelegram<ENV extends { BA: KVNamespace }>(
 				ec.waitUntil(p)
 			},
 		}
-		const resp = next(ctx)
-		return Promise.resolve(resp).catch((err) => {
+		try {
+			return await next(ctx)
+		} catch (err) {
 			if (err instanceof Response) {
 				ec.waitUntil(monitor.logResponse(err, req))
 				return err
@@ -81,7 +82,7 @@ export function sendErrorToTelegram<ENV extends { BA: KVNamespace }>(
 				ec.waitUntil(monitor.error(err, req))
 				return HttpInternalServerError()
 			}
-		})
+		}
 	}
 }
 

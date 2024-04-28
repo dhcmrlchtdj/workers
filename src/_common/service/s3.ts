@@ -170,7 +170,7 @@ function getCanonicalRequest(
 
 	// https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L155
 	const canonicalHeaders = headerKeys
-		.map((k) => `${k}:${header.get(k)!.trim().replace(/\s+/g, " ")}`)
+		.map((k) => `${k}:${header.get(k)!.trim().replaceAll(/\s+/g, " ")}`)
 		.join("\n")
 
 	const signedHeaders = headerKeys.join(";")
@@ -209,7 +209,7 @@ function getSignedHeaders(header: Headers): string[] {
 ///
 
 const uriEncode = (input: string): string => {
-	return encodeURIComponent(input).replace(
+	return encodeURIComponent(input).replaceAll(
 		/[!*'()]/g,
 		(c) => "%" + c.charCodeAt(0).toString(16).toUpperCase(),
 	)

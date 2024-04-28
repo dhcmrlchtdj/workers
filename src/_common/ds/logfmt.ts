@@ -10,15 +10,15 @@ export const parse = (line: string): Record<string, string> => {
 	let in_value = false
 	let in_quote = false
 
-	if (line[line.length - 1] == "\n") {
+	if (line[line.length - 1] === "\n") {
 		line = line.slice(0, line.length - 1)
 	}
 
 	for (let i = 0; i <= line.length; i++) {
-		if ((line[i] == " " && !in_quote) || i == line.length) {
+		if ((line[i] === " " && !in_quote) || i === line.length) {
 			object[key] = value
 			value = ""
-			if (i == line.length) {
+			if (i === line.length) {
 				break
 			} else {
 				in_key = false
@@ -27,16 +27,16 @@ export const parse = (line: string): Record<string, string> => {
 			}
 		}
 
-		if (line[i] == "=" && !in_quote) {
+		if (line[i] === "=" && !in_quote) {
 			//split
 			in_key = false
 			in_value = true
-		} else if (line[i] == "\\") {
+		} else if (line[i] === "\\") {
 			i++
 			value += line[i]
-		} else if (line[i] == '"') {
+		} else if (line[i] === '"') {
 			in_quote = !in_quote
-		} else if (line[i] != " " && !in_value && !in_key) {
+		} else if (line[i] !== " " && !in_value && !in_key) {
 			in_key = true
 			key = line[i]!
 		} else if (in_key) {

@@ -109,9 +109,7 @@ function createMatcher<ENV>(
 	pathPattern: string,
 ): Matcher<ENV> {
 	return (ctx: RouterContext<ENV>) => {
-		if (method) {
-			if (ctx.req.method.toUpperCase() !== method) return null
-		}
+		if (method && ctx.req.method.toUpperCase() !== method) return null
 		return matchPath(pathPattern, new URL(ctx.req.url).pathname)
 	}
 }
