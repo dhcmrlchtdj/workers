@@ -180,7 +180,6 @@ export function murmur(b: Uint8Array, seed = 0xbc9f1d34): number {
 		i += 4
 	}
 
-	/* eslint-disable no-fallthrough */
 	switch (bLen - i) {
 		// @ts-expect-error
 		case 3: {
@@ -198,7 +197,6 @@ export function murmur(b: Uint8Array, seed = 0xbc9f1d34): number {
 			h ^= h >>> 24
 		}
 	}
-	/* eslint-enable no-fallthrough */
 
 	return h >>> 0
 }
