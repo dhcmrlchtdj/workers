@@ -28,12 +28,14 @@ lint:
 		-A=no-new-array \
 		-A=ban-ts-comment \
 		-A=max-lines \
+		-A=max-classes-per-file \
 		-A=prefer-math-trunc \
 		-A=no-negated-condition \
 		-A=no-mixed-operators \
 		-A=prefer-code-point \
 		-A=no-hex-escape \
-		--import-plugin
+		--import-plugin \
+		-A=namespace
 	prettier --check . "!pnpm-lock.yaml"
 
 t :=
