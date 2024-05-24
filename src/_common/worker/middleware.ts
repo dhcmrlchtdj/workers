@@ -13,10 +13,10 @@ import type { Handler, RouterContext } from "./type.ts"
 export function checkContentType<ENV>(expectedType: string): Handler<ENV> {
 	return (ctx, next) => {
 		const actualType = ctx.req.headers.get("content-type")
-		if (!actualType?.startsWith(expectedType)) {
-			return HttpUnsupportedMediaType(`expect "${expectedType}"`)
+		if (actualType?.startsWith(expectedType)) {
+			return next(ctx)
 		}
-		return next(ctx)
+		return HttpUnsupportedMediaType(`expect "${expectedType}"`)
 	}
 }
 
