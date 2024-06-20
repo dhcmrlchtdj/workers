@@ -59,6 +59,7 @@ deploy: on_ci
 	cd ./src/proxy-list && pnpx wrangler --experimental-json-config deploy
 	cd ./src/r2-share && pnpx wrangler --experimental-json-config deploy
 	cd ./src/poetry && pnpx wrangler --experimental-json-config deploy
+	cd ./src/errlog && pnpx wrangler --experimental-json-config deploy
 
 ###
 
