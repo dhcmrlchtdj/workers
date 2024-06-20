@@ -12,10 +12,10 @@ export class BitMap {
 		this.bits = new Uint8Array(Math.ceil(size / 8))
 	}
 	set(pos: number) {
-		this.bits[pos >>> 3] |= 1 << (pos & 7)
+		this.bits[pos >>> 3]! |= 1 << (pos & 7)
 	}
 	clear(pos: number) {
-		this.bits[pos >>> 3] &= ~(1 << (pos & 7))
+		this.bits[pos >>> 3]! &= ~(1 << (pos & 7))
 	}
 	test(pos: number): boolean {
 		return (this.bits[pos >>> 3]! & (1 << (pos & 7))) !== 0

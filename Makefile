@@ -34,6 +34,7 @@ lint:
 		-A=no-mixed-operators \
 		-A=prefer-code-point \
 		-A=no-hex-escape \
+		-A=require-await \
 		--import-plugin \
 		-A=namespace
 	prettier --check . "!pnpm-lock.yaml"

@@ -11,13 +11,13 @@ jobs:
         runs-on: ubuntu-22.04
         steps:
             # https://github.com/marketplace/actions/checkout
-            - uses: actions/checkout@v4.1.1
+            - uses: actions/checkout@v4.1.7
             # https://github.com/marketplace/actions/setup-node-js-environment
             - uses: actions/setup-node@v4.0.2
               with:
-                  node-version: "20.x"
+                  node-version: "22.x"
             # https://github.com/marketplace/actions/cache
-            - uses: actions/cache@v4.0.0
+            - uses: actions/cache@v4.0.2
               with:
                   path: ~/.local/share/pnpm/store
                   key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -25,7 +25,7 @@ jobs:
             - run: |
                   corepack enable
                   # https://www.npmjs.com/package/pnpm
-                  corepack prepare pnpm@8.15.3 --activate
+                  corepack prepare pnpm@9.4.0 --activate
                   pnpm config set store-dir ~/.local/share/pnpm/store
                   pnpm install
               env:
