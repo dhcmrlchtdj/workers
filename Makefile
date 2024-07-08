@@ -35,6 +35,11 @@ lint:
 		-A=prefer-code-point \
 		-A=no-hex-escape \
 		-A=require-await \
+		-A=no-useless-undefined \
+		-A=no-confusing-non-null-assertion \
+		-A=max-dependencies \
+		-A=sort-keys \
+		-A=no-else-return \
 		--import-plugin \
 		-A=namespace
 	prettier --check . "!pnpm-lock.yaml"
