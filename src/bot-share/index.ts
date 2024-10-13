@@ -273,11 +273,12 @@ async function handleCommand(ctx: BotContextMessage) {
 				disable_web_page_preview: true,
 			})
 
+			const author = getAuthor(reply)
 			await uploadByBuffer(
 				ctx.env,
 				fromStr(reply.text),
-				{ source: "telegram message" },
-				getAuthor(reply),
+				{ source: "telegram/" + author },
+				author,
 				undefined,
 			)
 				.then((sharedUrl) => encodeHtmlEntities(sharedUrl))
@@ -348,7 +349,7 @@ async function handleCommand(ctx: BotContextMessage) {
 	}
 }
 
-function getAuthor(msg: Message) {
+function getAuthor(msg: Message): string {
 	const forward = msg.forward_origin
 	if (forward) {
 		switch (forward.type) {
@@ -360,17 +361,19 @@ function getAuthor(msg: Message) {
 				return (
 					forward.author_signature ??
 					forward.sender_chat.title ??
-					msg.from?.first_name
+					msg.from?.first_name ??
+					"Unknown"
 				)
 			case "channel":
 				return (
 					forward.author_signature ??
 					forward.chat.title ??
-					msg.from?.first_name
+					msg.from?.first_name ??
+					"Unknown"
 				)
 		}
 	}
-	return msg.from?.first_name
+	return msg.from?.first_name ?? "Unknown"
 }
 
 async function uploadMessageUrl(ctx: BotContextMessage) {
@@ -513,7 +516,7 @@ async function uploadFile(
 	const sharedUrl = await uploadByUrl(
 		env,
 		fileUrl,
-		{ source: "telegram file" },
+		{ source: "telegram" },
 		fileInfo.file_unique_id + (filename ? "." + filename : ""),
 		contentType,
 	).catch(handleError)
