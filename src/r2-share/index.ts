@@ -34,6 +34,10 @@ router.get(
 				"public, must-revalidate, s-maxage=86400, max-age=604800",
 			),
 			(b) => object.writeHttpMetadata(b.headers),
+			(b) =>
+				Object.entries(object.customMetadata || {}).forEach(([k, v]) =>
+					R.header("ww-" + k, v)(b),
+				),
 		)
 
 		return resp
