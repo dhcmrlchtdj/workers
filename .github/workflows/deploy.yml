@@ -8,7 +8,7 @@ on:
 jobs:
     deploy:
         # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#choosing-github-hosted-runners
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-latest
         steps:
             # https://github.com/marketplace/actions/checkout
             - uses: actions/checkout@v4.1.7
