@@ -5,7 +5,10 @@ import * as url from "node:url"
 import * as S from "../../src/_common/http/sniff.ts"
 
 const resolveFile = (p: string) =>
-	path.relative(process.cwd(), url.fileURLToPath(new URL(p, import.meta.url)))
+	path.relative(
+		process.cwd(),
+		url.fileURLToPath(new url.URL(p, import.meta.url)),
+	)
 
 describe("MIME Sniff", () => {
 	test("test", async () => {
@@ -21,7 +24,7 @@ describe("MIME Sniff", () => {
 
 		async function t(file: string, mime: string) {
 			const data = await fs.readFile(resolveFile(file))
-			const actual = S.detectContentType(data)
+			const actual = S.detectContentType(data.buffer)
 			expect(actual).toBe(mime)
 		}
 	})

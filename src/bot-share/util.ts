@@ -64,7 +64,7 @@ export async function uploadByUrl(
 
 export async function uploadByBuffer(
 	env: ENV,
-	data: ArrayBuffer,
+	data: ArrayBufferLike,
 	meta: Record<string, string>,
 	filename: string | undefined,
 	contentType: string | undefined,
@@ -81,7 +81,7 @@ export async function uploadByBuffer(
 	meta["via"] = "telegram-bot"
 	const uploaded = await env.R2share.put(
 		encodeURIComponent(objectKey),
-		data,
+		data as unknown as ArrayBuffer,
 		{
 			httpMetadata: { contentType: cType },
 			customMetadata: meta,

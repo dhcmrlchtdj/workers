@@ -338,7 +338,7 @@ const allPatterns = [
 const sniffLen = 512
 
 export function detectContentType(
-	data: ArrayBuffer,
+	data: ArrayBufferLike,
 	patterns: Pattern[] = allPatterns,
 ): string {
 	const buf = new Uint8Array(data.slice(0, sniffLen)) // resource header

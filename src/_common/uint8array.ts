@@ -1,12 +1,12 @@
-export const fromBuf = (buf: ArrayBuffer) => new Uint8Array(buf)
+export const fromBuf = (buf: ArrayBufferLike): Uint8Array => new Uint8Array(buf)
 
-export const toBuf = (u: Uint8Array) => u.buffer
+export const toBuf = (u: Uint8Array): ArrayBufferLike => u.buffer
 
-export const fromStr = (s: string) => new TextEncoder().encode(s)
+export const fromStr = (s: string): Uint8Array => new TextEncoder().encode(s)
 
-export const toStr = (u: Uint8Array) => new TextDecoder().decode(u)
+export const toStr = (u: Uint8Array): string => new TextDecoder().decode(u)
 
-export const fromHex = (hex: string) => {
+export const fromHex = (hex: string): Uint8Array => {
 	const buf = new Uint8Array(hex.length >>> 1)
 	for (let i = 0, len = hex.length; i < len; i += 2) {
 		const parsed = parseInt(hex.slice(i, i + 2), 16)
@@ -27,7 +27,7 @@ const u8ToHex = (() => {
 	}
 	return table
 })()
-export const toHex = (u: Uint8Array) => {
+export const toHex = (u: Uint8Array): string => {
 	let out = ""
 	for (let i = 0, len = u.length; i < len; i++) {
 		out += u8ToHex[u[i]!]
