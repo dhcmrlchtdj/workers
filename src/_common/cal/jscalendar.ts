@@ -45,7 +45,7 @@ export type Group = {
 
 type CommonProperties = {
 	uid: string
-	// relatedTo?:
+	relatedTo?: Record<string, Relation>
 	prodId?: string
 	created?: UTCDateTime
 	updated: UTCDateTime
@@ -90,7 +90,7 @@ type CommonProperties = {
 
 ///
 
-type RecurrenceRule = {
+export type RecurrenceRule = {
 	"@type": "RecurrenceRule"
 	frequency:
 		| "yearly"
@@ -113,7 +113,7 @@ type RecurrenceRule = {
 	byMinue?: UnsignedInt[]
 	bySecond?: UnsignedInt[]
 	bySetPosition?: Int[]
-	count?: UnsignedInt[]
+	count?: UnsignedInt
 	until?: LocalDateTime
 }
 
