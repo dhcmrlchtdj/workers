@@ -13,18 +13,18 @@ jobs:
             # https://github.com/marketplace/actions/checkout
             - uses: actions/checkout@v4.2.2
             # https://github.com/marketplace/actions/setup-node-js-environment
-            - uses: actions/setup-node@v4.2.0
+            - uses: actions/setup-node@v4.4.0
               with:
                   node-version: "22.x"
             # https://github.com/marketplace/actions/cache
-            - uses: actions/cache@v4.2.0
+            - uses: actions/cache@v4.2.3
               with:
                   path: ~/.local/share/pnpm/store
                   key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
                   restore-keys: ${{ runner.os }}-pnpm-
             - run: |
                   # https://www.npmjs.com/package/pnpm
-                  npm install -g pnpm@10.4.0
+                  npm install -g pnpm@10.10.0
                   pnpm config set store-dir ~/.local/share/pnpm/store
                   pnpm install
               env:

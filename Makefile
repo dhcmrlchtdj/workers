@@ -25,23 +25,23 @@ lint:
 		-D=correctness \
 		-D=suspicious \
 		-D=pedantic \
-		-A=no-new-array \
 		-A=ban-ts-comment \
-		-A=max-lines \
 		-A=max-classes-per-file \
-		-A=prefer-math-trunc \
-		-A=no-negated-condition \
-		-A=no-mixed-operators \
-		-A=prefer-code-point \
-		-A=no-hex-escape \
-		-A=require-await \
-		-A=no-useless-undefined \
-		-A=no-confusing-non-null-assertion \
 		-A=max-dependencies \
-		-A=sort-keys \
+		-A=max-depth \
+		-A=max-lines \
+		-A=max-lines-per-function \
+		-A=max-nested-callbacks \
 		-A=no-else-return \
-		--import-plugin \
-		-A=namespace
+		-A=no-hex-escape \
+		-A=no-negated-condition \
+		-A=no-new-array \
+		-A=no-useless-undefined \
+		-A=prefer-code-point \
+		-A=prefer-math-trunc \
+		-A=require-await \
+		--promise-plugin \
+		--import-plugin
 	prettier --check . "!pnpm-lock.yaml"
 
 t :=
