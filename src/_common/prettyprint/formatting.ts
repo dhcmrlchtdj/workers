@@ -24,7 +24,7 @@ export function measure(fmt: Format): number {
 		case "empty":
 			return 0
 		case "text":
-			return fmt.text.length
+			return fmt.measure
 		case "block":
 			return fmt.measure
 		case "ablock":
