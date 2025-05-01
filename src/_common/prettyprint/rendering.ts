@@ -58,9 +58,9 @@ function renderBlock(
 ): RenderState {
 	let blm = state[0]
 	let rstate = state
-	let i = 0
+
 	let len = elems.length
-	while (i < len) {
+	for (let i = 0; i < len; i++) {
 		const elem = elems[i]!
 		switch (elem.type) {
 			case "FMT": {
@@ -114,8 +114,8 @@ function renderBlock(
 				break
 			}
 		}
-		i++
 	}
+
 	return rstate
 }
 
@@ -126,17 +126,25 @@ function renderABlock(
 	device: Device,
 ): RenderState {
 	let blm = state[0]
-	const renderBreak = (cc: number, m: number): RenderState => {
-		switch (align) {
-			case "compact":
-				return [cc, false]
-			case "horizontal":
+	let renderBreak: (cc: number, m: number) => RenderState
+	switch (align) {
+		case "compact":
+			renderBreak = (cc) => [cc, false]
+			break
+		case "horizontal":
+			renderBreak = (cc) => {
 				device.space(1)
 				return [cc + 1, false]
-			case "vertical":
+			}
+			break
+		case "vertical":
+			renderBreak = () => {
 				device.lineBreak(blm)
 				return [blm, true]
-			case "packed": {
+			}
+			break
+		case "packed":
+			renderBreak = (cc, m) => {
 				if (m <= device.lineWidth - cc - 1) {
 					device.space(1)
 					return [cc + 1, false]
@@ -145,21 +153,18 @@ function renderABlock(
 					return [blm, true]
 				}
 			}
-		}
+			break
 	}
 
 	let rstate = state
-	let i = 0
 	let len = fmts.length
-	while (i < len) {
+	for (let i = 0; i < len; i++) {
 		const fmt = fmts[i]!
 		const [cc, _] = render1(fmt, rstate, device)
-		if (i + 1 === len) {
-			break
+		if (i + 1 < len) {
+			const nextFmt = fmts[i + 1]!
+			rstate = renderBreak(cc, measure(nextFmt))
 		}
-		const nextFmt = fmts[i + 1]!
-		rstate = renderBreak(cc, measure(nextFmt))
-		i++
 	}
 	return rstate
 }
@@ -189,10 +194,10 @@ function flatRender(fmt: Format, device: Device): void {
 	}
 }
 function flatRenderABlock(fmts: Format[], device: Device): void {
-	const last = fmts.length - 1
-	for (let i = 0; i <= fmts.length; i++) {
+	const len = fmts.length
+	for (let i = 0; i <= len; i++) {
 		flatRender(fmts[i]!, device)
-		if (i < last) device.space(1)
+		if (i + 1 < len) device.space(1)
 	}
 }
 function flatRenderElement(elem: Element, device: Device): void {
