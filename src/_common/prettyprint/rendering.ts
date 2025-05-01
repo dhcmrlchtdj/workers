@@ -87,13 +87,13 @@ function renderBlock(
 					case "soft": {
 						if (i + 1 === len) {
 							throw new Error(
-								"renderBlock: soft break should not be the latest Element",
+								"Soft break cannot be the last element in a non-flat structure.",
 							)
 						}
 						const nextElem = elems[i + 1]!
 						if (nextElem.type !== "FMT") {
 							throw new Error(
-								"renderBlock: soft break should be followed by Format",
+								"soft break must be immediately followed by a Format element in a non-flat structure.",
 							)
 						}
 						const cc = rstate[0]
@@ -129,16 +129,16 @@ function renderABlock(
 	let renderBreak: (cc: number, m: number) => RenderState
 	switch (align) {
 		case "compact":
-			renderBreak = (cc) => [cc, false]
+			renderBreak = (cc, _m) => [cc, false]
 			break
 		case "horizontal":
-			renderBreak = (cc) => {
+			renderBreak = (cc, _m) => {
 				device.space(1)
 				return [cc + 1, false]
 			}
 			break
 		case "vertical":
-			renderBreak = () => {
+			renderBreak = (_cc, _m) => {
 				device.lineBreak(blm)
 				return [blm, true]
 			}
@@ -160,10 +160,10 @@ function renderABlock(
 	let len = fmts.length
 	for (let i = 0; i < len; i++) {
 		const fmt = fmts[i]!
-		const [cc, _] = render1(fmt, rstate, device)
+		rstate = render1(fmt, rstate, device)
 		if (i + 1 < len) {
 			const nextFmt = fmts[i + 1]!
-			rstate = renderBreak(cc, measure(nextFmt))
+			rstate = renderBreak(rstate[0], measure(nextFmt))
 		}
 	}
 	return rstate
