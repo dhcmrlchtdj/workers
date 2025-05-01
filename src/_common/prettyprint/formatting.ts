@@ -8,7 +8,7 @@ export type Break =
 
 export type Format =
 	| { type: "empty" }
-	| { type: "text"; text: string }
+	| { type: "text"; text: string; measure: number }
 	| { type: "block"; elems: Element[]; measure: number }
 	| { type: "ablock"; fmts: Format[]; align: Alignment; measure: number }
 	| { type: "indent"; indent: number; fmt: Format }
@@ -93,7 +93,7 @@ export function empty(): Format {
 }
 
 export function text(s: string): Format {
-	return { type: "text", text: s }
+	return { type: "text", text: s, measure: s.length }
 }
 
 export function indent(n: number, fmt: Format): Format {

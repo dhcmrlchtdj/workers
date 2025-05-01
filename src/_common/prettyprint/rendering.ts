@@ -23,7 +23,7 @@ function render1(
 			return inputState
 		case "text": {
 			device.text(fmt.text)
-			return [cc + fmt.text.length, false]
+			return [cc + measure(fmt), false]
 		}
 		case "block":
 			return renderBlock(fmt.elems, inputState, device)
@@ -174,7 +174,7 @@ function renderABlock(
 function flatRender(fmt: Format, device: Device): void {
 	switch (fmt.type) {
 		case "empty":
-			break
+			return
 		case "text":
 			return device.text(fmt.text)
 		case "block": {
