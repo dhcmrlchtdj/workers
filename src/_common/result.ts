@@ -1,4 +1,4 @@
-export type Result<T> = Ok<T> | Err<T>
+export type Result<T> = Ok<T> | Err
 
 class Ok<T> {
 	v: T
@@ -8,7 +8,7 @@ class Ok<T> {
 	isOk(): this is Ok<T> {
 		return true
 	}
-	isErr(): this is Err<T> {
+	isErr(): this is Err {
 		return false
 	}
 	unwrap(): T {
@@ -30,15 +30,15 @@ class Ok<T> {
 		return this
 	}
 }
-class Err<T> {
+class Err {
 	e: Error
 	constructor(e: Error) {
 		this.e = e
 	}
-	isOk(): this is Ok<T> {
+	isOk(): this is Ok<unknown> {
 		return false
 	}
-	isErr(): this is Err<T> {
+	isErr(): this is Err {
 		return true
 	}
 	unwrap(): never {
@@ -53,10 +53,10 @@ class Err<T> {
 	unwrapErr(): Error {
 		return this.e
 	}
-	mapErr(f: (e: Error) => Error): Result<T> {
+	mapErr<K>(f: (e: Error) => Error): Result<K> {
 		return new Err(f(this.e))
 	}
-	bindErr(f: (e: Error) => Result<T>): Result<T> {
+	bindErr<K>(f: (e: Error) => Result<K>): Result<K> {
 		return f(this.e)
 	}
 }
@@ -65,7 +65,7 @@ export function ok<T>(v: T): Ok<T> {
 	return new Ok(v)
 }
 
-export function err<T>(e: Error | string): Err<T> {
+export function err(e: Error | string): Err {
 	if (e instanceof Error) {
 		return new Err(e)
 	} else {

@@ -1,0 +1,55 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`parsec parse json 1`] = `123`;
+
+exports[`parsec parse json 2`] = `123.456`;
+
+exports[`parsec parse json 3`] = `-0.789`;
+
+exports[`parsec parse json 4`] = `""`;
+
+exports[`parsec parse json 5`] = `"hello"`;
+
+exports[`parsec parse json 6`] = `true`;
+
+exports[`parsec parse json 7`] = `false`;
+
+exports[`parsec parse json 8`] = `[]`;
+
+exports[`parsec parse json 9`] = `
+[
+  true,
+]
+`;
+
+exports[`parsec parse json 10`] = `
+[
+  true,
+  false,
+]
+`;
+
+exports[`parsec parse json 11`] = `{}`;
+
+exports[`parsec parse json 12`] = `
+{
+  "a": true,
+}
+`;
+
+exports[`parsec parse json 13`] = `
+{
+  "a": true,
+  "b": false,
+}
+`;
+
+exports[`parsec parse provider 1`] = `
+"Lorem ipsum dolor sit amet
+{"source":"abc","provider":"https://abc"}
+Lorem ipsum dolor sit amet
+{"source":"def","provider":"https://def"}
+Lorem ipsum dolor sit amet
+[sourceghi](https://ghi)
+Lorem ipsum dolor sit amet"
+`;
