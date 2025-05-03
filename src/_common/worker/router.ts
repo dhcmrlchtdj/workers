@@ -61,7 +61,6 @@ export class Router<ENV> {
 		ec: ExecutionContext,
 	): ReturnType<Handler<ENV>> {
 		const gen = routeGenerator(this._route)
-		gen.next() // init
 		const next: NextFn<ENV> = (ctx) => {
 			const route = gen.next(ctx)
 			if (route.done) return HttpNotFound()
@@ -73,25 +72,32 @@ export class Router<ENV> {
 	}
 }
 
-function* routeGenerator<ENV>(route: Route<ENV>[]): Generator<
+type Gen<ENV> = Generator<
 	{
 		handler: Handler<ENV>
 		param: Map<string, string>
 	},
 	void,
 	RouterContext<ENV>
-> {
-	// @ts-expect-error
-	let ctx = yield // init
-	for (let i = 0; i < route.length; i++) {
-		const { matcher, handlers } = route[i]!
-		if (handlers.length === 0) continue
-		const param = matcher(ctx)
-		if (!param) continue
-		for (let j = 0; j < handlers.length; j++) {
-			ctx = yield { handler: handlers[j]!, param }
+>
+function routeGenerator<ENV>(route: Route<ENV>[]): Gen<ENV> {
+	// eslint-disable-next-line consistent-function-scoping
+	function* aux<ENV>(route: Route<ENV>[]): Gen<ENV> {
+		// @ts-expect-error
+		let ctx = yield // init
+		for (let i = 0; i < route.length; i++) {
+			const { matcher, handlers } = route[i]!
+			if (handlers.length === 0) continue
+			const param = matcher(ctx)
+			if (!param) continue
+			for (let j = 0; j < handlers.length; j++) {
+				ctx = yield { handler: handlers[j]!, param }
+			}
 		}
 	}
+	const gen = aux(route)
+	gen.next() // init
+	return gen
 }
 
 function createMatcher<ENV>(
