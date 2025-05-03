@@ -15,7 +15,7 @@ export function defer(cleanup: () => void) {
 ///
 
 export const sleep = (ms: number) =>
-	new Promise<void>((resolve) => setTimeout(() => resolve(), ms))
+	new Promise((resolve) => setTimeout(resolve, ms))
 
 ///
 
@@ -396,5 +396,40 @@ export class Mailbox<T> {
 			return true
 		}
 		return false
+	}
+}
+
+///
+
+export class RateLimiter {
+	// https://github.com/vitessio/vitess/blob/master/go/ratelimiter/ratelimiter.go
+	private maxCount: number
+	private interval: number
+	private lock: Mutex
+	private curCount: number
+	private lastTime: number
+	constructor(maxCount: number, interval: number) {
+		this.maxCount = maxCount
+		this.interval = interval
+		this.lock = new Mutex()
+		this.curCount = maxCount - 1
+		this.lastTime = Date.now()
+	}
+	async allow(): Promise<boolean> {
+		return this.lock.withLock(async () => {
+			const now = Date.now()
+			if (now - this.lastTime < this.interval) {
+				if (this.curCount > 0) {
+					this.curCount--
+					return true
+				} else {
+					return false
+				}
+			} else {
+				this.curCount = this.maxCount - 1
+				this.lastTime = now
+				return true
+			}
+		})
 	}
 }
