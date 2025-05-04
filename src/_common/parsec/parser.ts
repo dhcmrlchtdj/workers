@@ -26,7 +26,7 @@ export const eof: Parser<symbol> = async (io) => {
 	if (ch === undefined) {
 		return ok(EOF)
 	} else {
-		return err(`eof: expect EOF, get '${ch}'`)
+		return err(`eof: expect EOF, actual '${ch}'`)
 	}
 }
 export function char(ch: string): Parser<string> {
@@ -36,7 +36,7 @@ export function char(ch: string): Parser<string> {
 			await io.reader.advance()
 			return ok(next)
 		} else {
-			return err(`char: expect ${ch}, get '${next}'`)
+			return err(`char: expect ${ch}, actual '${next}'`)
 		}
 	}
 }
@@ -44,7 +44,7 @@ export function notChar(ch: string): Parser<string> {
 	return async (io) => {
 		const next = await io.reader.peek()
 		if (next === undefined || next === ch) {
-			return err(`notChar: expect not ${ch}, get '${next}'`)
+			return err(`notChar: unexpected '${next}'`)
 		} else {
 			await io.reader.advance()
 			return ok(next)
@@ -69,7 +69,7 @@ export function str(s: string): Parser<string> {
 			await io.reader.advance(s.length)
 			return ok(s)
 		} else {
-			return err(`str: expect ${s}, get '${next}'`)
+			return err(`str: expect ${s}, actual '${next}'`)
 		}
 	}
 }
@@ -133,27 +133,12 @@ export function repeat0<T>(c: Parser<T>): Parser<T[]> {
 	}
 }
 export function repeat1<T>(c: Parser<T>): Parser<T[]> {
-	return async (io) => {
-		const rs = await repeat0(c)(io)
-		if (rs.isOk() && rs.unwrap().length > 0) {
-			return rs
-		} else {
-			return err(`repeat1: expect at least 1 element`)
-		}
-	}
+	return bind(repeat0(c), (r) =>
+		r.length > 0 ? ok(r) : err("repeat1: expect at least 1 element"),
+	)
 }
 export function optional<T>(c: Parser<T>): Parser<T | typeof EMPTY> {
-	return async (io) => {
-		const mark = await io.reader.mark()
-		const r = await c(io)
-		if (r.isErr()) {
-			await io.reader.backTo(mark)
-			return ok(EMPTY)
-		} else {
-			await io.reader.unmark(mark)
-			return r
-		}
-	}
+	return bindErr<T | typeof EMPTY>(c, (_) => ok(EMPTY))
 }
 export function sepBy<T>(sep: Parser<unknown>, c: Parser<T>): Parser<T[]> {
 	return async (io) => {
