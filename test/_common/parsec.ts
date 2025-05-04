@@ -89,6 +89,7 @@ describe("parsec", () => {
 				p.choice(p.str("true"), p.str("false")),
 				(r) => r === "true",
 			)
+			const jsonNull = p.map(p.str("null"), (_) => null)
 			const jsonArr = p.delimited(
 				p.char("["),
 				p.sepBy(p.char(","), jsonp),
@@ -117,7 +118,14 @@ describe("parsec", () => {
 
 			return p.delimited(
 				p.space0,
-				p.choice(jsonNum, jsonStr, jsonBool, jsonArr, jsonObj),
+				p.choice(
+					jsonNum,
+					jsonStr,
+					jsonBool,
+					jsonNull,
+					jsonArr,
+					jsonObj,
+				),
 				p.space0,
 			)
 		})
@@ -133,9 +141,11 @@ describe("parsec", () => {
 		await t('"hello"')
 		await t("true")
 		await t("false")
+		await t("null")
 		await t("[]")
 		await t("[ true ]")
 		await t("[true, false]")
+		await t('[ 123 , true, "hello" , null]')
 		await t(" {} ")
 		await t('{ "a" : true }')
 		await t('{"a": true, "b": false}')

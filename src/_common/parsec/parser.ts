@@ -3,7 +3,10 @@ import type { IO } from "./io"
 
 export type Parser<T, W = unknown> = (_: IO<W>) => Promise<Result<T>>
 
-export async function run<T, W>(parser: Parser<T, W>, io: IO<W>) {
+export async function run<T, W>(
+	parser: Parser<T, W>,
+	io: IO<W>,
+): Promise<Result<T>> {
 	const r = await parser(io)
 	if (r.isErr()) {
 		await io.writer.error?.(r.unwrapErr())

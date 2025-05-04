@@ -14,30 +14,41 @@ exports[`parsec parse json 6`] = `true`;
 
 exports[`parsec parse json 7`] = `false`;
 
-exports[`parsec parse json 8`] = `[]`;
+exports[`parsec parse json 8`] = `null`;
 
-exports[`parsec parse json 9`] = `
+exports[`parsec parse json 9`] = `[]`;
+
+exports[`parsec parse json 10`] = `
 [
   true,
 ]
 `;
 
-exports[`parsec parse json 10`] = `
+exports[`parsec parse json 11`] = `
 [
   true,
   false,
 ]
 `;
 
-exports[`parsec parse json 11`] = `{}`;
-
 exports[`parsec parse json 12`] = `
+[
+  123,
+  true,
+  "hello",
+  null,
+]
+`;
+
+exports[`parsec parse json 13`] = `{}`;
+
+exports[`parsec parse json 14`] = `
 {
   "a": true,
 }
 `;
 
-exports[`parsec parse json 13`] = `
+exports[`parsec parse json 15`] = `
 {
   "a": true,
   "b": false,
