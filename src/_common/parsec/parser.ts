@@ -262,10 +262,7 @@ export function bindErrAsync<T, I = unknown>(
 ///
 
 export function fix<T>(f: (x: Parser<T>) => Parser<T>): Parser<T> {
-	const _fix =
-		<T>(ff: (x: Parser<T>) => Parser<T>): Parser<T> =>
-		(io) =>
-			ff(_fix(ff))(io)
+	const _fix: typeof fix = (ff) => (io) => ff(_fix(ff))(io)
 	return _fix(f)
 }
 
