@@ -29,12 +29,12 @@ export const eof: Parser<typeof EOF, unknown> = async (io) => {
 		return err(`eof: expect EOF, actual '${next}'`)
 	}
 }
-export const notEof: Parser<typeof EMPTY, unknown> = async (io) => {
+export const hasMore: Parser<typeof EMPTY, unknown> = async (io) => {
 	const next = await io.reader.peek()
 	if (next !== undefined) {
 		return ok(EMPTY)
 	} else {
-		return err(`notEof: expect not EOF`)
+		return err(`hasMore: expect not EOF`)
 	}
 }
 export function char(ch: string): Parser<string> {
@@ -187,8 +187,20 @@ export function delimited<T, W = unknown>(
 		(e) => "delimited: " + e.message,
 	)
 }
+export function tuple0<T, W = unknown>(
+	p0: Parser<T, W>,
+	p1: Parser<unknown, unknown>,
+): Parser<T, W> {
+	return map(sequence(p0, p1), (r) => r[0])
+}
+export function tuple1<T, W = unknown>(
+	p0: Parser<unknown, unknown>,
+	p1: Parser<T, W>,
+): Parser<T, W> {
+	return map(sequence(p0, p1), (r) => r[1])
+}
 export function end<T, W = unknown>(p: Parser<T, W>): Parser<T, W> {
-	return map(sequence(p, eof), (r) => r[0])
+	return tuple0(p, eof)
 }
 
 ///

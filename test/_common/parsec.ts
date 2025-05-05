@@ -11,7 +11,7 @@ describe("parsec", () => {
 			p.end(
 				p.repeat0(
 					p.sequence(
-						p.map(p.notEof, () => ""),
+						p.map(p.hasMore, () => ""),
 						p.map(p.repeat0(writeCh(p.notChar("["))), (r) =>
 							r.join(""),
 						),
