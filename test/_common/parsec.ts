@@ -1,6 +1,5 @@
 import { describe, expect, test } from "@jest/globals"
 import * as p from "../../src/_common/parsec"
-import { StrIO } from "../../src/_common/parsec"
 
 describe("parsec", () => {
 	test("parse provider", async () => {
@@ -52,7 +51,7 @@ describe("parsec", () => {
 			"Lorem ipsum dolor sit amet",
 		].join("\n")
 		let output = ""
-		const io = new StrIO<string>(input, {
+		const io = new p.BufIO<string>(input, {
 			async write(data) {
 				output += data
 			},
@@ -140,7 +139,7 @@ describe("parsec", () => {
 			}),
 		)
 		const t = async (input: string) => {
-			const io = new StrIO<string>(input)
+			const io = new p.BufIO<string>(input)
 			const r = await p.run(jsonParser, io)
 			expect(r.isOk() ? r.unwrap() : r.unwrapErr()).toMatchSnapshot()
 		}
