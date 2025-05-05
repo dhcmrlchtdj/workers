@@ -74,44 +74,44 @@ export class StreamIO<T> implements IO<T> {
 	}
 }
 class StreamingStr implements IOReader {
-	private len: number
+	private eof: boolean
 	private buf: string
-	private bufStart: number
-	private bufCurr: number
-	private marks: Record<string, number>
-	private peekDeferred: Deferred<string> | null
+	private idx: number
+	private start: number
+	private marks: Map<number, number>
+	private peekDeferred: Deferred<string | undefined> | null
 	private peekSize: number
 	constructor() {
-		this.len = Infinity
+		this.eof = false
 		this.buf = ""
-		this.bufStart = 0
-		this.bufCurr = 0
-		this.marks = {}
+		this.idx = 0
+		this.start = 0
+		this.marks = new Map()
 		this.peekDeferred = null
 		this.peekSize = 0
 	}
 	write(data: string) {
 		this.buf += data
 		if (this.peekDeferred === null) return
-		if (this.bufCurr + this.peekSize < this.buf.length) {
-			const data = this.buf.slice(
-				this.bufStart,
-				this.bufStart + this.peekSize,
-			)
-			this.bufStart += this.peekSize
-			this.peekDeferred.resolve(data)
+		if (this.idx + this.peekSize < this.buf.length) {
+			const chunk = this.buf.slice(this.idx, this.idx + this.peekSize)
+			this.peekDeferred.resolve(chunk)
 			this.peekDeferred = null
 		}
 	}
 	end() {
-		this.len = this.buf.length + this.bufStart
+		this.eof = true
+		if (this.peekDeferred !== null) {
+			this.peekDeferred.resolve(undefined)
+		}
 	}
 	async peek(n = 1) {
-		if (this.bufCurr + n > this.len) return undefined
-		if (this.bufCurr + n < this.buf.length) {
-			const data = this.buf.slice(this.bufStart, this.bufStart + n)
-			this.bufStart += n
-			return data
+		if (this.idx + n < this.buf.length) {
+			if (n === 1) return this.buf[this.idx + 1]
+			const chunk = this.buf.slice(this.idx, this.idx + n)
+			return chunk
+		} else if (this.eof) {
+			return undefined
 		} else {
 			this.peekDeferred = new Deferred()
 			this.peekSize = n
@@ -119,34 +119,35 @@ class StreamingStr implements IOReader {
 		}
 	}
 	async advance(n = 1) {
-		this.bufCurr += n
+		this.idx += n
+		this._cleanup()
 	}
 	async mark() {
-		this.marks[this.bufCurr] = (this.marks[this.bufCurr] ?? 0) + 1
-		return this.bufCurr
+		const pos = this.start + this.idx
+		const count = (this.marks.get(pos) ?? 0) + 1
+		this.marks.set(pos, count)
+		return pos
 	}
 	async unmark(m: number) {
-		const count = (this.marks[m] ?? 1) - 1
-		this.marks[m] = count
-		if (count === 0) {
-			this.tryCleanupMark()
-		}
-	}
-	private tryCleanupMark() {
-		let minPos = this.bufCurr
-		let newMarks: Record<string, number> = {}
-		for (const [k, v] of Object.entries(this.marks)) {
-			if (v > 0) {
-				newMarks[k] = v
-			}
-		}
-		this.marks = newMarks
-		if (minPos > this.bufStart) {
-			this.buf = this.buf.slice(minPos - this.bufStart)
-			this.bufStart = minPos
+		const count = (this.marks.get(m) ?? 1) - 1
+		if (count > 0) {
+			this.marks.set(m, count)
+		} else {
+			this.marks.delete(m)
+			this._cleanup()
 		}
 	}
 	async backTo(m: number) {
-		this.bufCurr = m
+		this.idx = m - this.start
+	}
+	private _cleanup() {
+		if (Math.random() > 0.2) return
+		const minPos = Math.min(this.start + this.idx, ...this.marks.keys())
+		if (minPos > this.start) {
+			const shift = minPos - this.start
+			this.buf = this.buf.slice(shift)
+			this.idx -= shift
+			this.start = minPos
+		}
 	}
 }
