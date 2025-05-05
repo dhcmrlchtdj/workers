@@ -64,3 +64,13 @@ Lorem ipsum dolor sit amet
 [sourceghi](https://ghi)
 Lorem ipsum dolor sit amet"
 `;
+
+exports[`parsec parse provider 2`] = `
+"Lorem ipsum dolor sit amet
+{"source":"abc","provider":"https://abc"}
+Lorem ipsum dolor sit amet
+{"source":"def","provider":"https://def"}
+Lorem ipsum dolor sit amet
+[sourceghi](https://ghi)
+Lorem ipsum dolor sit amet"
+`;

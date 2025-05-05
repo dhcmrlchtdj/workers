@@ -21,12 +21,20 @@ export async function run<T, W>(
 export const EOF = Symbol("EOF")
 export const EMPTY = Symbol("EMPTY")
 
-export const eof: Parser<symbol> = async (io) => {
-	const ch = await io.reader.peek()
-	if (ch === undefined) {
+export const eof: Parser<typeof EOF, unknown> = async (io) => {
+	const next = await io.reader.peek()
+	if (next === undefined) {
 		return ok(EOF)
 	} else {
-		return err(`eof: expect EOF, actual '${ch}'`)
+		return err(`eof: expect EOF, actual '${next}'`)
+	}
+}
+export const notEof: Parser<typeof EMPTY, unknown> = async (io) => {
+	const next = await io.reader.peek()
+	if (next !== undefined) {
+		return ok(EMPTY)
+	} else {
+		return err(`notEof: expect not EOF`)
 	}
 }
 export function char(ch: string): Parser<string> {
@@ -76,10 +84,10 @@ export function str(s: string): Parser<string> {
 
 ///
 
-export function sequence<T extends Parser<unknown>[]>(
+export function sequence<T extends Parser<unknown, W>[], W = unknown>(
 	...cs: T
 ): Parser<{
-	[K in keyof T]: T[K] extends Parser<infer R> ? R : never
+	[K in keyof T]: T[K] extends Parser<infer R, W> ? R : never
 }> {
 	return async (io) => {
 		const rs = []
@@ -97,11 +105,11 @@ export function sequence<T extends Parser<unknown>[]>(
 		return ok(rs) as any
 	}
 }
-export function choice<T extends Parser<unknown>[]>(
+export function choice<T extends Parser<unknown, W>[], W = unknown>(
 	...cs: T
-): Parser<T[number] extends Parser<infer R> ? R : never> {
+): Parser<T[number] extends Parser<infer R, W> ? R : never> {
 	return async (io) => {
-		let r = err("fail to match") as any
+		let r = err("choice: fail to match") as any
 		for (const c of cs) {
 			const mark = await io.reader.mark()
 			r = await c(io)
@@ -115,7 +123,7 @@ export function choice<T extends Parser<unknown>[]>(
 		return err(`choice: ${r.unwrapErr().message}`)
 	}
 }
-export function repeat0<T>(c: Parser<T>): Parser<T[]> {
+export function repeat0<T, W = unknown>(c: Parser<T, W>): Parser<T[], W> {
 	return async (io) => {
 		const rs: T[] = []
 		while (true) {
@@ -132,19 +140,24 @@ export function repeat0<T>(c: Parser<T>): Parser<T[]> {
 		return ok(rs)
 	}
 }
-export function repeat1<T>(c: Parser<T>): Parser<T[]> {
+export function repeat1<T, W = unknown>(c: Parser<T, W>): Parser<T[], W> {
 	return bind(repeat0(c), (r) =>
 		r.length > 0 ? ok(r) : err("repeat1: expect at least 1 element"),
 	)
 }
-export function optional<T>(c: Parser<T>): Parser<T | typeof EMPTY> {
+export function optional<T, W = unknown>(
+	c: Parser<T, W>,
+): Parser<T | typeof EMPTY, W> {
 	return bindErr<T | typeof EMPTY>(c, (_) => ok(EMPTY))
 }
-export function sepBy<T>(sep: Parser<unknown>, c: Parser<T>): Parser<T[]> {
+export function sepBy<T, W = unknown>(
+	sep: Parser<unknown, unknown>,
+	c: Parser<T, W>,
+): Parser<T[], W> {
 	return async (io) => {
 		const rs: T[] = []
+		let mark = await io.reader.mark()
 		while (true) {
-			const mark = await io.reader.mark()
 			const r = await c(io)
 			if (r.isErr()) {
 				await io.reader.backTo(mark)
@@ -154,47 +167,54 @@ export function sepBy<T>(sep: Parser<unknown>, c: Parser<T>): Parser<T[]> {
 				rs.push(r.unwrap())
 			}
 
-			const sMark = await io.reader.mark()
+			mark = await io.reader.mark()
 			const s = await sep(io)
 			if (s.isErr()) {
-				await io.reader.backTo(sMark)
+				await io.reader.backTo(mark)
 				break
-			} else {
-				await io.reader.unmark(sMark)
 			}
 		}
 		return ok(rs)
 	}
 }
-export function delimited<T>(
-	left: Parser<unknown>,
-	c: Parser<T>,
-	right: Parser<unknown>,
+export function delimited<T, W = unknown>(
+	left: Parser<unknown, unknown>,
+	c: Parser<T, W>,
+	right: Parser<unknown, unknown>,
 ): Parser<T> {
 	return mapErr(
 		map(sequence(left, c, right), (r) => r[1]),
 		(e) => "delimited: " + e.message,
 	)
 }
+export function end<T, W = unknown>(p: Parser<T, W>): Parser<T, W> {
+	return map(sequence(p, eof), (r) => r[0])
+}
 
 ///
 
+export function effect<T, I = unknown>(
+	p: Parser<T, I>,
+	fn: (r: T) => void,
+): Parser<T, I> {
+	return map(p, (r) => (fn(r), r))
+}
 export function map<T, K, I = unknown>(
 	p: Parser<T, I>,
 	fn: (r: T) => K,
-): Parser<K> {
+): Parser<K, I> {
 	return bind(p, (r) => ok(fn(r)))
 }
 export function mapErr<T, I = unknown>(
 	p: Parser<T, I>,
 	fn: (r: Error) => Error | string,
-): Parser<T> {
+): Parser<T, I> {
 	return bindErr(p, (e) => err(fn(e)))
 }
 export function bind<T, K, I = unknown>(
 	p: Parser<T, I>,
 	fn: (r: T) => Result<K>,
-): Parser<K> {
+): Parser<K, I> {
 	return async (io) => {
 		const r = await p(io)
 		if (r.isOk()) {
@@ -207,7 +227,7 @@ export function bind<T, K, I = unknown>(
 export function bindErr<T, I = unknown>(
 	p: Parser<T, I>,
 	fn: (r: Error) => Result<T>,
-): Parser<T> {
+): Parser<T, I> {
 	return async (io) => {
 		const r = await p(io)
 		if (r.isErr()) {
@@ -220,22 +240,28 @@ export function bindErr<T, I = unknown>(
 
 ///
 
+export function effectAsync<T, I = unknown>(
+	p: Parser<T, I>,
+	fn: (r: T, io: IO<I>) => Promise<void>,
+): Parser<T, I> {
+	return mapAsync(p, async (r, io) => (await fn(r, io), r))
+}
 export function mapAsync<T, K, I = unknown>(
 	p: Parser<T, I>,
 	fn: (r: T, io: IO<I>) => Promise<K>,
-): Parser<K> {
+): Parser<K, I> {
 	return bindAsync(p, async (r, io) => ok(await fn(r, io)))
 }
 export function mapErrAsync<T, I = unknown>(
 	p: Parser<T, I>,
 	fn: (r: Error, io: IO<I>) => Promise<Error | string>,
-): Parser<T> {
+): Parser<T, I> {
 	return bindErrAsync(p, async (e, io) => err(await fn(e, io)))
 }
 export function bindAsync<T, K, I = unknown>(
 	p: Parser<T, I>,
 	fn: (r: T, io: IO<I>) => Promise<Result<K>>,
-): Parser<K> {
+): Parser<K, I> {
 	return async (io) => {
 		const r = await p(io)
 		if (r.isOk()) {
@@ -248,7 +274,7 @@ export function bindAsync<T, K, I = unknown>(
 export function bindErrAsync<T, I = unknown>(
 	p: Parser<T, I>,
 	fn: (r: Error, io: IO<I>) => Promise<Result<T>>,
-): Parser<T> {
+): Parser<T, I> {
 	return async (io) => {
 		const r = await p(io)
 		if (r.isErr()) {
@@ -261,7 +287,9 @@ export function bindErrAsync<T, I = unknown>(
 
 ///
 
-export function fix<T>(f: (x: Parser<T>) => Parser<T>): Parser<T> {
+export function fix<T, W = unknown>(
+	f: (x: Parser<T, W>) => Parser<T, W>,
+): Parser<T, W> {
 	const _fix: typeof fix = (ff) => (io) => ff(_fix(ff))(io)
 	return _fix(f)
 }
