@@ -85,7 +85,7 @@ export function str(s: string): Parser<string> {
 export function pure<T>(val: T): Parser<T> {
 	return async () => ok(val)
 }
-export function sequence<T extends Parser<unknown>[]>(
+export function seq<T extends Parser<unknown>[]>(
 	...cs: T
 ): Parser<{
 	[K in keyof T]: T[K] extends Parser<infer R> ? R : never
@@ -146,7 +146,7 @@ export function repeat1<T>(c: Parser<T>): Parser<T[]> {
 		r.length > 0 ? ok(r) : err("repeat1: expect at least 1 element"),
 	)
 }
-export function optional<T>(c: Parser<T>): Parser<T | typeof EMPTY> {
+export function opt<T>(c: Parser<T>): Parser<T | typeof EMPTY> {
 	return bindErr<T | typeof EMPTY>(c, (_) => ok(EMPTY))
 }
 export function sepBy<T>(sep: Parser<unknown>, c: Parser<T>): Parser<T[]> {
@@ -173,21 +173,21 @@ export function sepBy<T>(sep: Parser<unknown>, c: Parser<T>): Parser<T[]> {
 		return ok(rs)
 	}
 }
-export function delimited<T>(
+export function between<T>(
 	left: Parser<unknown>,
 	c: Parser<T>,
 	right: Parser<unknown>,
 ): Parser<T> {
 	return mapErr(
-		map(sequence(left, c, right), (r) => r[1]),
+		map(seq(left, c, right), (r) => r[1]),
 		(e) => "delimited: " + e.message,
 	)
 }
 export function tuple0<T>(p0: Parser<T>, p1: Parser<unknown>): Parser<T> {
-	return map(sequence(p0, p1), (r) => r[0])
+	return map(seq(p0, p1), (r) => r[0])
 }
 export function tuple1<T>(p0: Parser<unknown>, p1: Parser<T>): Parser<T> {
-	return map(sequence(p0, p1), (r) => r[1])
+	return map(seq(p0, p1), (r) => r[1])
 }
 export function end<T>(p: Parser<T>): Parser<T> {
 	return tuple0(p, eof)

@@ -9,14 +9,14 @@ describe("parsec", () => {
 		const parser = p.map(
 			p.end(
 				p.repeat0(
-					p.sequence(
+					p.seq(
 						p.map(p.hasMore, () => ""),
 						p.map(p.repeat0(writeCh(p.notChar("["))), (r) =>
 							r.join(""),
 						),
 						p.choice(
 							p.map(
-								p.sequence(
+								p.seq(
 									p.str("[source:"),
 									p.repeat1(p.notChar("]")),
 									p.str("]("),
@@ -60,11 +60,11 @@ describe("parsec", () => {
 		const jsonParser = p.end(
 			p.fix((json) => {
 				const jsonNum = p.map(
-					p.sequence(
-						p.optional(p.char("-")),
+					p.seq(
+						p.opt(p.char("-")),
 						p.repeat1(p.satisfy((c) => c >= "0" && c <= "9")),
-						p.optional(
-							p.sequence(
+						p.opt(
+							p.seq(
 								p.char("."),
 								p.repeat1(
 									p.satisfy((c) => c >= "0" && c <= "9"),
@@ -81,7 +81,7 @@ describe("parsec", () => {
 					},
 				)
 				const jsonStr = p.map(
-					p.delimited(
+					p.between(
 						p.char('"'),
 						p.repeat0(p.notChar('"')),
 						p.char('"'),
@@ -93,18 +93,18 @@ describe("parsec", () => {
 					(r) => r === "true",
 				)
 				const jsonNull = p.map(p.str("null"), (_) => null)
-				const jsonArr = p.delimited(
+				const jsonArr = p.between(
 					p.char("["),
 					p.sepBy(p.char(","), json),
 					p.char("]"),
 				)
 				const jsonObj = p.map(
-					p.delimited(
+					p.between(
 						p.char("{"),
 						p.sepBy(
 							p.char(","),
 							p.map(
-								p.sequence(
+								p.seq(
 									p.space0,
 									jsonStr,
 									p.space0,
@@ -119,7 +119,7 @@ describe("parsec", () => {
 					(r) => Object.fromEntries(r),
 				)
 
-				return p.delimited(
+				return p.between(
 					p.space0,
 					p.choice(
 						jsonNum,
