@@ -3,9 +3,9 @@ import * as p from "../../src/_common/parsec"
 
 describe("parsec", () => {
 	test("parse provider", async () => {
-		const writeCh = (c: p.Parser<string>) =>
-			p.effectAsync(c, async (d, io) => io.writer.write?.(d))
+		let output = ""
 
+		const writeCh = (c: p.Parser<string>) => p.tap(c, (d) => (output += d))
 		const parser = p.map(
 			p.end(
 				p.repeat0(
@@ -15,7 +15,7 @@ describe("parsec", () => {
 							r.join(""),
 						),
 						p.choice(
-							p.mapAsync(
+							p.map(
 								p.sequence(
 									p.str("[source:"),
 									p.repeat1(p.notChar("]")),
@@ -23,12 +23,12 @@ describe("parsec", () => {
 									p.repeat1(p.notChar(")")),
 									p.char(")"),
 								),
-								async (d, io) => {
+								(d) => {
 									const s = JSON.stringify({
 										source: d[1].join(""),
 										provider: d[3].join(""),
 									})
-									await io.writer.write?.(s)
+									output += s
 									return s
 								},
 							),
@@ -50,13 +50,8 @@ describe("parsec", () => {
 			"[sourceghi](https://ghi)",
 			"Lorem ipsum dolor sit amet",
 		].join("\n")
-		let output = ""
-		const io = new p.BufIO<string>(input, {
-			async write(data) {
-				output += data
-			},
-		})
-		const r = await p.run(parser, io)
+		const io = new p.Buffered(input)
+		const r = await parser(io)
 		expect(output).toMatchSnapshot()
 		expect(r.unwrap()).toMatchSnapshot()
 	})
@@ -139,8 +134,8 @@ describe("parsec", () => {
 			}),
 		)
 		const t = async (input: string) => {
-			const io = new p.BufIO<string>(input)
-			const r = await p.run(jsonParser, io)
+			const io = new p.Buffered(input)
+			const r = await jsonParser(io)
 			expect(r.isOk() ? r.unwrap() : r.unwrapErr()).toMatchSnapshot()
 		}
 		await t("123")

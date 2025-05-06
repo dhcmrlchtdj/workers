@@ -9,27 +9,10 @@ export interface IOReader {
 	unmark: (m: number) => Promise<void>
 	backTo(m: number): Promise<void>
 }
-export interface IOWriter<T> {
-	write?(data: T): Promise<void>
-	close?(): Promise<void>
-	error?(err: Error): Promise<void>
-}
-export interface IO<T> {
-	reader: IOReader
-	writer: IOWriter<T>
-}
 
 ///
 
-export class BufIO<T = unknown> implements IO<T> {
-	public reader: IOReader
-	public writer: IOWriter<T>
-	constructor(s: string, writer: IOWriter<T> = {}) {
-		this.reader = new BufferedStr(s)
-		this.writer = writer
-	}
-}
-class BufferedStr implements IOReader {
+export class Buffered implements IOReader {
 	private str: string
 	private idx: number
 	constructor(s: string) {
@@ -57,23 +40,7 @@ class BufferedStr implements IOReader {
 	}
 }
 
-///
-
-export class StreamIO<T> implements IO<T> {
-	public reader: IOReader
-	public writer: IOWriter<T>
-	constructor(writer: IOWriter<T> = {}) {
-		this.reader = new StreamingStr()
-		this.writer = writer
-	}
-	public write(data: string) {
-		;(this.reader as StreamingStr).write(data)
-	}
-	public end() {
-		;(this.reader as StreamingStr).end()
-	}
-}
-class StreamingStr implements IOReader {
+export class Streaming implements IOReader {
 	private eof: boolean
 	private buf: string
 	private idx: number
@@ -141,7 +108,7 @@ class StreamingStr implements IOReader {
 		this.idx = m - this.start
 	}
 	private _cleanup() {
-		if (Math.random() > 0.2) return
+		if (Math.random() < 0.2) return
 		const minPos = Math.min(this.start + this.idx, ...this.marks.keys())
 		if (minPos > this.start) {
 			const shift = minPos - this.start
