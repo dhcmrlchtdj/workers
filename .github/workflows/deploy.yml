@@ -26,6 +26,7 @@ jobs:
                   # https://www.npmjs.com/package/pnpm
                   npm install -g pnpm@10.10.0
                   pnpm config set store-dir ~/.local/share/pnpm/store
+                  pnpm approve-builds
                   pnpm install
               env:
                   PNPM_HOME: /home/runner/.local/bin
