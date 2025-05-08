@@ -2,61 +2,7 @@ import { describe, expect, test } from "@jest/globals"
 import * as p from "../../src/_common/parsec"
 
 describe("parsec", () => {
-	test("parse provider", async () => {
-		let output = ""
-
-		const writeCh = (c: p.Parser<string>) => p.tap(c, (d) => (output += d))
-		const parser = p.map(
-			p.end(
-				p.repeat0(
-					p.seq(
-						p.map(p.hasMore, () => ""),
-						p.map(p.repeat0(writeCh(p.notChar("["))), (r) =>
-							r.join(""),
-						),
-						p.choice(
-							p.map(
-								p.seq(
-									p.str("[source:"),
-									p.repeat1(p.notChar("]")),
-									p.str("]("),
-									p.repeat1(p.notChar(")")),
-									p.char(")"),
-								),
-								(d) => {
-									const s = JSON.stringify({
-										source: d[1].join(""),
-										provider: d[3].join(""),
-									})
-									output += s
-									return s
-								},
-							),
-							writeCh(p.char("[")),
-							p.map(p.eof, () => ""),
-						),
-					),
-				),
-			),
-			(r) => r.map((xs) => xs[1] + xs[2]).join(""),
-		)
-
-		const input = [
-			"Lorem ipsum dolor sit amet",
-			"[source:abc](https://abc)",
-			"Lorem ipsum dolor sit amet",
-			"[source:def](https://def)",
-			"Lorem ipsum dolor sit amet",
-			"[sourceghi](https://ghi)",
-			"Lorem ipsum dolor sit amet",
-		].join("\n")
-		const io = new p.Buffered(input)
-		const r = await parser(io)
-		expect(output).toMatchSnapshot()
-		expect(r.unwrap()).toMatchSnapshot()
-	})
-
-	test("parse json", async () => {
+	test("parse json", () => {
 		const jsonParser = p.end(
 			p.fix((json) => {
 				const jsonNum = p.map(
@@ -133,25 +79,87 @@ describe("parsec", () => {
 				)
 			}),
 		)
-		const t = async (input: string) => {
-			const io = new p.Buffered(input)
-			const r = await jsonParser(io)
+		const t = (input: string) => {
+			const buf = new p.Buffered(input)
+			const r = p.parse(jsonParser, buf)
 			expect(r.isOk() ? r.unwrap() : r.unwrapErr()).toMatchSnapshot()
 		}
-		await t("123")
-		await t("123.456")
-		await t("-0.789")
-		await t('""')
-		await t('"hello"')
-		await t("true")
-		await t("false")
-		await t("null")
-		await t("[]")
-		await t("[ true ]")
-		await t("[true, false]")
-		await t('[ 123 , true, "hello" , null]')
-		await t(" {} ")
-		await t('{ "a" : true }')
-		await t('{"a": true, "b": false}')
+		t("123")
+		t("123.456")
+		t("-0.789")
+		t('""')
+		t('"hello"')
+		t("true")
+		t("false")
+		t("null")
+		t("[]")
+		t("[ true ]")
+		t("[true, false]")
+		t('[ 123 , true, "hello" , null]')
+		t(" {} ")
+		t('{ "a" : true }')
+		t('{"a": true, "b": false}')
+	})
+
+	test("parse provider", async () => {
+		let output = ""
+
+		const writeChar = (c: p.Parser<string>) =>
+			p.tap(c, (d) => (output += d))
+		const parser = p.map(
+			p.end(
+				p.repeat0(
+					p.seq(
+						p.map(p.notEof, () => ""),
+						p.map(p.repeat0(writeChar(p.notChar("["))), (r) =>
+							r.join(""),
+						),
+						p.choice(
+							p.map(
+								p.seq(
+									p.str("[source:"),
+									p.repeat1(p.notChar("]")),
+									p.str("]("),
+									p.repeat1(p.notChar(")")),
+									p.char(")"),
+								),
+								(d) => {
+									const s = JSON.stringify({
+										source: d[1].join(""),
+										provider: d[3].join(""),
+									})
+									output += s
+									return s
+								},
+							),
+							writeChar(p.char("[")),
+							p.map(p.eof, () => ""),
+						),
+					),
+				),
+			),
+			(r) => r.map((xs) => xs[1] + xs[2]).join(""),
+		)
+
+		const stream = new p.Streaming()
+		const r = p.parseAsync(parser, stream)
+
+		const text = [
+			"Lorem ipsum dolor sit amet",
+			"[source:abc](https://abc)",
+			"Lorem ipsum dolor sit amet",
+			"[source:def](https://def)",
+			"Lorem ipsum dolor sit amet",
+			"[sourceghi](https://ghi)",
+			"Lorem ipsum dolor sit amet",
+		].join("\n")
+		await text.split("").reduce(async (prev, curr) => {
+			await prev
+			return stream.write(curr)
+		}, Promise.resolve())
+		stream.end()
+
+		expect((await r).unwrap()).toMatchSnapshot()
+		expect(output).toMatchSnapshot()
 	})
 })

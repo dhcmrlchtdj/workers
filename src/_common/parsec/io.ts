@@ -1,25 +1,33 @@
 import { Deferred } from "../ds/deferred"
 
-export interface IOReader {
-	peek(): Promise<string | undefined>
-	peek(n: number): Promise<string | undefined>
-	advance(): Promise<void>
-	advance(n: number): Promise<void>
-	mark: () => Promise<number>
-	unmark: (m: number) => Promise<void>
-	backTo(m: number): Promise<void>
+export interface SyncReader {
+	peek(): string | undefined
+	peek(n: number): string | undefined
+	advance(): void
+	advance(n: number): void
+	mark: () => number
+	unmark: (m: number) => void
+	backTo(m: number): void
 }
 
-///
+export interface AsyncReader {
+	peek(): Promise<string | undefined>
+	peek(n: number): Promise<string | undefined>
+	advance(): void
+	advance(n: number): void
+	mark: () => number
+	unmark: (m: number) => void
+	backTo(m: number): void
+}
 
-export class Buffered implements IOReader {
+export class Buffered implements SyncReader {
 	private str: string
 	private idx: number
 	constructor(s: string) {
 		this.str = s
 		this.idx = 0
 	}
-	async peek(n = 1) {
+	peek(n = 1) {
 		if (n === 1) {
 			return this.str[this.idx]
 		} else if (this.idx + n <= this.str.length) {
@@ -28,19 +36,19 @@ export class Buffered implements IOReader {
 			return undefined
 		}
 	}
-	async advance(n = 1) {
+	advance(n = 1) {
 		this.idx += n
 	}
-	async mark() {
+	mark() {
 		return this.idx
 	}
-	async unmark() {}
-	async backTo(m: number) {
+	unmark() {}
+	backTo(m: number) {
 		this.idx = m
 	}
 }
 
-export class Streaming implements IOReader {
+export class Streaming implements AsyncReader {
 	private eof: boolean
 	private buf: string
 	private idx: number
@@ -60,7 +68,7 @@ export class Streaming implements IOReader {
 	write(data: string) {
 		this.buf += data
 		if (this.peekDeferred === null) return
-		if (this.idx + this.peekSize < this.buf.length) {
+		if (this.idx + this.peekSize <= this.buf.length) {
 			const chunk = this.buf.slice(this.idx, this.idx + this.peekSize)
 			this.peekDeferred.resolve(chunk)
 			this.peekDeferred = null
@@ -70,11 +78,14 @@ export class Streaming implements IOReader {
 		this.eof = true
 		if (this.peekDeferred !== null) {
 			this.peekDeferred.resolve(undefined)
+			this.peekDeferred = null
 		}
 	}
 	async peek(n = 1) {
-		if (this.idx + n < this.buf.length) {
-			if (n === 1) return this.buf[this.idx + 1]
+		if (this.idx + n <= this.buf.length) {
+			if (n === 1) {
+				return this.buf[this.idx]
+			}
 			const chunk = this.buf.slice(this.idx, this.idx + n)
 			return chunk
 		} else if (this.eof) {
@@ -85,17 +96,17 @@ export class Streaming implements IOReader {
 			return this.peekDeferred.promise
 		}
 	}
-	async advance(n = 1) {
+	advance(n = 1) {
 		this.idx += n
 		this._cleanup()
 	}
-	async mark() {
+	mark() {
 		const pos = this.start + this.idx
 		const count = (this.marks.get(pos) ?? 0) + 1
 		this.marks.set(pos, count)
 		return pos
 	}
-	async unmark(m: number) {
+	unmark(m: number) {
 		const count = (this.marks.get(m) ?? 1) - 1
 		if (count > 0) {
 			this.marks.set(m, count)
@@ -104,14 +115,14 @@ export class Streaming implements IOReader {
 			this._cleanup()
 		}
 	}
-	async backTo(m: number) {
+	backTo(m: number) {
 		this.idx = m - this.start
 	}
 	private _cleanup() {
-		if (Math.random() < 0.2) return
+		if (Math.random() > 0.2) return
 		const minPos = Math.min(this.start + this.idx, ...this.marks.keys())
-		if (minPos > this.start) {
-			const shift = minPos - this.start
+		const shift = minPos - this.start
+		if (shift > 20) {
 			this.buf = this.buf.slice(shift)
 			this.idx -= shift
 			this.start = minPos

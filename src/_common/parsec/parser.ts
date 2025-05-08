@@ -1,45 +1,102 @@
 import { err, ok, type Result } from "../result"
-import type { IOReader } from "./io"
+import type { AsyncReader, SyncReader } from "./io"
+import { advance, backTo, mark, peek, unmark, type OP } from "./op"
 
-export type Parser<T> = (_: IOReader) => Promise<Result<T>>
+export type Parser<T> = () => Generator<OP, Result<T>>
+
+export function parse<T>(parser: Parser<T>, r: SyncReader): Result<T> {
+	const gen = parser()
+	let op = gen.next()
+	while (!op.done) {
+		const v = op.value
+		switch (v.t) {
+			case "peek":
+				op = gen.next(r.peek(v.n))
+				break
+			case "advance":
+				op = gen.next(r.advance(v.n))
+				break
+			case "mark":
+				op = gen.next(r.mark())
+				break
+			case "unmark":
+				op = gen.next(r.unmark(v.pos))
+				break
+			case "backTo":
+				op = gen.next(r.backTo(v.pos))
+				break
+			default:
+				throw new Error("unreachable")
+		}
+	}
+	return op.value
+}
+export async function parseAsync<T>(
+	parser: Parser<T>,
+	r: AsyncReader,
+): Promise<Result<T>> {
+	const gen = parser()
+	let op = gen.next()
+	while (!op.done) {
+		const v = op.value
+		switch (v.t) {
+			case "peek":
+				op = gen.next(await r.peek(v.n))
+				break
+			case "advance":
+				op = gen.next(r.advance(v.n))
+				break
+			case "mark":
+				op = gen.next(r.mark())
+				break
+			case "unmark":
+				op = gen.next(r.unmark(v.pos))
+				break
+			case "backTo":
+				op = gen.next(r.backTo(v.pos))
+				break
+			default:
+				throw new Error("unreachable")
+		}
+	}
+	return op.value
+}
 
 ///
 
 export const EOF = Symbol("EOF")
 export const EMPTY = Symbol("EMPTY")
 
-export const eof: Parser<typeof EOF> = async (io) => {
-	const next = await io.peek()
+export const eof: Parser<typeof EOF> = function* () {
+	const next = yield peek()
 	if (next === undefined) {
 		return ok(EOF)
 	} else {
 		return err(`eof: expect EOF, actual '${next}'`)
 	}
 }
-export const hasMore: Parser<typeof EMPTY> = async (io) => {
-	const next = await io.peek()
+export const notEof: Parser<typeof EMPTY> = function* () {
+	const next = yield peek()
 	if (next !== undefined) {
 		return ok(EMPTY)
 	} else {
-		return err(`hasMore: expect not EOF`)
+		return err(`notEof: expect not EOF`)
 	}
 }
-export function anyChar(): Parser<string> {
-	return async (io) => {
-		const next = await io.peek()
-		if (next !== undefined) {
-			await io.advance()
-			return ok(next)
-		} else {
-			return err(`anyChar: expect not EOF`)
-		}
+export const anyChar: Parser<string> = function* () {
+	const next = yield peek()
+	if (next !== undefined) {
+		yield advance()
+		return ok(next)
+	} else {
+		return err(`anyChar: expect not EOF`)
 	}
 }
 export function char(ch: string): Parser<string> {
-	return async (io) => {
-		const next = await io.peek()
+	return function* () {
+		const next = yield peek()
 		if (next === ch) {
-			await io.advance()
+			yield advance()
 			return ok(next)
 		} else {
 			return err(`char: expect ${ch}, actual '${next}'`)
@@ -47,21 +104,21 @@ export function char(ch: string): Parser<string> {
 	}
 }
 export function notChar(ch: string): Parser<string> {
-	return async (io) => {
-		const next = await io.peek()
+	return function* () {
+		const next = yield peek()
 		if (next === undefined || next === ch) {
 			return err(`notChar: unexpected '${next}'`)
 		} else {
-			await io.advance()
+			yield advance()
 			return ok(next)
 		}
 	}
 }
 export function satisfy(fn: (c: string) => boolean): Parser<string> {
-	return async (io) => {
-		const next = await io.peek()
+	return function* () {
+		const next = yield peek()
 		if (next !== undefined && fn(next)) {
-			await io.advance()
+			yield advance()
 			return ok(next)
 		} else {
 			return err(`satisfy: unexpected '${next}'`)
@@ -69,10 +126,10 @@ export function satisfy(fn: (c: string) => boolean): Parser<string> {
 	}
 }
 export function str(s: string): Parser<string> {
-	return async (io) => {
-		const next = await io.peek(s.length)
+	return function* () {
+		const next = yield peek(s.length)
 		if (next === s) {
-			await io.advance(s.length)
+			yield advance(s.length)
 			return ok(s)
 		} else {
 			return err(`str: expect ${s}, actual '${next}'`)
@@ -83,58 +140,61 @@ export function str(s: string): Parser<string> {
 ///
 
 export function pure<T>(val: T): Parser<T> {
-	return async () => ok(val)
+	// eslint-disable-next-line require-yield
+	return function* () {
+		return ok(val)
+	}
 }
 export function seq<T extends Parser<unknown>[]>(
 	...cs: T
 ): Parser<{
 	[K in keyof T]: T[K] extends Parser<infer R> ? R : never
 }> {
-	return async (io) => {
+	return function* () {
 		const rs = []
-		const mark = await io.mark()
+		const pos = yield mark()
 		for (const c of cs) {
-			const r = await c(io)
+			const r = yield* c()
 			if (r.isErr()) {
-				await io.backTo(mark)
+				yield backTo(pos)
 				return err(`seq: ${r.unwrapErr().message}`)
 			} else {
 				rs.push(r.unwrap())
 			}
 		}
-		await io.unmark(mark)
+		yield unmark(pos)
 		return ok(rs) as any
 	}
 }
 export function choice<T extends Parser<unknown>[]>(
 	...cs: T
 ): Parser<T[number] extends Parser<infer R> ? R : never> {
-	return async (io) => {
+	return function* () {
 		let r = err("choice: fail to match") as any
 		for (const c of cs) {
-			const mark = await io.mark()
-			r = await c(io)
+			const pos = yield mark()
+			r = yield* c()
 			if (r.isOk()) {
-				await io.unmark(mark)
+				yield unmark(pos)
 				return r
 			} else {
-				await io.backTo(mark)
+				yield backTo(pos)
 			}
 		}
 		return err(`choice: ${r.unwrapErr().message}`)
 	}
 }
 export function repeat0<T>(c: Parser<T>): Parser<T[]> {
-	return async (io) => {
+	return function* () {
 		const rs: T[] = []
 		while (true) {
-			const mark = await io.mark()
-			const r = await c(io)
+			const pos = yield mark()
+			const r = yield* c()
 			if (r.isErr()) {
-				await io.backTo(mark)
+				yield backTo(pos)
 				break
 			} else {
-				await io.unmark(mark)
+				yield unmark(pos)
 				rs.push(r.unwrap())
 			}
 		}
@@ -150,23 +210,23 @@ export function opt<T>(c: Parser<T>): Parser<T | typeof EMPTY> {
 	return bindErr<T | typeof EMPTY>(c, (_) => ok(EMPTY))
 }
 export function sepBy<T>(sep: Parser<unknown>, c: Parser<T>): Parser<T[]> {
-	return async (io) => {
+	return function* () {
 		const rs: T[] = []
-		let mark = await io.mark()
+		let pos = yield mark()
 		while (true) {
-			const r = await c(io)
+			const r = yield* c()
 			if (r.isErr()) {
-				await io.backTo(mark)
+				yield backTo(pos)
 				break
 			} else {
-				await io.unmark(mark)
+				yield unmark(pos)
 				rs.push(r.unwrap())
 			}
 
-			mark = await io.mark()
-			const s = await sep(io)
+			pos = yield mark()
+			const s = yield* sep()
 			if (s.isErr()) {
-				await io.backTo(mark)
+				yield backTo(pos)
 				break
 			}
 		}
@@ -208,8 +268,8 @@ export function mapErr<T>(
 	return bindErr(p, (e) => err(fn(e)))
 }
 export function bind<T, K>(p: Parser<T>, fn: (r: T) => Result<K>): Parser<K> {
-	return async (io) => {
-		const r = await p(io)
+	return function* () {
+		const r = yield* p()
 		if (r.isOk()) {
 			return fn(r.unwrap())
 		} else {
@@ -221,8 +281,8 @@ export function bindErr<T>(
 	p: Parser<T>,
 	fn: (r: Error) => Result<T>,
 ): Parser<T> {
-	return async (io) => {
-		const r = await p(io)
+	return function* () {
+		const r = yield* p()
 		if (r.isErr()) {
 			return fn(r.unwrapErr())
 		} else {
@@ -234,7 +294,7 @@ export function bindErr<T>(
 ///
 
 export function fix<T>(f: (x: Parser<T>) => Parser<T>): Parser<T> {
-	const _fix: typeof fix = (ff) => (io) => ff(_fix(ff))(io)
+	const _fix: typeof fix = (ff) => () => ff(_fix(ff))()
 	return _fix(f)
 }
 
