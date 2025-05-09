@@ -1,25 +1,28 @@
 import { describe, expect, test } from "@jest/globals"
 import * as pp from "../../src/_common/prettyprint"
-import { PlainDevice } from "../../src/_common/prettyprint"
 
 describe("prettyprint", () => {
 	test("sentence", () => {
 		const t = (
 			sentence: string,
-			toBlock: (_: pp.Format[]) => pp.Format,
+			toSeq: (sep: pp.Format, xs: pp.Format[]) => pp.Format,
 		) => {
-			const device = new PlainDevice(80)
-			const fmt = toBlock(sentence.split(" ").map((x) => pp.text(x)))
-			pp.render(fmt, device)
-			expect(device.getOutput()).toMatchSnapshot()
+			const fmt = toSeq(
+				pp.text(""),
+				sentence.split(" ").map((x) => pp.text(x)),
+			)
+			let buf = ""
+			const cfg = pp.config((s) => (buf += s), 80, "\n", "\t", 4)
+			pp.render(fmt, cfg)
+			expect(buf).toMatchSnapshot()
 		}
 
 		const sentence =
 			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-		t(sentence, pp.hBlock)
-		t(sentence, pp.pBlock)
-		t(sentence, pp.vBlock)
-		t(sentence, pp.cBlock)
+		t(sentence, pp.hSequence)
+		t(sentence, pp.pSequence)
+		t(sentence, pp.vSequence)
+		t(sentence, pp.cSequence)
 	})
 
 	test("tree", () => {
@@ -51,7 +54,7 @@ describe("prettyprint", () => {
 				return pp.vBlock([
 					pp.cBlock([pp.text(tree[0]), pp.text("[")]),
 					pp.indent(
-						2,
+						1,
 						pp.vSequence(pp.text(","), tree[1].map(wadler2)),
 					),
 					pp.text("]"),
@@ -60,9 +63,10 @@ describe("prettyprint", () => {
 		}
 
 		const t = (fmt: pp.Format) => {
-			const device = new PlainDevice(10)
-			pp.render(fmt, device)
-			expect(device.getOutput()).toMatchSnapshot()
+			let buf = ""
+			const cfg = pp.config((s) => (buf += s), 80, "\n", " ", 2)
+			pp.render(fmt, cfg)
+			expect(buf).toMatchSnapshot()
 		}
 
 		t(wadler1(tree))

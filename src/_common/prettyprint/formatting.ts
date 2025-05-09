@@ -15,7 +15,7 @@ export type Format =
 	| { type: "flat"; fmt: Format }
 	| { type: "alt"; fmt1: Format; fmt2: Format }
 
-export type Element = { type: "BRK"; brk: Break } | { type: "FMT"; fmt: Format }
+export type Element = Break | Format
 
 ///
 
@@ -40,22 +40,16 @@ export function measure(fmt: Format): number {
 
 function measureElement(elem: Element): number {
 	switch (elem.type) {
-		case "FMT": {
-			return measure(elem.fmt)
-		}
-		case "BRK": {
-			const brk = elem.brk
-			switch (brk.type) {
-				case "hard":
-					return 1
-				case "null":
-					return 0
-				case "space":
-					return brk.space
-				case "soft":
-					return brk.space
-			}
-		}
+		case "hard":
+			return 1
+		case "null":
+			return 0
+		case "space":
+			return elem.space
+		case "soft":
+			return elem.space
+		default:
+			return measure(elem)
 	}
 }
 export function measureElements(elems: Element[]): number {
@@ -106,7 +100,7 @@ export function indent(n: number, fmt: Format): Format {
 }
 
 export function block(elems: Element[]): Format {
-	const xs = elems.filter((x) => x.type !== "FMT" || x.fmt.type !== "empty")
+	const xs = elems.filter((x) => x.type !== "empty")
 	if (xs.length === 0) return empty()
 	return { type: "block", elems: xs, measure: measureElements(elems) }
 }
@@ -144,13 +138,6 @@ export function spaces(n: number): Format {
 	return text(" ".repeat(n))
 }
 
-export function elemBreak(brk: Break): Element {
-	return { type: "BRK", brk }
-}
-export function elemFormat(fmt: Format): Element {
-	return { type: "FMT", fmt }
-}
-
 export function sequence(
 	align: Alignment,
 	sep: Format,
@@ -159,12 +146,10 @@ export function sequence(
 	const elems = []
 	const brk = alignmentToBreak(align)
 	const pushSep =
-		align === "compact"
-			? () => elems.push(elemFormat(sep))
-			: () => elems.push(elemFormat(sep), elemBreak(brk))
+		align === "compact" ? () => elems.push(sep) : () => elems.push(sep, brk)
 	const len = fmts.length
 	for (let i = 0; i < len; i++) {
-		elems.push(elemFormat(fmts[i]!))
+		elems.push(fmts[i]!)
 		if (i + 1 < len) pushSep()
 	}
 	return block(elems)

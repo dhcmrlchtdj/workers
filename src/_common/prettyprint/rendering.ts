@@ -1,4 +1,4 @@
-import type { Device } from "./device"
+import type { Config } from "./config"
 import {
 	measure,
 	type Alignment,
@@ -6,46 +6,50 @@ import {
 	type Format,
 } from "./formatting"
 
-type RenderState = [number, boolean]
+type RenderState = [indent: number, occupied: number, newline: boolean]
 
-export function render(fmt: Format, device: Device): void {
-	render1(fmt, [0, false], device)
+export function render(fmt: Format, cfg: Config): void {
+	render1(fmt, [0, 0, false], cfg)
 }
 
-function render1(
-	fmt: Format,
-	inputState: RenderState,
-	device: Device,
-): RenderState {
-	const [cc, newlinep] = inputState
+function render1(fmt: Format, state: RenderState, cfg: Config): RenderState {
+	const [indent, occupied, newline] = state
 	switch (fmt.type) {
 		case "empty":
-			return inputState
+			return state
 		case "text": {
-			device.text(fmt.text)
-			return [cc + measure(fmt), false]
+			cfg.writeText(fmt.text)
+			return [indent, occupied + measure(fmt), false]
 		}
 		case "block":
-			return renderBlock(fmt.elems, inputState, device)
+			return renderBlock(fmt.elems, state, cfg)
 		case "ablock":
-			return renderABlock(fmt.align, fmt.fmts, inputState, device)
+			return renderABlock(fmt.align, fmt.fmts, state, cfg)
 		case "indent": {
-			if (newlinep) {
-				device.space(fmt.indent)
-				return render1(fmt.fmt, [cc + fmt.indent, true], device)
+			if (newline) {
+				cfg.writeIndent(fmt.indent)
+				return render1(
+					fmt.fmt,
+					[
+						indent + fmt.indent,
+						occupied + fmt.indent * cfg.tabWidth,
+						true,
+					],
+					cfg,
+				)
 			} else {
-				return render1(fmt.fmt, [cc, false], device)
+				return render1(fmt.fmt, [indent, occupied, false], cfg)
 			}
 		}
 		case "flat": {
-			flatRender(fmt.fmt, device)
-			return [cc + measure(fmt.fmt), false]
+			flatRender(fmt.fmt, cfg)
+			return [indent, occupied + measure(fmt.fmt), false]
 		}
 		case "alt": {
-			if (measure(fmt.fmt1) <= device.lineWidth - cc) {
-				return render1(fmt.fmt1, inputState, device)
+			if (measure(fmt.fmt1) <= cfg.width - occupied) {
+				return render1(fmt.fmt1, state, cfg)
 			} else {
-				return render1(fmt.fmt2, inputState, device)
+				return render1(fmt.fmt2, state, cfg)
 			}
 		}
 	}
@@ -54,116 +58,123 @@ function render1(
 function renderBlock(
 	elems: Element[],
 	state: RenderState,
-	device: Device,
+	cfg: Config,
 ): RenderState {
-	let blm = state[0]
-	let rstate = state
+	let [indent, occupied, newline] = state
+	const blm = occupied
+	const preSpace = blm - indent * cfg.tabWidth
 
 	let len = elems.length
 	for (let i = 0; i < len; i++) {
 		const elem = elems[i]!
 		switch (elem.type) {
-			case "FMT": {
-				rstate = render1(elem.fmt, rstate, device)
+			case "null": {
+				newline = false
 				break
 			}
-			case "BRK": {
-				const brk = elem.brk
-				switch (brk.type) {
-					case "null": {
-						rstate[1] = false
-						break
-					}
-					case "hard": {
-						device.lineBreak(blm)
-						rstate = [blm, true]
-						break
-					}
-					case "space": {
-						device.space(brk.space)
-						rstate[0] += brk.space
-						break
-					}
-					case "soft": {
-						if (i + 1 === len) {
-							throw new Error(
-								"Soft break cannot be the last element in a non-flat structure.",
-							)
-						}
-						const nextElem = elems[i + 1]!
-						if (nextElem.type !== "FMT") {
-							throw new Error(
-								"soft break must be immediately followed by a Format element in a non-flat structure.",
-							)
-						}
-						const cc = rstate[0]
-						const sp = brk.space
-						if (
-							measure(nextElem.fmt) <=
-							device.lineWidth - (cc + sp)
-						) {
-							device.space(brk.space)
-							rstate = [cc + sp, false]
-						} else {
-							device.lineBreak(blm)
-							rstate = [blm, true]
-						}
-						break
-					}
+			case "hard": {
+				cfg.writeNewline()
+				cfg.writeIndent(indent)
+				cfg.writeSpace(preSpace)
+				occupied = blm
+				newline = true
+				break
+			}
+			case "space": {
+				cfg.writeSpace(elem.space)
+				occupied += elem.space
+				break
+			}
+			case "soft": {
+				if (i === len - 1) {
+					throw new Error(
+						"Soft break cannot be the last element in a non-flat structure.",
+					)
+				}
+				const nextElem = elems[i + 1]!
+				if (
+					nextElem.type === "space" ||
+					nextElem.type === "hard" ||
+					nextElem.type === "soft" ||
+					nextElem.type === "null"
+				) {
+					throw new Error(
+						"Soft break must be immediately followed by a Format element in a non-flat structure.",
+					)
+				}
+				const sp = elem.space
+				if (measure(nextElem) <= cfg.width - (occupied + sp)) {
+					cfg.writeSpace(elem.space)
+					occupied += sp
+					newline = false
+				} else {
+					cfg.writeNewline()
+					cfg.writeIndent(indent)
+					cfg.writeSpace(preSpace)
+					occupied = blm
+					newline = true
 				}
 				break
+			}
+			default: {
+				const rstate = render1(elem, [indent, occupied, newline], cfg)
+				occupied = rstate[1]
+				newline = rstate[2]
 			}
 		}
 	}
 
-	return rstate
+	return [indent, occupied, newline]
 }
 
 function renderABlock(
 	align: Alignment,
 	fmts: Format[],
 	state: RenderState,
-	device: Device,
+	cfg: Config,
 ): RenderState {
-	let blm = state[0]
-	let renderBreak: (cc: number, m: number) => RenderState
+	let renderBreak: (state: RenderState, nextSize: number) => RenderState
 	switch (align) {
 		case "compact":
-			renderBreak = (cc, _m) => [cc, false]
+			renderBreak = (s, _m) => [s[0], s[1], false]
 			break
 		case "horizontal":
-			renderBreak = (cc, _m) => {
-				device.space(1)
-				return [cc + 1, false]
+			renderBreak = (s, _m) => {
+				cfg.writeSpace(1)
+				return [s[0], s[1] + 1, false]
 			}
 			break
 		case "vertical":
-			renderBreak = (_cc, _m) => {
-				device.lineBreak(blm)
-				return [blm, true]
+			renderBreak = (s, _m) => {
+				cfg.writeNewline()
+				cfg.writeIndent(s[0])
+				return [s[0], s[0] * cfg.tabWidth, true]
 			}
 			break
 		case "packed":
-			renderBreak = (cc, m) => {
-				if (m <= device.lineWidth - cc - 1) {
-					device.space(1)
-					return [cc + 1, false]
+			renderBreak = (s, m) => {
+				if (m <= cfg.width - s[1] - 1) {
+					cfg.writeSpace(1)
+					return [s[0], s[1] + 1, false]
 				} else {
-					device.lineBreak(blm)
-					return [blm, true]
+					cfg.writeNewline()
+					cfg.writeIndent(s[0])
+					return [s[0], s[0] * cfg.tabWidth, true]
 				}
 			}
 			break
 	}
 
+	let indent = state[0]
 	let rstate = state
 	let len = fmts.length
 	for (let i = 0; i < len; i++) {
 		const fmt = fmts[i]!
-		rstate = render1(fmt, rstate, device)
+		rstate = render1(fmt, rstate, cfg)
+		rstate[0] = indent
 		if (i + 1 < len) {
 			const nextFmt = fmts[i + 1]!
-			rstate = renderBreak(rstate[0], measure(nextFmt))
+			rstate = renderBreak(rstate, measure(nextFmt))
 		}
 	}
 	return rstate
@@ -171,52 +182,46 @@ function renderABlock(
 
 ///
 
-function flatRender(fmt: Format, device: Device): void {
+function flatRender(fmt: Format, cfg: Config): void {
 	switch (fmt.type) {
 		case "empty":
 			return
 		case "text":
-			return device.text(fmt.text)
+			return cfg.writeText(fmt.text)
 		case "block": {
 			for (const elem of fmt.elems) {
-				flatRenderElement(elem, device)
+				flatRenderElement(elem, cfg)
 			}
 			return
 		}
 		case "ablock":
-			return flatRenderABlock(fmt.fmts, device)
+			return flatRenderABlock(fmt.fmts, cfg)
 		case "indent":
-			return flatRender(fmt.fmt, device)
+			return flatRender(fmt.fmt, cfg)
 		case "flat":
-			return flatRender(fmt.fmt, device)
+			return flatRender(fmt.fmt, cfg)
 		case "alt":
-			return flatRender(fmt.fmt1, device)
+			return flatRender(fmt.fmt1, cfg)
 	}
 }
-function flatRenderABlock(fmts: Format[], device: Device): void {
+function flatRenderABlock(fmts: Format[], cfg: Config): void {
 	const len = fmts.length
 	for (let i = 0; i <= len; i++) {
-		flatRender(fmts[i]!, device)
-		if (i + 1 < len) device.space(1)
+		flatRender(fmts[i]!, cfg)
+		if (i + 1 < len) cfg.writeSpace(1)
 	}
 }
-function flatRenderElement(elem: Element, device: Device): void {
+function flatRenderElement(elem: Element, cfg: Config): void {
 	switch (elem.type) {
-		case "FMT": {
-			return flatRender(elem.fmt, device)
-		}
-		case "BRK": {
-			const brk = elem.brk
-			switch (brk.type) {
-				case "hard":
-					return device.space(1)
-				case "space":
-					return device.space(brk.space)
-				case "soft":
-					return device.space(brk.space)
-				case "null":
-					return
-			}
-		}
+		case "hard":
+			return cfg.writeSpace(1)
+		case "space":
+			return cfg.writeSpace(elem.space)
+		case "soft":
+			return cfg.writeSpace(elem.space)
+		case "null":
+			return
+		default:
+			return flatRender(elem, cfg)
 	}
 }
