@@ -7,7 +7,7 @@ MAKEFLAGS += --no-builtin-variables
 PATH := ./node_modules/.bin:$(PATH)
 
 targets := $(filter-out src/_%, $(wildcard src/*))
-test_compiled := $(addsuffix .test.js, $(wildcard test/**/*.ts))
+test_compiled := $(wildcard src/_common/**/*.test.ts)
 
 ###
 
@@ -91,7 +91,15 @@ node_modules:
 	pnpm install
 
 $(test_compiled): node_modules/tsconfig.tsbuildinfo
-	esbuild --bundle --format=esm --target=esnext --platform=browser --external:'node:*' --external:'@jest/globals' --outfile=$@ ${@:.test.js=}
+	esbuild \
+		--bundle \
+		--format=esm \
+		--target=esnext \
+		--platform=browser \
+		--external:'node:*' \
+		--external:'@jest/globals' \
+		--outfile=$(subst src/,test/,$(subst .ts,.js,$@)) \
+		$@
 
 # https://developers.cloudflare.com/workers/platform/compatibility-dates/#change-history
 update_compatibility_date:
