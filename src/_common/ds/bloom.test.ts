@@ -1,6 +1,6 @@
 import { describe, expect, test } from "@jest/globals"
-import { murmur, xxh32 } from "../../src/_common/ds/bloom.ts"
-import { fromStr } from "../../src/_common/uint8array.ts"
+import { fromStr } from "../uint8array.ts"
+import { murmur, xxh32 } from "./bloom.ts"
 
 describe("BloomFilter", () => {
 	test("xxh32", () => {

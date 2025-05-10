@@ -1,7 +1,7 @@
 import { describe, expect, test } from "@jest/globals"
-import * as S from "../../src/_common/http/request.ts"
-import * as R from "../../src/_common/http/response.ts"
-import * as W from "../../src/_common/worker/index.ts"
+import * as W from "."
+import * as S from "../http/request.ts"
+import * as R from "../http/response.ts"
 
 describe("Worker Router", () => {
 	test("all", async () => {

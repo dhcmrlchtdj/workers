@@ -1,5 +1,5 @@
 import { describe, expect, test } from "@jest/globals"
-import * as p from "../../src/_common/parsec"
+import * as p from "."
 
 describe("parsec", () => {
 	test("parse json", () => {

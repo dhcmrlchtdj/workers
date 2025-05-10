@@ -1,5 +1,5 @@
 import { describe, expect, test } from "@jest/globals"
-import * as pp from "../../src/_common/prettyprint"
+import * as pp from "."
 
 describe("prettyprint", () => {
 	test("sentence", () => {

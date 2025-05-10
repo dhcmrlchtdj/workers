@@ -1,5 +1,5 @@
 import { describe, expect, test } from "@jest/globals"
-import { BTree } from "../../src/_common/ds/btree.ts"
+import { BTree } from "./btree.ts"
 
 describe("BTree", () => {
 	test("degree 2", () => {
