@@ -133,6 +133,10 @@ function renderABlock(
 	state: RenderState,
 	cfg: Config,
 ): RenderState {
+	let indent = state[0]
+	const blm = state[1]
+	const preSpace = blm - indent * cfg.tabWidth
+
 	let renderBreak: (state: RenderState, nextSize: number) => RenderState
 	switch (align) {
 		case "compact":
@@ -148,7 +152,8 @@ function renderABlock(
 			renderBreak = (s, _m) => {
 				cfg.writeNewline()
 				cfg.writeIndent(s[0])
-				return [s[0], s[0] * cfg.tabWidth, true]
+				cfg.writeSpace(preSpace)
+				return [s[0], blm, true]
 			}
 			break
 		case "packed":
@@ -159,13 +164,13 @@ function renderABlock(
 				} else {
 					cfg.writeNewline()
 					cfg.writeIndent(s[0])
-					return [s[0], s[0] * cfg.tabWidth, true]
+					cfg.writeSpace(preSpace)
+					return [s[0], blm, true]
 				}
 			}
 			break
 	}
 
-	let indent = state[0]
 	let rstate = state
 	let len = fmts.length
 	for (let i = 0; i < len; i++) {
