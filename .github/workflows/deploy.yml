@@ -31,8 +31,7 @@ jobs:
               env:
                   PNPM_HOME: /home/runner/.local/bin
             - run: |
-                  make -j check lint
-                  make -j test
+                  make -j check lint test
                   make -j build
             - run: make deploy
               env:

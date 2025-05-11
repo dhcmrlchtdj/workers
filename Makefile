@@ -21,7 +21,8 @@ fmt:
 	prettier --write . "!pnpm-lock.yaml"
 
 lint:
-	oxlint --deny-warnings \
+	@echo "Linting..."
+	@oxlint --deny-warnings \
 		-D=correctness \
 		-D=suspicious \
 		-D=pedantic \
@@ -42,12 +43,14 @@ lint:
 		-A=require-await \
 		--promise-plugin \
 		--import-plugin
-	prettier --check . "!pnpm-lock.yaml"
+	@echo ""
+	@prettier --check . "!pnpm-lock.yaml"
 
 t :=
 test: $(test_compiled)
+	@echo ""
 	@echo "filter test with 'make test t=xxx'"
-	NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --rootDir=./test --verbose=true -t=$(t)
+	@NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --rootDir=./test --verbose=true -t=$(t)
 
 # clean:
 
@@ -78,20 +81,32 @@ endif
 force: check build
 
 $(targets): node_modules/tsconfig.tsbuildinfo
-	esbuild --bundle --format=esm --target=esnext --platform=browser --external:'node:*' --outfile=$@/index.js $@/index.ts
+	@echo "Building $@/index.ts"
+	@esbuild \
+		--log-level=warning \
+		--bundle \
+		--format=esm \
+		--target=esnext \
+		--platform=browser \
+		--external:'node:*' \
+		--outfile=$@/index.js \
+		$@/index.ts
 
-node_modules/tsconfig.tsbuildinfo: node_modules $(shell ls {src,test}/**/*.ts)
+node_modules/tsconfig.tsbuildinfo:
 	@make --no-print-directory check
 
 check:
-	tsc --noEmit
+	@echo "Checking"
+	@tsc --noEmit
 	@touch -cm node_modules/tsconfig.tsbuildinfo # force update mtime
 
 node_modules:
 	pnpm install
 
-$(test_compiled): node_modules/tsconfig.tsbuildinfo
-	esbuild \
+$(test_compiled):
+	@echo "Building $@"
+	@esbuild \
+		--log-level=warning \
 		--bundle \
 		--format=esm \
 		--target=esnext \

@@ -8,9 +8,9 @@ export type Break =
 
 export type Format =
 	| { type: "empty" }
-	| { type: "text"; text: string; measure: number }
-	| { type: "block"; elems: Element[]; measure: number }
-	| { type: "ablock"; fmts: Format[]; align: Alignment; measure: number }
+	| { type: "text"; text: string; size: number }
+	| { type: "block"; elems: Element[]; size: number }
+	| { type: "ablock"; fmts: Format[]; align: Alignment; size: number }
 	| { type: "indent"; indent: number; fmt: Format }
 	| { type: "flat"; fmt: Format }
 	| { type: "alt"; fmt1: Format; fmt2: Format }
@@ -24,11 +24,11 @@ export function measure(fmt: Format): number {
 		case "empty":
 			return 0
 		case "text":
-			return fmt.measure
+			return fmt.size
 		case "block":
-			return fmt.measure
+			return fmt.size
 		case "ablock":
-			return fmt.measure
+			return fmt.size
 		case "indent":
 			return measure(fmt.fmt)
 		case "flat":
@@ -87,7 +87,7 @@ export function empty(): Format {
 }
 
 export function text(s: string): Format {
-	return { type: "text", text: s, measure: s.length }
+	return { type: "text", text: s, size: s.length }
 }
 
 export function indent(n: number, fmt: Format): Format {
@@ -102,7 +102,7 @@ export function indent(n: number, fmt: Format): Format {
 export function block(elems: Element[]): Format {
 	const xs = elems.filter((x) => x.type !== "empty")
 	if (xs.length === 0) return empty()
-	return { type: "block", elems: xs, measure: measureElements(elems) }
+	return { type: "block", elems: xs, size: measureElements(elems) }
 }
 
 export function aBlock(align: Alignment, fmts: Format[]): Format {
@@ -114,7 +114,7 @@ export function aBlock(align: Alignment, fmts: Format[]): Format {
 		type: "ablock",
 		fmts: xs,
 		align,
-		measure: measureFormats(breakSize, fmts),
+		size: measureFormats(breakSize, fmts),
 	}
 }
 export const hBlock = (fmts: Format[]) => aBlock("horizontal", fmts)
