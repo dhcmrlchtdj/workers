@@ -73,9 +73,7 @@ function renderBlock(
 				break
 			}
 			case "hard": {
-				cfg.writeNewline()
-				cfg.writeIndent(indent)
-				cfg.writeSpace(preSpace)
+				cfg.writeNewline(indent, preSpace)
 				occupied = blm
 				newline = true
 				break
@@ -108,9 +106,7 @@ function renderBlock(
 					occupied += sp
 					newline = false
 				} else {
-					cfg.writeNewline()
-					cfg.writeIndent(indent)
-					cfg.writeSpace(preSpace)
+					cfg.writeNewline(indent, preSpace)
 					occupied = blm
 					newline = true
 				}
@@ -150,8 +146,7 @@ function renderABlock(
 			break
 		case "vertical":
 			renderBreak = (s, _m) => {
-				cfg.writeNewline()
-				cfg.writeIndent(s[0])
+				cfg.writeNewline(s[0], preSpace)
 				cfg.writeSpace(preSpace)
 				return [s[0], blm, true]
 			}
@@ -162,9 +157,7 @@ function renderABlock(
 					cfg.writeSpace(1)
 					return [s[0], s[1] + 1, false]
 				} else {
-					cfg.writeNewline()
-					cfg.writeIndent(s[0])
-					cfg.writeSpace(preSpace)
+					cfg.writeNewline(s[0], preSpace)
 					return [s[0], blm, true]
 				}
 			}
