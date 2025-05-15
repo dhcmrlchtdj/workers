@@ -9,7 +9,7 @@ import {
 type RenderState = [indent: number, occupied: number, newline: boolean]
 
 export function render(fmt: Format, cfg: Config): void {
-	render1(fmt, [0, 0, false], cfg)
+	render1(fmt, [0, 0, true], cfg)
 }
 
 function render1(fmt: Format, state: RenderState, cfg: Config): RenderState {
