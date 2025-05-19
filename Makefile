@@ -8,10 +8,11 @@ PATH := ./node_modules/.bin:$(PATH)
 
 targets := $(filter-out src/_%, $(wildcard src/*))
 test_compiled := $(wildcard src/_common/**/*.test.ts)
+bench_compiled := $(wildcard src/_common/**/*.bench.ts)
 
 ###
 
-.PHONY: dev build fmt lint test clean outdated upgrade
+.PHONY: dev build fmt lint test bench clean outdated upgrade
 
 # dev:
 
@@ -52,6 +53,8 @@ test: $(test_compiled)
 	@echo "filter test with 'make test t=xxx'"
 	@NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --rootDir=./test --verbose=true -t=$(t)
 
+bench: $(bench_compiled)
+
 # clean:
 
 outdated:
@@ -71,7 +74,7 @@ deploy: on_ci
 
 ###
 
-.PHONY: check force $(targets) $(test_compiled) update_compatibility_date on_ci
+.PHONY: check force $(targets) $(test_compiled) $(bench_compiled) update_compatibility_date on_ci
 
 on_ci:
 ifndef CI
@@ -114,6 +117,19 @@ $(test_compiled):
 		--external:'node:*' \
 		--external:'@jest/globals' \
 		--outfile=$(subst src/,test/,$(subst .ts,.js,$@)) \
+		$@
+
+$(bench_compiled):
+	@echo "Building $@"
+	@esbuild \
+		--log-level=warning \
+		--bundle \
+		--format=esm \
+		--target=esnext \
+		--platform=browser \
+		--external:'node:*' \
+		--external:'mitata' \
+		--outfile=$(subst src/,bench/,$(subst .ts,.js,$@)) \
 		$@
 
 # https://developers.cloudflare.com/workers/platform/compatibility-dates/#change-history
