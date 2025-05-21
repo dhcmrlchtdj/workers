@@ -12,6 +12,21 @@ bench_compiled := $(wildcard src/_common/**/*.bench.ts)
 
 ###
 
+COLOR ?= true
+
+ifeq ($(COLOR),true)
+GREEN := \033[32m
+BGREEN := \033[1;32m
+RESET := \033[0m
+else
+GREEN :=
+BGREEN :=
+RESET :=
+endif
+
+
+###
+
 .PHONY: dev build fmt lint test bench clean outdated upgrade
 
 # dev:
@@ -54,6 +69,7 @@ test: $(test_compiled)
 	@NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --rootDir=./test --verbose=true -t=$(t)
 
 bench: $(bench_compiled)
+	$(foreach js,$(patsubst src/%.ts,bench/%.js,$^),@echo "node --expose-gc --allow-natives-syntax $(js)";)
 
 # clean:
 
@@ -84,7 +100,7 @@ endif
 force: check build
 
 $(targets): node_modules/tsconfig.tsbuildinfo
-	@echo "Building $@/index.ts"
+	@echo -e "Building $(GREEN)$@/index.ts$(RESET) => $(BGREEN)$@/index.js$(RESET)"
 	@esbuild \
 		--log-level=warning \
 		--bundle \
@@ -107,7 +123,7 @@ node_modules:
 	pnpm install
 
 $(test_compiled):
-	@echo "Building $@"
+	@echo -e "Building $(GREEN)$@$(RESET) => $(BGREEN)$(patsubst src/%.ts,test/%.js,$@)$(RESET)"
 	@esbuild \
 		--log-level=warning \
 		--bundle \
@@ -116,11 +132,11 @@ $(test_compiled):
 		--platform=browser \
 		--external:'node:*' \
 		--external:'@jest/globals' \
-		--outfile=$(subst src/,test/,$(subst .ts,.js,$@)) \
+		--outfile=$(patsubst src/%.ts,test/%.js,$@) \
 		$@
 
 $(bench_compiled):
-	@echo "Building $@"
+	@echo -e "Building $(GREEN)$@$(RESET) => $(BGREEN)$(patsubst src/%.ts,bench/%.js,$@)$(RESET)"
 	@esbuild \
 		--log-level=warning \
 		--bundle \
@@ -129,7 +145,7 @@ $(bench_compiled):
 		--platform=browser \
 		--external:'node:*' \
 		--external:'mitata' \
-		--outfile=$(subst src/,bench/,$(subst .ts,.js,$@)) \
+		--outfile=$(patsubst src/%.ts,bench/%.js,$@) \
 		$@
 
 # https://developers.cloudflare.com/workers/platform/compatibility-dates/#change-history
