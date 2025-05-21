@@ -1,5 +1,5 @@
 import { err, ok, type Result } from "../result"
-import { advance, backTo, mark, peek, unmark, type OP } from "./op"
+import { advance, drop, mark, read, reset, type OP } from "./op"
 
 export type Parser<T> = () => Generator<OP, Result<T>>
 
@@ -9,72 +9,82 @@ export const EOF = Symbol("EOF")
 export const EMPTY = Symbol("EMPTY")
 
 export const eof: Parser<typeof EOF> = function* () {
-	const next = yield peek()
-	if (next === undefined) {
+	const ch = yield read()
+	if (ch === undefined) {
 		return ok(EOF)
 	} else {
-		return err(`eof: expect EOF, actual '${next}'`)
+		return err(`eof: expect EOF, actual '${ch}'`)
 	}
 }
-export const notEof: Parser<typeof EMPTY> = function* () {
-	const next = yield peek()
-	if (next !== undefined) {
-		return ok(EMPTY)
+export const notEof: Parser<string> = function* () {
+	const ch = yield read()
+	if (ch !== undefined) {
+		return ok(ch)
 	} else {
 		return err(`notEof: expect not EOF`)
 	}
 }
 export const anyChar: Parser<string> = function* () {
-	const next = yield peek()
-	if (next !== undefined) {
+	const ch = yield read()
+	if (ch !== undefined) {
 		yield advance()
-		return ok(next)
+		return ok(ch)
 	} else {
 		return err(`anyChar: expect not EOF`)
 	}
 }
 export function char(ch: string): Parser<string> {
+	if (ch.length === 0 || ch.length > 1)
+		throw new Error(`char: expect single char input, actual '${ch}'`)
 	return function* () {
-		const next = yield peek()
-		if (next === ch) {
+		const curr = yield read()
+		if (curr === ch) {
 			yield advance()
-			return ok(next)
+			return ok(curr)
 		} else {
-			return err(`char: expect ${ch}, actual '${next}'`)
+			return err(`char: expect ${ch}, actual '${curr}'`)
 		}
 	}
 }
 export function notChar(ch: string): Parser<string> {
+	if (ch.length === 0 || ch.length > 1)
+		throw new Error(`notChar: expect single char input, actual '${ch}'`)
 	return function* () {
-		const next = yield peek()
-		if (next === undefined || next === ch) {
-			return err(`notChar: unexpected '${next}'`)
+		const curr = yield read()
+		if (curr === undefined || curr === ch) {
+			return err(`notChar: unexpected '${curr}'`)
 		} else {
 			yield advance()
-			return ok(next)
+			return ok(curr)
 		}
 	}
 }
 export function satisfy(fn: (c: string) => boolean): Parser<string> {
 	return function* () {
-		const next = yield peek()
-		if (next !== undefined && fn(next)) {
+		const ch = yield read()
+		if (ch !== undefined && fn(ch)) {
 			yield advance()
-			return ok(next)
+			return ok(ch)
 		} else {
-			return err(`satisfy: unexpected '${next}'`)
+			return err(`satisfy: unexpected '${ch}'`)
 		}
 	}
 }
 export function str(s: string): Parser<string> {
+	if (s.length === 0) return pure("")
+	if (s.length === 1) return mapErr(char(s), (e) => "str: " + e.message)
 	return function* () {
-		const next = yield peek(s.length)
-		if (next === s) {
-			yield advance(s.length)
-			return ok(s)
-		} else {
-			return err(`str: expect ${s}, actual '${next}'`)
+		let buf = ""
+		for (const c of s) {
+			const ch = yield read()
+			if (ch === c) {
+				yield advance()
+				buf += ch
+			} else {
+				return err(`str: expect ${s}, actual '${buf}'`)
+			}
 		}
+		return ok(s)
 	}
 }
 
@@ -93,17 +103,14 @@ export function seq<T extends Parser<unknown>[]>(
 }> {
 	return function* () {
 		const rs = []
-		const pos = yield mark()
 		for (const c of cs) {
 			const r = yield* c()
 			if (r.isErr()) {
-				yield backTo(pos)
 				return err(`seq: ${r.unwrapErr().message}`)
 			} else {
 				rs.push(r.unwrap())
 			}
 		}
-		yield unmark(pos)
 		return ok(rs) as any
 	}
 }
@@ -116,10 +123,10 @@ export function choice<T extends Parser<unknown>[]>(
 			const pos = yield mark()
 			r = yield* c()
 			if (r.isOk()) {
-				yield unmark(pos)
+				yield drop(pos)
 				return r
 			} else {
-				yield backTo(pos)
+				yield reset(pos)
 			}
 		}
 		return err(`choice: ${r.unwrapErr().message}`)
@@ -132,10 +139,10 @@ export function repeat0<T>(c: Parser<T>): Parser<T[]> {
 			const pos = yield mark()
 			const r = yield* c()
 			if (r.isErr()) {
-				yield backTo(pos)
+				yield reset(pos)
 				break
 			} else {
-				yield unmark(pos)
+				yield drop(pos)
 				rs.push(r.unwrap())
 			}
 		}
@@ -157,17 +164,17 @@ export function sepBy<T>(sep: Parser<unknown>, c: Parser<T>): Parser<T[]> {
 		while (true) {
 			const r = yield* c()
 			if (r.isErr()) {
-				yield backTo(pos)
+				yield reset(pos)
 				break
 			} else {
-				yield unmark(pos)
+				yield drop(pos)
 				rs.push(r.unwrap())
 			}
 
 			pos = yield mark()
 			const s = yield* sep()
 			if (s.isErr()) {
-				yield backTo(pos)
+				yield reset(pos)
 				break
 			}
 		}

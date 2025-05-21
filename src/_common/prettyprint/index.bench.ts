@@ -44,13 +44,13 @@ async function benchmark() {
 				const cfg = pp.config((s) => (buf += s), 80, "\n", " ", 2)
 				pp.render(wadler1(tree), cfg)
 				do_not_optimize(buf)
-			}).gc('inner')
+			}).gc("inner")
 			bench("wadler1.1", () => {
 				let buf: string[] = []
 				const cfg = pp.config((s) => buf.push(s), 80, "\n", " ", 2)
 				pp.render(wadler1(tree), cfg)
 				do_not_optimize(buf.join(""))
-			}).gc('inner')
+			}).gc("inner")
 		})
 		summary(() => {
 			bench("wadler2", () => {
@@ -58,13 +58,13 @@ async function benchmark() {
 				const cfg = pp.config((s) => (buf += s), 80, "\n", " ", 2)
 				pp.render(wadler2(tree), cfg)
 				do_not_optimize(buf)
-			}).gc('inner')
+			}).gc("inner")
 			bench("wadler2.1", () => {
-				let buf:string[] = []
-				const cfg = pp.config((s) => (buf.push(s)), 80, "\n", " ", 2)
+				let buf: string[] = []
+				const cfg = pp.config((s) => buf.push(s), 80, "\n", " ", 2)
 				pp.render(wadler2(tree), cfg)
 				do_not_optimize(buf.join(""))
-			}).gc('inner')
+			}).gc("inner")
 		})
 	})
 

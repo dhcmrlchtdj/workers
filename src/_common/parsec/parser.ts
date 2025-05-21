@@ -26,16 +26,16 @@ export async function parseAsync<T>(
 
 function handleOp(op: OP, r: SyncReader | AsyncReader): unknown {
 	switch (op.t) {
-		case "peek":
-			return r.peek(op.n)
+		case "read":
+			return r.read()
 		case "advance":
-			return r.advance(op.n)
+			return r.advance()
 		case "mark":
 			return r.mark()
-		case "unmark":
-			return r.unmark(op.pos)
-		case "backTo":
-			return r.backTo(op.pos)
+		case "drop":
+			return r.drop(op.pos)
+		case "reset":
+			return r.reset(op.pos)
 		default:
 			throw new Error("unreachable")
 	}

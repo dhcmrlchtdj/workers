@@ -1,23 +1,19 @@
 import { Deferred } from "../ds/deferred"
 
 export interface SyncReader {
-	peek(): string | undefined
-	peek(n: number): string | undefined
+	read(): string | undefined
 	advance(): void
-	advance(n: number): void
 	mark: () => number
-	unmark: (m: number) => void
-	backTo(m: number): void
+	drop: (pos: number) => void
+	reset(pos: number): void
 }
 
 export interface AsyncReader {
-	peek(): Promise<string | undefined>
-	peek(n: number): Promise<string | undefined>
+	read(): Promise<string | undefined>
 	advance(): void
-	advance(n: number): void
 	mark: () => number
-	unmark: (m: number) => void
-	backTo(m: number): void
+	drop: (pos: number) => void
+	reset(pos: number): void
 }
 
 export class Buffered implements SyncReader {
@@ -27,24 +23,18 @@ export class Buffered implements SyncReader {
 		this.str = s
 		this.idx = 0
 	}
-	peek(n = 1) {
-		if (n === 1) {
-			return this.str[this.idx]
-		} else if (this.idx + n <= this.str.length) {
-			return this.str.slice(this.idx, this.idx + n)
-		} else {
-			return undefined
-		}
+	read() {
+		return this.str[this.idx]
 	}
-	advance(n = 1) {
-		this.idx += n
+	advance() {
+		this.idx++
 	}
 	mark() {
 		return this.idx
 	}
-	unmark() {}
-	backTo(m: number) {
-		this.idx = m
+	drop() {}
+	reset(pos: number) {
+		this.idx = pos
 	}
 }
 
@@ -53,24 +43,22 @@ export class Streaming implements AsyncReader {
 	private buf: string
 	private idx: number
 	private start: number
-	private marks: Map<number, number>
+	private marks: number[]
 	private peekDeferred: Deferred<string | undefined> | null
-	private peekSize: number
 	constructor() {
 		this.eof = false
 		this.buf = ""
 		this.idx = 0
 		this.start = 0
-		this.marks = new Map()
+		this.marks = []
 		this.peekDeferred = null
-		this.peekSize = 0
 	}
 	write(data: string) {
 		this.buf += data
 		if (this.peekDeferred === null) return
-		if (this.idx + this.peekSize <= this.buf.length) {
-			const chunk = this.buf.slice(this.idx, this.idx + this.peekSize)
-			this.peekDeferred.resolve(chunk)
+		if (this.idx < this.buf.length) {
+			const char = this.buf[this.idx]
+			this.peekDeferred.resolve(char)
 			this.peekDeferred = null
 		}
 	}
@@ -81,51 +69,39 @@ export class Streaming implements AsyncReader {
 			this.peekDeferred = null
 		}
 	}
-	async peek(n = 1) {
-		if (this.idx + n <= this.buf.length) {
-			if (n === 1) {
-				return this.buf[this.idx]
-			}
-			const chunk = this.buf.slice(this.idx, this.idx + n)
-			return chunk
+	async read() {
+		if (this.idx < this.buf.length) {
+			return this.buf[this.idx]
 		} else if (this.eof) {
 			return undefined
 		} else {
 			this.peekDeferred = new Deferred()
-			this.peekSize = n
 			return this.peekDeferred.promise
 		}
 	}
-	advance(n = 1) {
-		this.idx += n
+	advance() {
+		this.idx++
 		this._cleanup()
 	}
 	mark() {
 		const pos = this.start + this.idx
-		const count = (this.marks.get(pos) ?? 0) + 1
-		this.marks.set(pos, count)
+		this.marks.push(pos)
 		return pos
 	}
-	unmark(m: number) {
-		const count = (this.marks.get(m) ?? 1) - 1
-		if (count > 0) {
-			this.marks.set(m, count)
-		} else {
-			this.marks.delete(m)
-			this._cleanup()
-		}
+	drop(_: number) {
+		this.marks.pop()
+		this._cleanup()
 	}
-	backTo(m: number) {
-		this.idx = m - this.start
+	reset(pos: number) {
+		this.idx = pos - this.start
+		this.marks.pop()
+		this._cleanup()
 	}
 	private _cleanup() {
-		if (Math.random() > 0.2) return
-		const minPos = Math.min(this.start + this.idx, ...this.marks.keys())
-		const shift = minPos - this.start
-		if (shift > 20) {
-			this.buf = this.buf.slice(shift)
-			this.idx -= shift
-			this.start = minPos
+		if (this.marks.length === 0) {
+			this.buf = this.buf.slice(this.idx)
+			this.start = this.idx
+			this.idx = 0
 		}
 	}
 }
