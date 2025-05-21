@@ -118,15 +118,15 @@ export function choice<T extends Parser<unknown>[]>(
 	...cs: T
 ): Parser<T[number] extends Parser<infer R> ? R : never> {
 	return function* () {
-		let r = err("choice: fail to match") as any
+		let r: Result<any> = err("fail to match")
 		for (const c of cs) {
 			const pos = yield mark()
 			r = yield* c()
-			if (r.isOk()) {
+			if (r.isErr()) {
+				yield reset(pos)
+			} else {
 				yield drop(pos)
 				return r
-			} else {
-				yield reset(pos)
 			}
 		}
 		return err(`choice: ${r.unwrapErr().message}`)
@@ -155,7 +155,17 @@ export function repeat1<T>(c: Parser<T>): Parser<T[]> {
 	)
 }
 export function opt<T>(c: Parser<T>): Parser<T | typeof EMPTY> {
-	return bindErr<T | typeof EMPTY>(c, (_) => ok(EMPTY))
+	return function* () {
+		const pos = yield mark()
+		const r = yield* c()
+		if (r.isErr()) {
+			yield reset(pos)
+			return ok(EMPTY)
+		} else {
+			yield drop(pos)
+			return r
+		}
+	}
 }
 export function sepBy<T>(sep: Parser<unknown>, c: Parser<T>): Parser<T[]> {
 	return function* () {
@@ -218,10 +228,10 @@ export function mapErr<T>(
 export function bind<T, K>(p: Parser<T>, fn: (r: T) => Result<K>): Parser<K> {
 	return function* () {
 		const r = yield* p()
-		if (r.isOk()) {
-			return fn(r.unwrap())
-		} else {
+		if (r.isErr()) {
 			return r
+		} else {
+			return fn(r.unwrap())
 		}
 	}
 }
