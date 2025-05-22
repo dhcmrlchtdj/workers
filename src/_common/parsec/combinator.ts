@@ -16,10 +16,10 @@ export const eof: Parser<typeof EOF> = function* () {
 		return err(`eof: expect EOF, actual '${ch}'`)
 	}
 }
-export const notEof: Parser<string> = function* () {
+export const notEof: Parser<typeof EMPTY> = function* () {
 	const ch = yield read()
 	if (ch !== undefined) {
-		return ok(ch)
+		return ok(EMPTY)
 	} else {
 		return err(`notEof: expect not EOF`)
 	}
@@ -34,8 +34,6 @@ export const anyChar: Parser<string> = function* () {
 	}
 }
 export function char(ch: string): Parser<string> {
-	if (ch.length === 0 || ch.length > 1)
-		throw new Error(`char: expect single char input, actual '${ch}'`)
 	return function* () {
 		const curr = yield read()
 		if (curr === ch) {
@@ -47,8 +45,6 @@ export function char(ch: string): Parser<string> {
 	}
 }
 export function notChar(ch: string): Parser<string> {
-	if (ch.length === 0 || ch.length > 1)
-		throw new Error(`notChar: expect single char input, actual '${ch}'`)
 	return function* () {
 		const curr = yield read()
 		if (curr === undefined || curr === ch) {
@@ -71,8 +67,6 @@ export function satisfy(fn: (c: string) => boolean): Parser<string> {
 	}
 }
 export function str(s: string): Parser<string> {
-	if (s.length === 0) return pure("")
-	if (s.length === 1) return mapErr(char(s), (e) => "str: " + e.message)
 	return function* () {
 		let buf = ""
 		for (const c of s) {
