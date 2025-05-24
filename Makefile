@@ -116,7 +116,7 @@ node_modules/tsconfig.tsbuildinfo:
 
 check:
 	@echo "Checking"
-	@tsc --noEmit
+	@tsgo --noEmit
 	@touch -cm node_modules/tsconfig.tsbuildinfo # force update mtime
 
 node_modules:
