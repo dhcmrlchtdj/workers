@@ -90,6 +90,10 @@ export function text(s: string): Format {
 	return { type: "text", text: s, size: s.length }
 }
 
+export function fancyText(s: string, size: number): Format {
+	return { type: "text", text: s, size: size }
+}
+
 export function indent(n: number, fmt: Format): Format {
 	switch (fmt.type) {
 		case "empty":
