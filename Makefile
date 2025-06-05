@@ -69,7 +69,7 @@ test: $(test_compiled)
 	@NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --rootDir=./test --verbose=true -t=$(t)
 
 bench: $(bench_compiled)
-	$(foreach js,$(patsubst src/%.ts,bench/%.js,$^),@echo "node --expose-gc --allow-natives-syntax $(js)";)
+	$(foreach js,$(patsubst src/%.ts,bench/%.js,$^),echo "node --expose-gc --allow-natives-syntax $(js)";)
 
 # clean:
 
