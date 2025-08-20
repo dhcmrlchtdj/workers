@@ -245,8 +245,8 @@ export function bindErr<T>(
 
 ///
 
+const _fix: typeof fix = (ff) => () => ff(_fix(ff))()
 export function fix<T>(f: (x: Parser<T>) => Parser<T>): Parser<T> {
-	const _fix: typeof fix = (ff) => () => ff(_fix(ff))()
 	return _fix(f)
 }
 

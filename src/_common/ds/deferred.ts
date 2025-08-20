@@ -28,10 +28,7 @@ export class Deferred<T = void> {
 
 const noop = () => {}
 
-export function abortedBySignal<T>(
-	d: Deferred<T>,
-	signal?: AbortSignal | undefined,
-) {
+export function abortedBySignal<T>(d: Deferred<T>, signal?: AbortSignal) {
 	if (signal) {
 		if (signal.aborted) {
 			d.reject(signal.reason)

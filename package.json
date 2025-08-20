@@ -7,17 +7,18 @@
 	"license": "Apache-2.0",
 	"type": "module",
 	"devDependencies": {
-		"@cloudflare/workers-types": "4.20250610.0",
-		"@jest/globals": "30.0.0",
+		"@cloudflare/workers-types": "4.20250816.0",
+		"@jest/globals": "30.0.5",
 		"@mitata/counters": "0.0.8",
-		"@types/node": "24.0.0",
-		"@typescript/native-preview": "7.0.0-dev.20250610.1",
-		"esbuild": "0.25.5",
-		"jest": "30.0.0",
+		"@types/node": "24.3.0",
+		"@typescript/native-preview": "7.0.0-dev.20250816.1",
+		"esbuild": "0.25.9",
+		"jest": "30.0.5",
 		"mitata": "1.0.34",
-		"oxlint": "1.0.0",
-		"prettier": "3.5.3",
-		"prettier-plugin-organize-imports": "4.1.0"
+		"oxlint": "1.12.0",
+		"oxlint-tsgolint": "0.0.4",
+		"prettier": "3.6.2",
+		"prettier-plugin-organize-imports": "4.2.0"
 	},
 	"prettier": {
 		"printWidth": 80,
