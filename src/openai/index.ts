@@ -20,7 +20,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 		const router = new W.Router<ENV>()
 
 		router.post(
-			"/open/v1/*",
+			"/openai/v1/*",
 			W.sendErrorToTelegram("openai"),
 			W.serverTiming(),
 			authMiddleware,

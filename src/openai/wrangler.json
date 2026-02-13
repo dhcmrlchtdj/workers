@@ -1,7 +1,7 @@
 {
 	"main": "index.js",
 	"name": "openai",
-	"route": "worker.h11.dev/open/v1*",
+	"route": "worker.h11.dev/openai/v1*",
 
 	"kv_namespaces": [
 		{ "binding": "BA", "id": "fb7f86b3d7fb42bc8bb5ed43907a6479" }
