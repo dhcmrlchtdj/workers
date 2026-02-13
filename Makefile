@@ -57,6 +57,7 @@ lint:
 		-A=prefer-code-point \
 		-A=prefer-math-trunc \
 		-A=require-await \
+		-A=no-async-endpoint-handlers \
 		--promise-plugin \
 		--import-plugin
 	@echo ""
