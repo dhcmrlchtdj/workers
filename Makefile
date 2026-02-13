@@ -81,13 +81,14 @@ upgrade:
 	pnpm update --latest # --interactive
 
 deploy: on_ci
-	cd ./src/backup && pnpx wrangler --experimental-json-config deploy
-	cd ./src/bot-share && pnpx wrangler --experimental-json-config deploy
-	cd ./src/current-ip && pnpx wrangler --experimental-json-config deploy
-	cd ./src/proxy-list && pnpx wrangler --experimental-json-config deploy
-	cd ./src/r2-share && pnpx wrangler --experimental-json-config deploy
-	cd ./src/poetry && pnpx wrangler --experimental-json-config deploy
-	cd ./src/errlog && pnpx wrangler --experimental-json-config deploy
+	cd ./src/backup && pnpx wrangler deploy
+	cd ./src/bot-share && pnpx wrangler deploy
+	cd ./src/current-ip && pnpx wrangler deploy
+	cd ./src/proxy-list && pnpx wrangler deploy
+	cd ./src/r2-share && pnpx wrangler deploy
+	cd ./src/poetry && pnpx wrangler deploy
+	cd ./src/errlog && pnpx wrangler deploy
+	cd ./src/openai && pnpx wrangler deploy
 
 ###
 
