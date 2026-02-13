@@ -22,7 +22,6 @@ const exportedHandler: ExportedHandler<ENV> = {
 		router.post(
 			"/openai/v1/*",
 			W.sendErrorToTelegram("openai"),
-			W.serverTiming(),
 			authMiddleware,
 			({ req, env, param }) => proxyRequest(req, env, param),
 		)
@@ -36,7 +35,6 @@ export default exportedHandler
 /* ---------------- auth ---------------- */
 
 async function authMiddleware(ctx: RouterContext<ENV>, next: NextFn<ENV>) {
-	// 支持 Authorization: Bearer xxx 以及 api-key
 	let userKey: string | null = null
 
 	const auth = ctx.req.headers.get("authorization")
@@ -52,7 +50,7 @@ async function authMiddleware(ctx: RouterContext<ENV>, next: NextFn<ENV>) {
 
 	const realKey = await ctx.env.BA.get("openai:auth", {
 		type: "text",
-		cacheTtl: 60,
+		cacheTtl: 3600,
 	})
 
 	if (!realKey || realKey !== userKey) {
@@ -71,25 +69,22 @@ async function proxyRequest(
 ): Promise<Response> {
 	const servers = await env.BA.get<Server[]>("openai:server", {
 		type: "json",
-		cacheTtl: 60,
+		cacheTtl: 1800,
 	})
 
 	if (!servers || servers.length === 0) {
+		await reportError(env, "no backend servers configured", { path: param.get("*") })
 		return HttpInternalServerError("no backend servers")
 	}
 
-	// shuffle
 	const shuffled = shuffle([...servers])
-
-	let lastErr: Response | null = null
+	let lastErr: { status: number; statusText: string; body?: string } | null = null
 	const suffix = param.get("*")!
+	const search = new URL(req.url).search
 
 	for (const server of shuffled) {
 		try {
-			const search = new URL(req.url).search
 			const target = server.url + "/" + suffix + search
-
-			// clone headers and add auth key
 			const headers = new Headers(req.headers)
 			headers.set("Authorization", `Bearer ${server.key}`)
 
@@ -104,13 +99,67 @@ async function proxyRequest(
 				return resp
 			}
 
-			lastErr = resp
+			// 记录上游错误（但不立即返回，继续尝试其他 server）
+			lastErr = {
+				status: resp.status,
+				statusText: resp.statusText,
+				body: await resp.text().catch(() => undefined),
+			}
+
+			// 上报 5xx 错误
+			if (resp.status >= 500) {
+				await reportError(env, `upstream ${resp.status}`, {
+					backend: server.url,
+					model: server.model,
+					path: suffix,
+					response: lastErr.body?.slice(0, 500),
+				})
+			}
 		} catch (e) {
-			lastErr = HttpInternalServerError(String(e))
+			// 网络/超时等异常
+			await reportError(env, `fetch error: ${String(e)}`, {
+				backend: server.url,
+				model: server.model,
+				path: suffix,
+			})
+			lastErr = { status: 502, statusText: String(e) }
 		}
 	}
 
-	return lastErr ?? HttpInternalServerError("all backends failed")
+	// 所有 backend 都失败了，上报聚合异常
+	await reportError(env, "all backends failed", {
+		path: suffix,
+		lastError: lastErr,
+		attempted: shuffled.map(s => ({ url: s.url, model: s.model })),
+	})
+
+	return HttpInternalServerError("all backends failed")
+}
+
+/* ---------------- error reporting ---------------- */
+
+async function reportError(
+	env: ENV,
+	message: string,
+	context: Record<string, unknown>,
+): Promise<void> {
+	try {
+		const payload = JSON.stringify({
+			service: "openai",
+			message,
+			context,
+			time: new Date().toISOString(),
+		})
+
+		// 通过 Bot API 或 Webhook 上报（先存 KV，由 errlog worker 消费）
+		await env.BA.put(
+			`error:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
+			payload,
+			{ expirationTtl: 86400 }, // 1天后过期
+		)
+	} catch {
+		// 上报失败静默处理，避免影响主流程
+	}
 }
 
 /* ---------------- utils ---------------- */
