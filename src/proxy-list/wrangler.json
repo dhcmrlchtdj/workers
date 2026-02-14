@@ -2,14 +2,16 @@
 	"main": "index.js",
 	"name": "proxy-list",
 	"route": "worker.h11.dev/proxy-list*",
-
 	"kv_namespaces": [
-		{ "binding": "BA", "id": "fb7f86b3d7fb42bc8bb5ed43907a6479" }
+		{
+			"binding": "BA",
+			"id": "fb7f86b3d7fb42bc8bb5ed43907a6479"
+		}
 	],
-
-	"compatibility_date": "2024-06-21",
-	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_date": "2026-02-14",
 	"workers_dev": false,
 	"no_bundle": true,
-	"placement": { "mode": "smart" }
+	"placement": {
+		"mode": "smart"
+	}
 }
