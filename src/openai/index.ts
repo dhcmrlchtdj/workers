@@ -1,9 +1,9 @@
+import type { NextFn, RouterContext } from "../_common/worker/type.ts"
 import {
 	HttpForbidden,
 	HttpInternalServerError,
 } from "../_common/http/status.ts"
 import * as W from "../_common/worker/index.ts"
-import type { NextFn, RouterContext } from "../_common/worker/type.ts"
 
 type ENV = {
 	BA: KVNamespace
@@ -73,12 +73,15 @@ async function proxyRequest(
 	})
 
 	if (!servers || servers.length === 0) {
-		await reportError(env, "no backend servers configured", { path: param.get("*") })
+		await reportError(env, "no backend servers configured", {
+			path: param.get("*"),
+		})
 		return HttpInternalServerError("no backend servers")
 	}
 
 	const shuffled = shuffle([...servers])
-	let lastErr: { status: number; statusText: string; body?: string } | null = null
+	let lastErr: { status: number; statusText: string; body?: string } | null =
+		null
 	const suffix = param.get("*")!
 	const search = new URL(req.url).search
 
@@ -130,7 +133,7 @@ async function proxyRequest(
 	await reportError(env, "all backends failed", {
 		path: suffix,
 		lastError: lastErr,
-		attempted: shuffled.map(s => ({ url: s.url, model: s.model })),
+		attempted: shuffled.map((s) => ({ url: s.url, model: s.model })),
 	})
 
 	return HttpInternalServerError("all backends failed")

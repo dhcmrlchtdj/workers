@@ -34,8 +34,7 @@ endif
 build: $(targets)
 
 fmt:
-	oxfmt . "!pnpm-lock.yaml"
-
+	oxfmt --write . "!pnpm-lock.yaml"
 
 lint:
 	@echo "Linting..."

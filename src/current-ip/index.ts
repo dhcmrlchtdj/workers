@@ -66,9 +66,7 @@ async function saveCurrentIp(env: ENV, item: KVItem, currIp: string) {
 	await sendMessage({
 		parse_mode: "HTML",
 		chat_id: tg.chatId,
-		text: `IP changed: ${enc(item.username)}\n<pre>HostName ${enc(
-			currIp,
-		)}</pre>`,
+		text: `IP changed: ${enc(item.username)}\n<pre>HostName ${enc(currIp)}</pre>`,
 		disable_web_page_preview: true,
 	})
 }

@@ -1,5 +1,5 @@
-import { PriorityQueue } from "../ds/priority-queue"
 import type { Event, Group, RecurrenceRule } from "./jscalendar"
+import { PriorityQueue } from "../ds/priority-queue"
 
 export function getEventFromGroup(
 	start: number,

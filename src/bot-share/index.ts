@@ -1,3 +1,9 @@
+import type {
+	CallbackQuery,
+	InlineKeyboardMarkup,
+	Message,
+	Update,
+} from "../_common/service/telegram-typings.ts"
 import { fromStr } from "../_common/array_buffer.ts"
 import { MIME_JSON } from "../_common/http/mime.ts"
 import {
@@ -5,12 +11,6 @@ import {
 	HttpInternalServerError,
 	HttpOk,
 } from "../_common/http/status.ts"
-import type {
-	CallbackQuery,
-	InlineKeyboardMarkup,
-	Message,
-	Update,
-} from "../_common/service/telegram-typings.ts"
 import {
 	encodeHtmlEntities,
 	extractCommand,
@@ -284,9 +284,7 @@ async function handleCommand(ctx: BotContextMessage) {
 				.then((sharedUrl) => encodeHtmlEntities(sharedUrl))
 				.catch(
 					(e) =>
-						`<pre>${encodeHtmlEntities(
-							stringifyError(e, true),
-						)}</pre>`,
+						`<pre>${encodeHtmlEntities(stringifyError(e, true))}</pre>`,
 				)
 				.then((text) => {
 					return editMessageText({
@@ -396,9 +394,7 @@ async function uploadMessageUrl(ctx: BotContextMessage) {
 				.then((sharedUrl) => encodeHtmlEntities(sharedUrl))
 				.catch(
 					(e) =>
-						`<pre>${encodeHtmlEntities(
-							stringifyError(e, true),
-						)}</pre>`,
+						`<pre>${encodeHtmlEntities(stringifyError(e, true))}</pre>`,
 				)
 				.then((text) => {
 					return editMessageText({
@@ -505,9 +501,7 @@ async function uploadFile(
 			message_id: uploading.message_id,
 			parse_mode: "HTML",
 			disable_web_page_preview: true,
-			text: `couldn't fetch file path<br><pre>${encodeHtmlEntities(
-				data,
-			)}</pre>`,
+			text: `couldn't fetch file path<br><pre>${encodeHtmlEntities(data)}</pre>`,
 		})
 		return
 	}

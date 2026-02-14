@@ -1,3 +1,4 @@
+import type { Handler, RouterContext } from "./type.ts"
 import { getBA } from "../http/basic_auth.ts"
 import * as S from "../http/request.ts"
 import * as R from "../http/response.ts"
@@ -8,7 +9,6 @@ import {
 } from "../http/status.ts"
 import { TelegramMonitor } from "../service/telegram-monitor.ts"
 import { addServerTiming, getInContext } from "./context.ts"
-import type { Handler, RouterContext } from "./type.ts"
 
 export function checkContentType<ENV>(expectedType: string): Handler<ENV> {
 	return (ctx, next) => {

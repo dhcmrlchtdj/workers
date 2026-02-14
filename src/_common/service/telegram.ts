@@ -1,4 +1,3 @@
-import * as S from "../http/request.ts"
 import type {
 	AnswerCallbackQuery,
 	ChatMember,
@@ -11,6 +10,7 @@ import type {
 	SendPhoto,
 	SendVideo,
 } from "./telegram-typings.ts"
+import * as S from "../http/request.ts"
 
 export const encodeHtmlEntities = (raw: string): string => {
 	const pairs: Record<string, string> = {

@@ -1,10 +1,10 @@
 {
-	"private": true,
 	"name": "workers",
 	"version": "0.0.0",
-	"repository": "git@github.com:dhcmrlchtdj/workers.git",
-	"author": "h11 <nirisix@gmail.com>",
+	"private": true,
 	"license": "Apache-2.0",
+	"author": "h11 <nirisix@gmail.com>",
+	"repository": "git@github.com:dhcmrlchtdj/workers.git",
 	"type": "module",
 	"devDependencies": {
 		"@cloudflare/workers-types": "4.20260214.0",
@@ -18,26 +18,5 @@
 		"oxfmt": "0.32.0",
 		"oxlint": "1.47.0",
 		"oxlint-tsgolint": "0.12.2"
-	},
-	"prettier": {
-		"printWidth": 80,
-		"tabWidth": 4,
-		"useTabs": true,
-		"semi": false,
-		"singleQuote": false,
-		"quoteProps": "as-needed",
-		"jsxSingleQuote": false,
-		"trailingComma": "all",
-		"bracketSpacing": true,
-		"bracketSameLine": false,
-		"arrowParens": "always",
-		"proseWrap": "preserve",
-		"htmlWhitespaceSensitivity": "ignore",
-		"endOfLine": "lf",
-		"embeddedLanguageFormatting": "auto",
-		"singleAttributePerLine": true,
-		"plugins": [
-			"prettier-plugin-organize-imports"
-		]
 	}
 }
