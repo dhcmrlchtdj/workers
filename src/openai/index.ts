@@ -36,14 +36,16 @@ const exportedHandler: ExportedHandler<ENV> = {
 				let resp: Response | null = null
 				for (const server of shuffled) {
 					try {
-						const target = server.url + "/" + suffix + search
+						const target = server.url.endsWith("/")
+							? server.url + suffix + search
+							: server.url + "/" + suffix + search
 						const headers = new Headers(req.headers)
 						headers.set("Authorization", `Bearer ${server.key}`)
 
 						resp = await fetch(target, {
 							method: "POST",
 							headers: headers,
-							body: req.body,
+							body: req.clone().body,
 							redirect: "manual",
 						})
 
@@ -51,9 +53,10 @@ const exportedHandler: ExportedHandler<ENV> = {
 							return resp
 						}
 						console.warn({
-							origin: server.url,
+							origin: target,
 							status: resp.status,
-							body: await resp.clone().text(),
+							respBody: await resp.clone().text(),
+							reqBody: req.clone().body,
 						})
 					} catch (e) {
 						const msg =
