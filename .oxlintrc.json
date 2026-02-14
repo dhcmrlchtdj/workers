@@ -3,11 +3,12 @@
 	"env": {
 		"builtin": true
 	},
-	"plugins": ["import", "promise"],
+	"plugins": ["eslint", "import", "oxc", "promise", "unicorn"],
 	"categories": {
 		"correctness": "deny",
-		"suspicious": "deny",
-		"pedantic": "deny"
+		"perf": "deny",
+		"pedantic": "deny",
+		"suspicious": "deny"
 	},
 	"rules": {
 		"ban-ts-comment": "allow",
@@ -17,7 +18,9 @@
 		"max-lines": "allow",
 		"max-lines-per-function": "allow",
 		"max-nested-callbacks": "allow",
+		"no-array-callback-reference": "allow",
 		"no-async-endpoint-handlers": "allow",
+		"no-await-in-loop": "allow",
 		"no-else-return": "allow",
 		"no-hex-escape": "allow",
 		"no-inline-comments": "allow",
@@ -29,6 +32,7 @@
 		"no-warning-comments": "allow",
 		"prefer-code-point": "allow",
 		"prefer-math-trunc": "allow",
+		"prefer-top-level-await": "allow",
 		"require-await": "allow"
 	},
 	"settings": {},

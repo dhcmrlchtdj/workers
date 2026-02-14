@@ -10,7 +10,7 @@ export const parse = (line: string): Record<string, string> => {
 	let in_value = false
 	let in_quote = false
 
-	if (line[line.length - 1] === "\n") {
+	if (line.at(line.length - 1) === "\n") {
 		line = line.slice(0, line.length - 1)
 	}
 

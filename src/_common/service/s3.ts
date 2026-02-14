@@ -158,14 +158,13 @@ function getCanonicalRequest(
 	hashedPayload: string,
 ): Promise<string> {
 	const canonicalQueryString = Array.from(query.keys())
-		.sort()
-		.map((k) =>
+		.toSorted()
+		.flatMap((k) =>
 			query
 				.getAll(k)
-				.sort()
+				.toSorted()
 				.map((v) => uriEncode(k) + "=" + uriEncode(v)),
 		)
-		.flat()
 		.join("&")
 
 	// https://github.com/aws/aws-sdk-js/blob/v2.789.0/lib/signers/v4.js#L155
@@ -202,7 +201,7 @@ function getSignedHeaders(header: Headers): string[] {
 	const signedHeaders = Array.from(header.keys())
 		.map((h) => h.toLowerCase())
 		.filter((h) => !UNSIGNABLE_HEADERS.has(h))
-		.sort()
+		.toSorted()
 	return signedHeaders
 }
 

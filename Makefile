@@ -36,11 +36,9 @@ fmt:
 	oxfmt --write . "!pnpm-lock.yaml"
 
 lint:
-	@oxfmt --check . "!pnpm-lock.yaml"
+	oxlint --type-aware
 	@echo ""
-	@echo "Linting..."
-	@echo ""
-	@oxlint
+	oxfmt --check . "!pnpm-lock.yaml"
 
 t :=
 test: $(test_compiled)
