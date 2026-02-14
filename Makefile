@@ -36,8 +36,9 @@ fmt:
 	oxfmt --write . "!pnpm-lock.yaml"
 
 lint:
-	@echo "Linting..."
 	@oxfmt --check . "!pnpm-lock.yaml"
+	@echo ""
+	@echo "Linting..."
 	@echo ""
 	@oxlint
 

@@ -10,9 +10,6 @@
 		"pedantic": "deny"
 	},
 	"rules": {
-		"no-useless-return": "allow",
-		"no-inline-comments": "allow",
-		"no-warning-comments": "warn",
 		"ban-ts-comment": "allow",
 		"max-classes-per-file": "allow",
 		"max-dependencies": "allow",
@@ -23,9 +20,13 @@
 		"no-async-endpoint-handlers": "allow",
 		"no-else-return": "allow",
 		"no-hex-escape": "allow",
+		"no-inline-comments": "allow",
 		"no-negated-condition": "allow",
 		"no-new-array": "allow",
+		"no-promise-executor-return": "allow",
+		"no-useless-return": "allow",
 		"no-useless-undefined": "allow",
+		"no-warning-comments": "allow",
 		"prefer-code-point": "allow",
 		"prefer-math-trunc": "allow",
 		"require-await": "allow"
