@@ -1,11 +1,14 @@
 name: deploy
 
 on:
+    workflow_dispatch:
     push:
         branches:
             - master
         paths:
             - "src/*/index.ts"
+            - "src/*/wrangler.json"
+            - ".github/workflows/deploy.yml"
 
 jobs:
     deploy:
