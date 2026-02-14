@@ -14,5 +14,8 @@
 	"no_bundle": true,
 	"placement": {
 		"mode": "smart"
+	},
+	"observability": {
+		"enabled": true
 	}
 }

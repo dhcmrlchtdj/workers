@@ -50,9 +50,15 @@ const exportedHandler: ExportedHandler<ENV> = {
 						if (resp.ok) {
 							return resp
 						}
+						console.warn({
+							origin: server.url,
+							status: resp.status,
+							body: await resp.clone().text(),
+						})
 					} catch (e) {
 						const msg =
 							e instanceof Error ? e.message : JSON.stringify(e)
+						console.warn(msg)
 						resp = HttpInternalServerError(msg)
 					}
 				}
