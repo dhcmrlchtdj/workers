@@ -31,6 +31,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 
 				const suffix = param.get("*")!
 				const search = new URL(req.url).search
+				const body = await req.text();
 
 				const shuffled = shuffle(servers)
 				let resp: Response | null = null
@@ -45,7 +46,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 						resp = await fetch(target, {
 							method: "POST",
 							headers: headers,
-							body: req.clone().body,
+							body: body,
 							redirect: "manual",
 						})
 
@@ -56,7 +57,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 							origin: target,
 							status: resp.status,
 							respBody: await resp.clone().text(),
-							reqBody: req.clone().body,
+							reqBody: body,
 						})
 					} catch (e) {
 						const msg =
