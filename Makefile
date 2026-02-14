@@ -34,10 +34,13 @@ endif
 build: $(targets)
 
 fmt:
-	prettier --write . "!pnpm-lock.yaml"
+	oxfmt . "!pnpm-lock.yaml"
+
 
 lint:
 	@echo "Linting..."
+	@oxfmt --check . "!pnpm-lock.yaml"
+	@echo ""
 	@oxlint --deny-warnings \
 		-D=correctness \
 		-D=suspicious \
@@ -60,8 +63,6 @@ lint:
 		-A=no-async-endpoint-handlers \
 		--promise-plugin \
 		--import-plugin
-	@echo ""
-	@prettier --check . "!pnpm-lock.yaml"
 
 t :=
 test: $(test_compiled)
