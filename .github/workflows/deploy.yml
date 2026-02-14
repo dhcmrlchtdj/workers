@@ -13,20 +13,20 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             # https://github.com/marketplace/actions/checkout
-            - uses: actions/checkout@v4.2.2
+            - uses: actions/checkout@v6.0.2
             # https://github.com/marketplace/actions/setup-node-js-environment
-            - uses: actions/setup-node@v4.4.0
+            - uses: actions/setup-node@v6.2.0
               with:
-                  node-version: "22.x"
+                  node-version: "24.x"
             # https://github.com/marketplace/actions/cache
-            - uses: actions/cache@v4.2.3
+            - uses: actions/cache@v5.0.3
               with:
                   path: ~/.local/share/pnpm/store
                   key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
                   restore-keys: ${{ runner.os }}-pnpm-
             - run: |
                   # https://www.npmjs.com/package/pnpm
-                  npm install -g pnpm@10.10.0
+                  npm install -g pnpm@10.29.3
                   pnpm config set store-dir ~/.local/share/pnpm/store
                   pnpm approve-builds
                   pnpm install
