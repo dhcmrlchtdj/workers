@@ -24,7 +24,6 @@ BGREEN :=
 RESET :=
 endif
 
-
 ###
 
 .PHONY: dev build fmt lint test bench clean outdated upgrade
@@ -40,28 +39,7 @@ lint:
 	@echo "Linting..."
 	@oxfmt --check . "!pnpm-lock.yaml"
 	@echo ""
-	@oxlint --deny-warnings \
-		-D=correctness \
-		-D=suspicious \
-		-D=pedantic \
-		-A=ban-ts-comment \
-		-A=max-classes-per-file \
-		-A=max-dependencies \
-		-A=max-depth \
-		-A=max-lines \
-		-A=max-lines-per-function \
-		-A=max-nested-callbacks \
-		-A=no-else-return \
-		-A=no-hex-escape \
-		-A=no-negated-condition \
-		-A=no-new-array \
-		-A=no-useless-undefined \
-		-A=prefer-code-point \
-		-A=prefer-math-trunc \
-		-A=require-await \
-		-A=no-async-endpoint-handlers \
-		--promise-plugin \
-		--import-plugin
+	@oxlint
 
 t :=
 test: $(test_compiled)
