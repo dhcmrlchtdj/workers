@@ -26,7 +26,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				})
 
 				if (!servers || servers.length === 0) {
-					return HttpInternalServerError()
+					return HttpInternalServerError("no servers available")
 				}
 
 				const suffix = param.get("*")!
@@ -51,10 +51,12 @@ const exportedHandler: ExportedHandler<ENV> = {
 							return resp
 						}
 					} catch (e) {
-						resp = HttpInternalServerError(String(e))
+						const msg =
+							e instanceof Error ? e.message : JSON.stringify(e)
+						resp = HttpInternalServerError(msg)
 					}
 				}
-				return resp
+				return resp!
 			},
 		)
 
