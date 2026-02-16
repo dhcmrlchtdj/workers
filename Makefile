@@ -65,7 +65,6 @@ deploy: on_ci
 	cd ./src/r2-share && pnpx wrangler deploy
 	cd ./src/poetry && pnpx wrangler deploy
 	cd ./src/errlog && pnpx wrangler deploy
-	cd ./src/openai && pnpx wrangler deploy
 
 ###
 
