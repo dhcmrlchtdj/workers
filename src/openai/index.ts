@@ -16,10 +16,10 @@ const exportedHandler: ExportedHandler<ENV> = {
 		const router = new W.Router<ENV>()
 
 		router.post(
-			"/openai/v1/*",
+			"/openai/v1/chat/completions",
 			W.sendErrorToTelegram("openai"),
 			auth,
-			async ({ req, env, param }) => {
+			async ({ req, env }) => {
 				const servers = await env.BA.get<Server[]>("openai:server", {
 					type: "json",
 					cacheTtl: 1800,
@@ -29,7 +29,6 @@ const exportedHandler: ExportedHandler<ENV> = {
 					return HttpInternalServerError("no servers available")
 				}
 
-				const suffix = param.get("*")!
 				const search = new URL(req.url).search
 				const body = await req.blob()
 
@@ -37,9 +36,7 @@ const exportedHandler: ExportedHandler<ENV> = {
 				let resp: Response | null = null
 				for (const server of shuffled) {
 					try {
-						const target = server.url.endsWith("/")
-							? server.url + suffix + search
-							: server.url + "/" + suffix + search
+						const target = server.url + search
 						const headers = new Headers(req.headers)
 						headers.set("Authorization", `Bearer ${server.key}`)
 

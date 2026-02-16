@@ -1,7 +1,7 @@
 {
 	"main": "index.js",
 	"name": "openai",
-	"route": "worker.h11.dev/openai/v1*",
+	"route": "worker.h11.dev/openai/v1/chat/completions*",
 	"kv_namespaces": [
 		{
 			"binding": "BA",
