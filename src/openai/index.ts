@@ -1,6 +1,9 @@
-import { HttpInternalServerError } from "../_common/http/status.ts"
+import type { NextFn, RouterContext } from "../_common/worker/type.ts"
+import {
+	HttpForbidden,
+	HttpInternalServerError,
+} from "../_common/http/status.ts"
 import * as W from "../_common/worker/index.ts"
-import { auth, shuffle } from "./util.ts"
 
 type ENV = {
 	BA: KVNamespace
@@ -24,48 +27,23 @@ const exportedHandler: ExportedHandler<ENV> = {
 					type: "json",
 					cacheTtl: 1800,
 				})
-
 				if (!servers || servers.length === 0) {
 					return HttpInternalServerError("no servers available")
 				}
+				const idx = Math.floor(Math.random() * servers.length)
+				const server = servers[idx]!
 
 				const search = new URL(req.url).search
-				const body = await req.blob()
+				const target = server.url + "/chat/completions" + search
+				const headers = new Headers(req.headers)
+				headers.set("Authorization", `Bearer ${server.key}`)
 
-				const shuffled = shuffle(servers)
-				let resp: Response | null = null
-				for (const server of shuffled) {
-					try {
-						const target = server.url + search
-						const headers = new Headers(req.headers)
-						headers.set("Authorization", `Bearer ${server.key}`)
-
-						resp = await fetch(target, {
-							method: "POST",
-							headers,
-							body,
-							redirect: "manual",
-						})
-
-						if (resp.ok) {
-							return resp
-						}
-						if (resp.status === 400) {
-							return resp
-						}
-						console.warn({
-							origin: target,
-							status: resp.status,
-							body: await resp.clone().text(),
-						})
-					} catch (e) {
-						const msg =
-							e instanceof Error ? e.message : JSON.stringify(e)
-						console.warn(msg)
-						resp = HttpInternalServerError(msg)
-					}
-				}
-				return resp!
+				return fetch(target, {
+					method: "POST",
+					headers,
+					body: req.body,
+					redirect: "manual",
+				})
 			},
 		)
 
@@ -74,3 +52,29 @@ const exportedHandler: ExportedHandler<ENV> = {
 }
 
 export default exportedHandler
+
+async function auth(ctx: RouterContext<ENV>, next: NextFn<ENV>) {
+	let userKey: string | null = null
+
+	const auth = ctx.req.headers.get("authorization")
+	if (auth?.startsWith("Bearer ")) {
+		userKey = auth.slice(7)
+	} else {
+		userKey = ctx.req.headers.get("api-key")
+	}
+
+	if (!userKey) {
+		return HttpForbidden("missing token")
+	}
+
+	const realKey = await ctx.env.BA.get("openai:auth", {
+		type: "text",
+		cacheTtl: 3600,
+	})
+
+	if (!realKey || realKey !== userKey) {
+		return HttpForbidden("invalid token")
+	}
+
+	return next(ctx)
+}
